@@ -1,0 +1,142 @@
+@page "/"
+@page "/login"
+@layout MerdasGold.Features.Authentication.Components.LoginLayout
+
+<PageTitle>ورود به پنل مدیریت | مرداس گلد</PageTitle>
+
+<div class="login-page">
+    <main class="portal">
+        <section class="workspace" aria-label="ورود به پنل مدیریت">
+            <header class="workspace-header">
+                <div class="brand" aria-label="مرداس گلد">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 40 40"><path d="M7 14 14 5h12l7 9-13 21L7 14Z M7 14h26 M14 5l6 30 6-30 M14 5l6 9 6-9" /></svg>
+                    </span>
+                    <div class="brand-type">
+                        <strong>مرداس گلد</strong>
+                        <span lang="en" dir="ltr">MERDAS GOLD</span>
+                    </div>
+                </div>
+                <span class="workspace-label">پنل مدیریت</span>
+            </header>
+
+            <div class="form-area">
+                <div class="form-heading">
+                    <span class="eyebrow"><span aria-hidden="true"></span>فضای اختصاصی مدیریت فروشگاه</span>
+                </div>
+
+                <form method="post" action="/account/login">
+                    <AntiforgeryToken />
+                    <div class="field">
+                        <label for="username">نام کاربری</label>
+                        <div class="input-wrap @(UserNameIsInvalid ? "invalid" : null)">
+                            <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" /><path d="M5 20v-1a7 7 0 0 1 14 0v1" /></svg>
+                            <input @ref="_userNameInput"
+                                   id="username"
+                                   name="UserName"
+                                   data-validation-label="نام کاربری"
+                                   type="text"
+                                   autocomplete="username"
+                                   autocapitalize="none"
+                                   spellcheck="false"
+                                   placeholder="نام کاربری خود را وارد کنید"
+                                   maxlength="256"
+                                   required
+                                   aria-invalid="@UserNameIsInvalid"
+                                   @bind="Model.UserName"
+                                   @bind:event="oninput" />
+                        </div>
+                        @if (UserNameIsInvalid)
+                        {
+                            <p class="field-error">نام کاربری خود را وارد کنید.</p>
+                        }
+                    </div>
+
+                    <div class="field password-field">
+                        <label for="password">رمز عبور</label>
+                        <div class="input-wrap @(PasswordIsInvalid ? "invalid" : null)">
+                            <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3" /><path d="M8 10V7a4 4 0 0 1 8 0v3 M12 14v3" /></svg>
+                            <input @ref="_passwordInput"
+                                   id="password"
+                                   name="Password"
+                                   data-validation-label="رمز عبور"
+                                   type="@PasswordInputType"
+                                   autocomplete="current-password"
+                                   placeholder="رمز عبور خود را وارد کنید"
+                                   required
+                                   aria-invalid="@PasswordIsInvalid"
+                                   @bind="Model.Password"
+                                   @bind:event="oninput" />
+                            <button class="visibility"
+                                    type="button"
+                                    aria-label="@(ShowPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور")"
+                                    aria-pressed="@ShowPassword"
+                                    @onclick="TogglePasswordVisibility">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                    @if (ShowPassword)
+                                    {
+                                        <path d="m3 3 18 18" />
+                                    }
+                                </svg>
+                            </button>
+                        </div>
+                        @if (PasswordIsInvalid)
+                        {
+                            <p class="field-error">رمز عبور خود را وارد کنید.</p>
+                        }
+                    </div>
+
+                    <div class="form-options">
+                        <span class="access-note">ورود ویژه همکاران مرداس گلد</span>
+                        <button class="text-button" type="button" aria-expanded="@ShowRecovery" @onclick="ToggleRecovery">
+                            رمز عبور را فراموش کرده‌اید؟
+                        </button>
+                    </div>
+
+                    @if (ShowRecovery)
+                    {
+                        <div class="help-note">برای بازیابی رمز عبور، با مدیر سیستم فروشگاه تماس بگیرید.</div>
+                    }
+
+                    <button class="submit" type="submit">
+                        <span>ورود به پنل مدیریت</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+                    </button>
+
+                    @if (HasLoginError)
+                    {
+                        <div class="login-error" role="alert">نام کاربری یا رمز عبور صحیح نیست.</div>
+                    }
+
+                </form>
+
+                <div class="restricted">
+                    <span class="restricted-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" /><path d="m8.5 12 2.5 2.5 4.5-5" /></svg></span>
+                    <p>دسترسی به این بخش، ویژه کاربران مجاز است.<br /><span>برای دریافت حساب کاربری، با مدیر سیستم در ارتباط باشید.</span></p>
+                </div>
+            </div>
+
+            <footer class="workspace-footer"><span>مرداس گلد · سامانه مدیریت فروشگاه</span><span class="footer-diamond" aria-hidden="true">◇</span></footer>
+        </section>
+
+        <aside class="showcase" aria-label="مرداس گلد؛ طلا و جواهر">
+            <img class="jewelry-image" src="/assets/images/jewelry-editorial.png" alt="انگشتر طلایی با نگین الماس روی سنگ تیره" width="1024" height="1536" fetchpriority="high" />
+            <div class="showcase-wash" aria-hidden="true"></div>
+            <div class="showcase-frame" aria-hidden="true"></div>
+            <div class="showcase-header" lang="en" dir="ltr">
+                <div class="editorial-wordmark">MERDAS<span>G O L D &nbsp; &amp; &nbsp; J E W E L R Y</span></div>
+                <svg class="editorial-spark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2c0 10-4 14-14 14 10 0 14 4 14 14 0-10 4-14 14-14-10 0-14-4-14-14Z" /></svg>
+            </div>
+            <div class="showcase-caption">
+                <span class="caption-rule" aria-hidden="true"></span>
+                <p class="caption-title">ارزش، در جزئیات است.</p>
+                <p class="caption-subtitle">از ظرافت یک جواهر، تا دقت در هر سفارش.</p>
+                <div class="showcase-footer"><span>مرداس گلد</span><span lang="en" dir="ltr">THE ART OF DETAIL</span></div>
+            </div>
+        </aside>
+    </main>
+
+    <div class="page-footer"><span>تمام حقوق این سامانه متعلق به مرداس گلد است.</span><span lang="en" dir="ltr">CRAFTED WITH CARE.</span></div>
+</div>

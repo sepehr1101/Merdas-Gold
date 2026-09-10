@@ -1,0 +1,21 @@
+@using MerdasGold.Features.StoreInformation.Models
+<div class="bank-form">
+    <div class="bank-form__title"><strong>@(Model.Id == 0 ? "افزودن حساب بانکی" : "ویرایش حساب بانکی")</strong><MudIconButton Icon="@Icons.Material.Outlined.Close" Size="Size.Small" OnClick="@OnCancel" /></div>
+    <form method="post" action="/account/store/bank-account" data-enhance="false">
+        <AntiforgeryToken /><input type="hidden" name="Id" value="@Model.Id" /><input type="hidden" name="RowVersion" value="@Model.RowVersion" />
+        <div class="bank-form__grid">
+            <Field Label="عنوان حساب"><input name="Title" value="@Model.Title" maxlength="200" required data-validation-label="عنوان حساب" /></Field>
+            <Field Label="نام بانک"><input name="BankName" value="@Model.BankName" maxlength="100" required data-validation-label="نام بانک" /></Field>
+            <Field Label="نام صاحب حساب"><input name="AccountHolderName" value="@Model.AccountHolderName" maxlength="200" required data-validation-label="نام صاحب حساب" /></Field>
+            <Field Label="شماره حساب"><input name="AccountNumber" value="@Model.AccountNumber" maxlength="50" dir="ltr" required data-validation-label="شماره حساب" /></Field>
+            <Field Label="شماره کارت"><input name="CardNumber" value="@Model.CardNumber" maxlength="32" dir="ltr" inputmode="numeric" required data-validation-label="شماره کارت" /></Field>
+            <Field Label="شماره شبا"><input name="Iban" value="@Model.Iban" maxlength="32" dir="ltr" placeholder="IR..." required data-validation-label="شماره شبا" /></Field>
+        </div>
+        <div class="bank-form__checks">
+            <label><input type="checkbox" name="IsDefault" value="true" checked="@Model.IsDefault" /><input type="hidden" name="IsDefault" value="false" /> حساب پیش‌فرض</label>
+            <label><input type="checkbox" name="IsActive" value="true" checked="@Model.IsActive" /><input type="hidden" name="IsActive" value="false" /> حساب فعال</label>
+        </div>
+        <SaveButton Text="@(Model.Id == 0 ? "افزودن حساب بانکی" : "ذخیره حساب بانکی")" />
+    </form>
+</div>
+@code { [Parameter, EditorRequired] public BankAccountEditModel Model { get; set; } = default!; [Parameter] public EventCallback<MouseEventArgs> OnCancel { get; set; } }

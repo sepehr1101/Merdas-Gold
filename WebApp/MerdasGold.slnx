@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MerdasGold.csproj" />
+  <Project Path="../Tests/MerdasGold.Tests/MerdasGold.Tests.csproj" />
+</Solution>

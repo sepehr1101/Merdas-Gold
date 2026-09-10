@@ -1,0 +1,40 @@
+# Build outputs
+**/bin/
+**/obj/
+**/TestResults/
+
+# IDE and user-specific files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Local application data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+App_Data/
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# Logs and operating-system files
+*.log
+logs/
+.DS_Store
+Thumbs.db
+
+# Package/build caches
+node_modules/
+dist/
+coverage/
+packages/
+

@@ -1,0 +1,32 @@
+@page "/admin/catalog/products"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>محصولات | مرداس گلد</PageTitle>
+
+<section class="list-page">
+    <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به کالاها</a>
+    <header class="page-header"><div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">محصولات</MudText></div><a class="primary-action" href="/admin/catalog/products/new"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> محصول جدید</a></header>
+    @if (Message is not null) { <div class="notice error">@Message</div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else
+    {
+        <div class="toolbar"><label><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" /><input placeholder="جست‌وجوی نام یا کد محصول" @bind="_search" @bind:event="oninput" /></label><div class="segments"><button class="@(_status is null ? "active" : "")" @onclick="ShowAll">همه</button><button class="@(_status == "active" ? "active" : "")" @onclick="ShowActive">فعال</button><button class="@(_status == "draft" ? "active" : "")" @onclick="ShowDraft">پیش‌نویس</button></div><span>@Filtered.Count محصول</span></div>
+        @if (Filtered.Count == 0)
+        {
+            <div class="empty"><span><MudIcon Icon="@Icons.Material.Outlined.Inventory2" /></span><h2>محصولی پیدا نشد</h2><a class="primary-action" href="/admin/catalog/products/new">ساخت اولین محصول</a></div>
+        }
+        else
+        {
+            <div class="product-grid">
+                @foreach (var item in Filtered)
+                {
+                    <a class="product-card" href="/admin/catalog/products/edit/@item.Id">
+                        <div class="image">@if (item.PrimaryImageId.HasValue) { <img src="/catalog-assets/images/@item.PrimaryImageId" alt="@item.Title" /> } else { <MudIcon Icon="@Icons.Material.Outlined.Diamond" /> }<span class="status @item.Status">@StatusLabel(item.Status)</span>@if (item.IsFeatured) { <span class="featured"><MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" /></span> }</div>
+                        <div class="copy"><span class="code">@item.Code</span><h2>@item.Title</h2><p>@item.TypeName · @(item.CategoryName ?? "بدون دسته")</p><span class="updated"><MudIcon Icon="@Icons.Material.Outlined.History" Size="Size.Small" /> به‌روزرسانی @PersianDate(item.UpdatedAtUtc)</span><footer><span>@item.VariantCount تنوع</span><i></i><span>@item.AvailablePieceCount قطعه آماده</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer></div>
+                    </a>
+                }
+            </div>
+        }
+    }
+</section>

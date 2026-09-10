@@ -1,0 +1,4 @@
+.save-row { margin-top:22px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
+p { margin:0; display:flex; align-items:center; gap:6px; color:var(--muted); font-size:9px; }
+button { min-height:42px; padding:0 17px; display:flex; align-items:center; gap:7px; border:0; border-radius:10px; background:var(--primary); color:var(--on-primary); cursor:pointer; font-size:11px; font-weight:700; }
+@media(max-width:600px){.save-row{align-items:stretch;flex-direction:column}button{justify-content:center}}

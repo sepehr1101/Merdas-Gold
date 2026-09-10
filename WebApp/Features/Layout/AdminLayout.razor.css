@@ -1,0 +1,42 @@
+.admin-shell {
+    min-height: 100svh;
+}
+
+.admin-logout {
+    width: 100%;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.admin-logout:hover {
+    background: var(--mud-palette-action-default-hover);
+}
+
+::deep .admin-appbar {
+    background: var(--primary);
+    color: var(--on-primary);
+}
+
+::deep .admin-title {
+    margin-inline-start: 8px;
+    font-weight: 750;
+}
+
+::deep .admin-drawer {
+    border-inline-end: 0;
+    border-inline-start: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: -12px 0 45px color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+::deep .admin-content {
+    min-height: 100svh;
+    background: var(--canvas);
+}

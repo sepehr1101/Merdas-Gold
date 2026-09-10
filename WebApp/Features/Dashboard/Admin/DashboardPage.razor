@@ -1,0 +1,77 @@
+@page "/admin"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>داشبورد مدیریت | مرداس گلد</PageTitle>
+
+<section class="dashboard-page">
+<MudStack Spacing="4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">داشبورد</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">نمای کلی فروشگاه مرداس گلد</MudText>
+        </div>
+        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Icon="@Icons.Material.Outlined.AutoAwesome">
+            نسخه اولیه
+        </MudChip>
+    </MudStack>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Class="summary-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Outlined.ShoppingBag" Color="Color.Primary" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">سفارش‌های امروز</MudText>
+                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Class="summary-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Outlined.Payments" Color="Color.Primary" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">فروش امروز</MudText>
+                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Class="summary-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Outlined.Diamond" Color="Color.Primary" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">محصولات فعال</MudText>
+                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Class="summary-card" Elevation="0">
+                <MudIcon Icon="@Icons.Material.Outlined.TrendingUp" Color="Color.Primary" Size="Size.Large" />
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">قیمت روز طلا</MudText>
+                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" lg="8">
+            <MudPaper Class="content-card content-card-large" Elevation="0">
+                <MudText Typo="Typo.h6">روند فروش</MudText>
+                <div class="empty-state">
+                    <MudIcon Icon="@Icons.Material.Outlined.InsertChart" Size="Size.Large" />
+                    <MudText Typo="Typo.body2">نمودار فروش در مرحله بعد اضافه می‌شود.</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" lg="4">
+            <MudPaper Class="content-card content-card-large" Elevation="0">
+                <MudText Typo="Typo.h6">آخرین سفارش‌ها</MudText>
+                <div class="empty-state">
+                    <MudIcon Icon="@Icons.Material.Outlined.ReceiptLong" Size="Size.Large" />
+                    <MudText Typo="Typo.body2">هنوز سفارشی ثبت نشده است.</MudText>
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
+</section>

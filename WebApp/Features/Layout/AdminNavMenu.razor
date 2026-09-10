@@ -1,0 +1,52 @@
+<div class="nav-shell">
+    <div class="nav-header">
+        <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40"><path d="M7 14 14 5h12l7 9-13 21L7 14Z M7 14h26 M14 5l6 30 6-30 M14 5l6 9 6-9" /></svg>
+        </span>
+        <div class="brand-copy">
+            <MudText Typo="Typo.subtitle1" Class="brand-title">مرداس گلد</MudText>
+            <span class="brand-subtitle">پنل مدیریت فروشگاه</span>
+        </div>
+    </div>
+
+    <MudNavMenu Class="nav-menu">
+        <MudNavLink Href="/admin"
+                    Match="NavLinkMatch.All"
+                    Class="nav-link dashboard-link"
+                    Icon="@Icons.Material.Outlined.Dashboard">
+            نمای کلی
+        </MudNavLink>
+
+        <div class="nav-section-title"><span>فروشگاه</span><i></i></div>
+
+        <MudNavLink Disabled="true" Class="nav-link" Icon="@Icons.Material.Outlined.ReceiptLong">سفارش‌ها</MudNavLink>
+        <MudNavLink Href="/admin/catalog" Match="NavLinkMatch.Prefix" Class="nav-link" Icon="@Icons.Material.Outlined.Inventory2">کالاها</MudNavLink>
+        <MudNavLink Disabled="true" Class="nav-link" Icon="@Icons.Material.Outlined.Groups">مشتریان</MudNavLink>
+        <MudNavLink Href="/admin/content"
+                    Match="NavLinkMatch.Prefix"
+                    Class="nav-link"
+                    Icon="@Icons.Material.Outlined.Article">
+            محتوا
+        </MudNavLink>
+
+        <div class="nav-section-title"><span>رشد و درآمد</span><i></i></div>
+
+        <MudNavLink Href="/admin/pricing" Match="NavLinkMatch.Prefix" Class="nav-link" Icon="@Icons.Material.Outlined.PriceChange">فروش و قیمت‌گذاری</MudNavLink>
+        <MudNavLink Disabled="true" Class="nav-link" Icon="@Icons.Material.Outlined.Assessment">گزارش‌ها</MudNavLink>
+        <MudNavLink Disabled="true" Class="nav-link" Icon="@Icons.Material.Outlined.CalendarMonth">تقویم و کمپین</MudNavLink>
+
+        <div class="nav-section-title"><span>سامانه</span><i></i></div>
+
+        <MudNavLink Href="/admin/settings"
+                    Match="NavLinkMatch.Prefix"
+                    Class="nav-link"
+                    Icon="@Icons.Material.Outlined.Settings">
+            تنظیمات
+        </MudNavLink>
+    </MudNavMenu>
+
+    <div class="nav-footer">
+        <span class="footer-icon"><MudIcon Icon="@Icons.Material.Outlined.Diamond" Size="Size.Small" /></span>
+        <div><strong>مرداس</strong><span><i></i> سامانه آماده به کار است</span></div>
+    </div>
+</div>

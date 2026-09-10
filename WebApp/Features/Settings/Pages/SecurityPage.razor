@@ -1,0 +1,147 @@
+@page "/admin/settings/security"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>امنیت | مرداس گلد</PageTitle>
+
+<section class="security-page">
+    <a class="back-link" href="/admin/settings">
+        <MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />
+        <span>بازگشت به تنظیمات</span>
+    </a>
+
+    <header class="security-header">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">امنیت</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">مدیریت سیاست‌های ورود و رمز عبور سامانه</MudText>
+        </div>
+        <span class="security-mark" aria-hidden="true">
+            <MudIcon Icon="@Icons.Material.Outlined.Security" Size="Size.Large" />
+        </span>
+    </header>
+
+    @if (SuccessMessage is not null)
+    {
+        <div class="notice success" role="status">
+            <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" />
+            <span>@SuccessMessage</span>
+        </div>
+    }
+    @if (ErrorMessage is not null)
+    {
+        <div class="notice error" role="alert">
+            <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" />
+            <span>@ErrorMessage</span>
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_settings is not null)
+    {
+        <div class="security-grid">
+            <article class="security-card">
+                <div class="card-heading">
+                    <span class="card-icon"><MudIcon Icon="@Icons.Material.Outlined.AdminPanelSettings" /></span>
+                    <div>
+                        <h2>سیاست ورود و رمز عبور</h2>
+                        
+                    </div>
+                </div>
+
+                <form method="post" action="/account/security-settings" data-enhance="false">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="RowVersion" value="@_settings.RowVersion" />
+
+                    <div class="number-fields">
+                        <label class="security-field">
+                            <span>حداقل طول رمز عبور</span>
+                            <input name="MinimumPasswordLength"
+                                   data-validation-label="حداقل طول رمز عبور"
+                                   type="number"
+                                   value="@_settings.MinimumPasswordLength"
+                                   min="6"
+                                   max="128"
+                                   required />
+                            <small>بین ۶ تا ۱۲۸ نویسه</small>
+                        </label>
+                        <label class="security-field">
+                            <span>حداکثر تلاش ناموفق</span>
+                            <input name="MaxFailedLoginAttempts"
+                                   data-validation-label="حداکثر تلاش ناموفق"
+                                   type="number"
+                                   value="@_settings.MaxFailedLoginAttempts"
+                                   min="1"
+                                   max="20"
+                                   required />
+                            <small>پیش از مسدود شدن حساب</small>
+                        </label>
+                        <label class="security-field">
+                            <span>مدت مسدودی حساب</span>
+                            <div class="input-with-unit">
+                                <input name="LockoutDurationMinutes"
+                                       data-validation-label="مدت مسدودی حساب"
+                                       type="number"
+                                       value="@_settings.LockoutDurationMinutes"
+                                       min="1"
+                                       max="1440"
+                                       required />
+                                <span>دقیقه</span>
+                            </div>
+                        </label>
+                        <label class="security-field">
+                            <span>مدت اعتبار نشست</span>
+                            <div class="input-with-unit">
+                                <input name="SessionTimeoutMinutes"
+                                       data-validation-label="مدت اعتبار نشست"
+                                       type="number"
+                                       value="@_settings.SessionTimeoutMinutes"
+                                       min="5"
+                                       max="10080"
+                                       required />
+                                <span>دقیقه</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="password-rules" role="group" aria-label="الزامات رمز عبور">
+                        <h3>الزامات رمز عبور</h3>
+                        <label class="rule-toggle">
+                            <input type="checkbox" name="RequireUppercase" value="true" checked="@_settings.RequireUppercase" />
+                            <input type="hidden" name="RequireUppercase" value="false" />
+                            <span>حداقل یک حرف بزرگ انگلیسی</span>
+                        </label>
+                        <label class="rule-toggle">
+                            <input type="checkbox" name="RequireLowercase" value="true" checked="@_settings.RequireLowercase" />
+                            <input type="hidden" name="RequireLowercase" value="false" />
+                            <span>حداقل یک حرف کوچک انگلیسی</span>
+                        </label>
+                        <label class="rule-toggle">
+                            <input type="checkbox" name="RequireDigit" value="true" checked="@_settings.RequireDigit" />
+                            <input type="hidden" name="RequireDigit" value="false" />
+                            <span>حداقل یک عدد</span>
+                        </label>
+                        <label class="rule-toggle">
+                            <input type="checkbox" name="RequireSpecialCharacter" value="true" checked="@_settings.RequireSpecialCharacter" />
+                            <input type="hidden" name="RequireSpecialCharacter" value="false" />
+                            <span>حداقل یک نماد مانند ! یا #</span>
+                        </label>
+                    </div>
+
+                    <div class="save-row">
+                        <p>
+                            <MudIcon Icon="@Icons.Material.Outlined.History" Size="Size.Small" />
+                            هر تغییر همراه با نام کاربر، زمان و IP در لاگ عملیات ثبت می‌شود.
+                        </p>
+                        <button class="primary-action" type="submit">
+                            <MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" />
+                            <span>ذخیره تنظیمات امنیتی</span>
+                        </button>
+                    </div>
+                </form>
+            </article>
+        </div>
+    }
+</section>

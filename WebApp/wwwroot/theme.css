@@ -1,0 +1,33 @@
+@font-face {
+    font-family: "Vazirmatn";
+    src: url("/assets/fonts/Vazirmatn-variable.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+:root {
+    --primary: #594ae2;
+    --primary-hover: color-mix(in srgb, var(--primary) 86%, #000);
+    --primary-soft: color-mix(in srgb, var(--primary) 6%, #fff);
+    --primary-subtle: color-mix(in srgb, var(--primary) 3%, #fff);
+    --primary-border: color-mix(in srgb, var(--primary) 22%, #fff);
+    --primary-focus: color-mix(in srgb, var(--primary) 13%, transparent);
+    --on-primary: #fff;
+    --canvas: #f3f2f7;
+    --surface: #fff;
+    --ink: #252333;
+    --muted: #777482;
+    --border: #e8e6ee;
+    --field: #fcfbfd;
+    --error: #b42338;
+    --error-soft: #fff1f3;
+    --showcase-bg: color-mix(in srgb, var(--primary) 14%, #111014);
+    --showcase-ink: #fff;
+    --showcase-muted: #cbc7d0;
+    --metal: #d8bf96;
+    --shadow: 0 16px 80px color-mix(in srgb, var(--primary) 5%, transparent);
+    --font: "Vazirmatn", Tahoma, sans-serif;
+    --radius: 12px;
+    --duration: 180ms;
+}

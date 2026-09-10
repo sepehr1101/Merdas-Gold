@@ -1,0 +1,134 @@
+@page "/admin/catalog/products/new"
+@page "/admin/catalog/products/edit/{Id:int}"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using MerdasGold.Features.Catalog.Components
+
+<PageTitle>@(Id.HasValue ? "ویرایش کالا" : "کالای جدید") | مرداس گلد</PageTitle>
+
+<section class="editor-page">
+    <a class="back-link" href="/admin/catalog/products"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به فهرست کالاها</a>
+    <header class="page-header">
+        <div><span class="eyebrow">@(Id.HasValue ? "ویرایش کالا" : "افزودن کالای تازه")</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">@(Id.HasValue ? _data?.Product.Title : "کالای جدید را قدم‌به‌قدم بسازید")</MudText></div>
+        <span class="status-badge @(_data?.Product.Status ?? "draft")"><i></i>@StatusLabel(_data?.Product.Status)</span>
+    </header>
+
+    @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")" role="status"><MudIcon Icon="@(Error is null ? Icons.Material.Outlined.CheckCircle : Icons.Material.Outlined.ErrorOutline)" /><span>@Message</span></div> }
+    @if (_loading) { <div class="loading-card"><MudProgressLinear Indeterminate="true" Color="Color.Primary" /></div> }
+    else if (_data is not null)
+    {
+        <nav class="stepper" aria-label="مراحل تعریف کالا">
+            @foreach (var step in Steps)
+            {
+                var locked = step.Number > 2 && (!Id.HasValue || _step <= 2);
+                <button type="button" class="step @(_step == step.Number ? "active" : "") @(IsStepComplete(step.Number) ? "complete" : "")" disabled="@locked" @onclick="() => GoToStep(step.Number)" aria-current="@(_step == step.Number ? "step" : null)">
+                    <span class="step-number">@if (IsStepComplete(step.Number)) { <MudIcon Icon="@Icons.Material.Outlined.Check" Size="Size.Small" /> } else { @step.Number }</span>
+                    <span class="step-copy"><strong>@step.Title</strong><small>@step.Description</small></span>
+                    @if (locked) { <MudIcon Icon="@Icons.Material.Outlined.Lock" Size="Size.Small" /> }
+                </button>
+            }
+        </nav>
+
+        <div class="editor-layout">
+            <main>
+                @if (_step <= 2)
+                {
+                    <form method="post" action="/account/catalog/products/save" data-enhance="false">
+                        <AntiforgeryToken /><input type="hidden" name="Id" value="@_data.Product.Id" /><input type="hidden" name="RowVersion" value="@_data.Product.RowVersion" />
+                        <article class="editor-card" hidden="@(_step != 1)">
+                            <header><span><MudIcon Icon="@Icons.Material.Outlined.Badge" /></span><div><span class="section-kicker">مرحله ۱ از ۴</span><h2>هویت کالا</h2></div></header>
+                            @if (!Id.HasValue)
+                            {
+                                <div class="type-intro"><div><MudIcon Icon="@Icons.Material.Outlined.AutoAwesome" /><span><strong>ابتدا یک الگوی کالا انتخاب کنید</strong></span></div><select aria-label="انتخاب الگوی کالا" @onchange="ChangeType">@foreach (var type in _data.ProductTypes) { <option value="@type.Id" selected="@(type.Id == _data.Product.ProductTypeId)">@type.Name</option> }</select></div>
+                            }
+                            <div class="card-body form-grid">
+                                <label class="field full"><span>نام کالا <em>ضروری</em></span><input name="Title" value="@_data.Product.Title" maxlength="250" placeholder="مثلاً انگشتر سولیتر آوا" required /></label>
+                                <label class="field"><span>کد کالا <em>ضروری</em></span><input name="Code" value="@_data.Product.Code" maxlength="80" dir="ltr" placeholder="AVA-R01" required /></label>
+                                <label class="field"><span>نامک آدرس <em>ضروری</em></span><input name="Slug" value="@_data.Product.Slug" maxlength="280" dir="ltr" placeholder="ava-solitaire-ring" pattern="[^\s]+" required /></label>
+                                <label class="field"><span>الگوی کالا</span><select name="ProductTypeId">@foreach (var type in _data.ProductTypes) { <option value="@type.Id" selected="@(type.Id == _data.Product.ProductTypeId)">@type.Name</option> }</select></label>
+                                <label class="field"><span>دسته اصلی</span><select name="PrimaryCategoryId"><option value="">بدون دسته</option>@foreach (var category in _data.Categories) { <option value="@category.Id" selected="@(category.Id == _data.Product.PrimaryCategoryId)">@category.Name</option> }</select></label>
+                            </div>
+                            <footer class="step-actions single"><button class="primary-action" type="button" @onclick="() => GoToStep(2)">مرحله بعد: مشخصات و محتوا <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></button></footer>
+                        </article>
+
+                        <article class="editor-card" hidden="@(_step != 2)">
+                            <header><span><MudIcon Icon="@Icons.Material.Outlined.Tune" /></span><div><span class="section-kicker">مرحله ۲ از ۴</span><h2>مشخصات و محتوای کالا</h2></div></header>
+                            <div class="card-body">
+                                @if (_data.ProductAttributes.Count > 0)
+                                {
+                                    <div class="section-title"><div><h3>مشخصات تخصصی</h3></div><span>@_data.ProductAttributes.Count ویژگی</span></div>
+                                    <div class="attribute-grid">@foreach (var attr in _data.ProductAttributes) { <CatalogAttributeField Attribute="attr" Name="@($"attribute-{attr.Id}")" Value="@_data.Product.AttributeValues.GetValueOrDefault(attr.Id)" /> }</div><div class="divider"></div>
+                                }
+                                <div class="form-grid">
+                                    <label class="field full"><span>توضیح کوتاه</span><textarea name="ShortDescription" rows="3" maxlength="700" placeholder="خلاصه‌ای کوتاه و جذاب برای کارت یا ابتدای صفحه کالا">@_data.Product.ShortDescription</textarea></label>
+                                    <label class="field full"><span>توضیحات کامل</span><textarea name="Description" rows="7" placeholder="داستان طراحی، جنس، شرایط نگهداری و هر نکته‌ای که به انتخاب مشتری کمک می‌کند">@_data.Product.Description</textarea></label>
+                                    <label class="field"><span>وضعیت نمایش</span><select name="Status"><option value="draft" selected="@(_data.Product.Status == "draft")">پیش‌نویس — فقط مدیر می‌بیند</option><option value="active" selected="@(_data.Product.Status == "active")">فعال — قابل نمایش در فروشگاه</option><option value="archived" selected="@(_data.Product.Status == "archived")">بایگانی — پنهان از فروشگاه</option></select></label>
+                                    <label class="featured-field"><input type="checkbox" name="IsFeatured" value="true" checked="@_data.Product.IsFeatured" /><input type="hidden" name="IsFeatured" value="false" /><span class="feature-check"><MudIcon Icon="@Icons.Material.Outlined.StarOutline" /></span><span><strong>کالای ویژه</strong></span></label>
+                                </div>
+                                @if (_data.Tags.Count > 0) { <div class="section-title tags-title"><div><h3>برچسب‌ها</h3></div></div><div class="tag-picker">@foreach (var tag in _data.Tags) { <label><input type="checkbox" name="tag-@tag.Id" value="true" checked="@_data.Product.TagIds.Contains(tag.Id)" /><span><MudIcon Icon="@Icons.Material.Outlined.Sell" Size="Size.Small" />@tag.Name</span></label> }</div> }
+                            </div>
+                            <footer class="step-actions"><button class="secondary-action" type="button" @onclick="() => GoToStep(1)"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> مرحله قبل</button><button class="primary-action" type="submit"><MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" /> ذخیره و ادامه</button></footer>
+                        </article>
+                    </form>
+                }
+
+                @if (_step == 3 && Id.HasValue)
+                {
+                    <article class="editor-card media-card">
+                        <header><span><MudIcon Icon="@Icons.Material.Outlined.PhotoLibrary" /></span><div><span class="section-kicker">مرحله ۳ از ۴</span><h2>تصاویر کالا</h2></div><span class="count-pill">@_data.Images.Count تصویر</span></header>
+                        <div class="card-body"><div class="image-grid">
+                            @foreach (var image in _data.Images)
+                            {
+                                <figure class="product-image">
+                                    <img src="/catalog-assets/images/@image.Id" alt="@image.AltText" />
+                                    @if (image.IsPrimary) { <span><MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" /> شاخص</span> }
+                                    <figcaption class="image-actions">
+                                        @if (!image.IsPrimary)
+                                        {
+                                            <form method="post" action="/account/catalog/images/primary" data-enhance="false">
+                                                <AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="ImageId" value="@image.Id" /><input type="hidden" name="RowVersion" value="@_data.Product.RowVersion" />
+                                                <button type="submit" aria-label="انتخاب @image.FileName به‌عنوان تصویر شاخص"><MudIcon Icon="@Icons.Material.Outlined.StarOutline" Size="Size.Small" /> انتخاب شاخص</button>
+                                            </form>
+                                        }
+                                        <form method="post" action="/account/catalog/images/delete" data-enhance="false" onsubmit="return confirm('این تصویر حذف شود؟ در صورت حذف تصویر شاخص، تصویر بعدی جایگزین می‌شود.')">
+                                            <AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="ImageId" value="@image.Id" /><input type="hidden" name="RowVersion" value="@_data.Product.RowVersion" />
+                                            <button class="delete-image" type="submit" aria-label="حذف تصویر @image.FileName"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" /> حذف</button>
+                                        </form>
+                                    </figcaption>
+                                </figure>
+                            }
+                            <form class="image-upload" method="post" action="/account/catalog/images/save" enctype="multipart/form-data" data-enhance="false"><AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><span class="upload-icon"><MudIcon Icon="@Icons.Material.Outlined.AddPhotoAlternate" /></span><strong>تصویر را انتخاب کنید</strong><small>PNG، JPG یا WebP تا ۵ مگابایت</small><input class="file-input" type="file" name="Image" accept="image/png,image/jpeg,image/webp" required /><input class="alt-input" name="AltText" placeholder="توضیح کوتاه تصویر (اختیاری)" /><label class="primary-check"><input type="checkbox" name="IsPrimary" value="true" /> انتخاب به‌عنوان تصویر شاخص</label><button type="submit">افزودن تصویر</button></form>
+                        </div></div>
+                        <footer class="step-actions"><button class="secondary-action" type="button" @onclick="() => GoToStep(2)"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> مرحله قبل</button><span></span><button class="primary-action" type="button" @onclick="() => GoToStep(4)">مرحله بعد: تنوع و موجودی <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></button></footer>
+                    </article>
+                }
+
+                @if (_step == 4 && Id.HasValue)
+                {
+                    <article class="editor-card variants-card">
+                        <header><span><MudIcon Icon="@Icons.Material.Outlined.AccountTree" /></span><div><span class="section-kicker">مرحله ۴ از ۴</span><h2>تنوع‌ها و موجودی فیزیکی</h2></div><a class="mini-action" href="/admin/catalog/products/edit/@Id?step=4&variant=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> تنوع جدید</a></header>
+                        
+                        @if (_variantEditor is not null)
+                        {
+                            <form class="inline-editor" method="post" action="/account/catalog/variants/save" data-enhance="false"><AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="Id" value="@_variantEditor.Id" /><input type="hidden" name="RowVersion" value="@_variantEditor.RowVersion" /><div class="inline-heading"><h3>@(_variantEditor.Id == 0 ? "تنوع تازه" : "ویرایش تنوع")</h3></div><div class="form-grid"><label class="field"><span>عنوان تنوع <em>ضروری</em></span><input name="Title" value="@_variantEditor.Title" placeholder="رزگلد / سایز ۵۴" required /></label><label class="field"><span>SKU</span><input name="Sku" value="@_variantEditor.Sku" dir="ltr" placeholder="AVA-RG-54" /></label><label class="field"><span>بارکد عمومی</span><input name="Barcode" value="@_variantEditor.Barcode" dir="ltr" /></label><label class="field"><span>ترتیب نمایش</span><input type="number" name="DisplayOrder" value="@_variantEditor.DisplayOrder" min="0" /></label></div>@if (_data.VariantAttributes.Count > 0) { <div class="attribute-grid compact">@foreach (var attr in _data.VariantAttributes) { <CatalogAttributeField Attribute="attr" Name="@($"attribute-{attr.Id}")" Value="@_variantEditor.AttributeValues.GetValueOrDefault(attr.Id)" /> }</div> }<div class="inline-actions"><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_variantEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span></span>فعال</label><a href="/admin/catalog/products/edit/@Id?step=4">انصراف</a><button type="submit">ذخیره تنوع</button></div></form>
+                        }
+                        <div class="variant-list">
+                            @foreach (var variant in _data.Variants)
+                            {
+                                <section class="variant"><div class="variant-head"><div><span class="variant-icon"><MudIcon Icon="@Icons.Material.Outlined.Style" /></span><div><h3>@variant.Title</h3><p>@(string.IsNullOrWhiteSpace(variant.Sku) ? "بدون SKU" : variant.Sku) · @variant.Pieces.Count قطعه</p></div></div><div><a class="add-piece" href="/admin/catalog/products/edit/@Id?step=4&pieceVariant=@variant.Id&piece=0"><MudIcon Icon="@Icons.Material.Outlined.AddCircleOutline" Size="Size.Small" /> افزودن قطعه</a><a href="/admin/catalog/products/edit/@Id?step=4&variant=@variant.Id"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> ویرایش</a></div></div>
+                                    @if (_pieceVariantId == variant.Id && _pieceEditor is not null) { <form class="piece-editor" method="post" action="/account/catalog/pieces/save" data-enhance="false"><AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="VariantId" value="@variant.Id" /><input type="hidden" name="Id" value="@_pieceEditor.Id" /><input type="hidden" name="RowVersion" value="@_pieceEditor.RowVersion" /><label class="field"><span>کد رهگیری *</span><input name="TrackingCode" value="@_pieceEditor.TrackingCode" dir="ltr" required /></label><label class="field"><span>وزن دقیق طلا *</span><div class="with-unit"><input name="ExactGoldWeightGrams" value="@(_pieceEditor.ExactGoldWeightGrams.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))" type="number" min="0.001" step="0.001" required /><span>گرم</span></div></label><label class="field"><span>وزن سنگ</span><div class="with-unit"><input name="StoneWeightCarats" value="@(_pieceEditor.StoneWeightCarats?.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))" type="number" min="0" step="0.001" /><span>قیراط</span></div></label><label class="field"><span>وضعیت</span><select name="Status"><option value="available" selected="@(_pieceEditor.Status == "available")">آماده فروش</option><option value="reserved" selected="@(_pieceEditor.Status == "reserved")">رزرو</option><option value="sold" selected="@(_pieceEditor.Status == "sold")">فروخته‌شده</option><option value="damaged" selected="@(_pieceEditor.Status == "damaged")">آسیب‌دیده</option></select></label><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_pieceEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span></span>فعال</label><button type="submit">ذخیره قطعه</button></form> }
+                                    @if (variant.Pieces.Count == 0) { <div class="no-pieces"><MudIcon Icon="@Icons.Material.Outlined.Inventory2" /><span><strong>هنوز قطعه‌ای ثبت نشده</strong></span></div> }
+                                    else { <div class="piece-table"><div class="table-head"><span>کد رهگیری</span><span>وزن طلا</span><span>وزن سنگ</span><span>وضعیت</span><span></span></div>@foreach (var piece in variant.Pieces) { <div class="piece-row"><strong dir="ltr">@piece.TrackingCode</strong><span>@piece.ExactGoldWeightGrams.ToString("0.###") گرم</span><span>@(piece.StoneWeightCarats.HasValue ? $"{piece.StoneWeightCarats:0.###} قیراط" : "—")</span><span class="piece-status @piece.Status">@PieceStatus(piece.Status)</span><span><a href="/admin/pricing/rules?piece=@piece.Id" aria-label="محاسبه قیمت قطعه"><MudIcon Icon="@Icons.Material.Outlined.Calculate" Size="Size.Small" /></a><a href="/admin/catalog/products/edit/@Id?step=4&pieceVariant=@variant.Id&piece=@piece.Id" aria-label="ویرایش قطعه"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /></a></span></div> }</div> }
+                                </section>
+                            }
+                        </div>
+                        <footer class="step-actions finish-actions"><button class="secondary-action" type="button" @onclick="() => GoToStep(3)"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> مرحله قبل</button><div><span><MudIcon Icon="@Icons.Material.Outlined.CheckCircle" /> اطلاعات کالا همیشه قابل ویرایش است.</span><a class="primary-action" href="/admin/catalog/products">پایان و بازگشت به کالاها</a></div></footer>
+                    </article>
+                }
+            </main>
+
+            <aside><div class="summary-card"><div class="summary-visual">@if (_data.Images.FirstOrDefault(x => x.IsPrimary) is { } primaryImage) { <img src="/catalog-assets/images/@primaryImage.Id" alt="" /> } else { <MudIcon Icon="@Icons.Material.Outlined.Diamond" /> }</div><span class="summary-label">پیش‌نمایش اطلاعات</span><h2>@(string.IsNullOrWhiteSpace(_data.Product.Title) ? "کالای بدون نام" : _data.Product.Title)</h2><p>@(string.IsNullOrWhiteSpace(_data.Product.Code) ? "هنوز کدی ثبت نشده" : _data.Product.Code)</p><dl><div><dt>الگو</dt><dd>@CurrentTypeName</dd></div><div><dt>تصاویر</dt><dd>@_data.Images.Count</dd></div><div><dt>تنوع‌ها</dt><dd>@_data.Variants.Count</dd></div><div><dt>قطعات</dt><dd>@PieceCount</dd></div></dl><div class="progress-copy"><span>تکمیل ساخت کالا</span><strong>@CompletionPercent٪</strong></div><div class="progress-track"><i style="width:@CompletionPercent%"></i></div></div></aside>
+        </div>
+    }
+</section>
+

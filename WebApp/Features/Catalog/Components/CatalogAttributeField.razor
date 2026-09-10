@@ -1,0 +1,17 @@
+@using MerdasGold.Features.Catalog.Models
+<label class="attribute-field">
+ <span>@Attribute.Name @if(Attribute.IsRequired){<b>*</b>} @if(!string.IsNullOrWhiteSpace(Attribute.Unit)){<small>(@Attribute.Unit)</small>}</span>
+ @if(Attribute.DataType is "select" or "color")
+ {
+  <select name="@Name" required="@Attribute.IsRequired"><option value="">انتخاب کنید</option>@foreach(var option in Attribute.Options){<option value="@option.Value" selected="@(Value==option.Value)">@option.Label</option>}</select>
+ }
+ else if(Attribute.DataType=="boolean")
+ {
+  <select name="@Name" required="@Attribute.IsRequired"><option value="">انتخاب کنید</option><option value="true" selected="@(Value=="true")">بله</option><option value="false" selected="@(Value=="false")">خیر</option></select>
+ }
+ else
+ {
+  <input name="@Name" value="@Value" type="@(Attribute.DataType=="number"?"number":"text")" step="@(Attribute.DataType=="number"?"0.001":null)" required="@Attribute.IsRequired" />
+ }
+</label>
+@code{[Parameter,EditorRequired]public ProductTypeAttributeModel Attribute{get;set;}=default!;[Parameter,EditorRequired]public string Name{get;set;}="";[Parameter]public string? Value{get;set;}}

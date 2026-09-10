@@ -1,0 +1,92 @@
+@page "/admin/settings/users"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@implements IAsyncDisposable
+@using MerdasGold.Features.Settings.Models
+
+<PageTitle>کاربران | مرداس گلد</PageTitle>
+
+<section class="users-page">
+    <a class="back-link" href="/admin/settings">
+        <MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />
+        <span>بازگشت به تنظیمات</span>
+    </a>
+
+    <header class="users-header">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">کاربران</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">حساب‌های کاربری، نقش‌ها و وضعیت دسترسی</MudText>
+        </div>
+        <span class="users-mark" aria-hidden="true">
+            <MudIcon Icon="@Icons.Material.Outlined.PeopleAlt" Size="Size.Large" />
+        </span>
+    </header>
+
+    <DataGridToolbar SearchText="@_searchText"
+                     SearchTextChanged="OnSearchChanged"
+                     TotalCount="@_users.Count"
+                     FilteredCount="@FilteredCount"
+                     ShowAddButton="true"
+                     Busy="@_isLoading"
+                     AddRequested="OpenCreateUserDialog"
+                     FilterRequested="OpenFilters"
+                     ColumnsRequested="OpenColumnsPanel"
+                     RefreshRequested="RefreshAsync"
+                     ExportCurrentPageRequested="ExportCurrentPageAsync"
+                     ExportFilteredRequested="ExportFilteredAsync" />
+
+    <MudDataGrid @ref="_grid"
+                 T="UserListItem"
+                 Items="@_users"
+                 QuickFilter="@QuickFilter"
+                 Filterable="true"
+                 FilterMode="DataGridFilterMode.Simple"
+                 FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                 FilterChanged="OnFilterChanged"
+                 SortMode="SortMode.Multiple"
+                 Hideable="true"
+                 ShowColumnOptions="true"
+                 ColumnsPanelReordering="true"
+                 Hover="true"
+                 Striped="true"
+                 Dense="true"
+                 Loading="@_isLoading"
+                 RowsPerPage="10"
+                 Breakpoint="Breakpoint.Sm"
+                 Class="users-grid"
+                 Elevation="0">
+        <Columns>
+            <PropertyColumn Property="user => user.UserName" Title="نام کاربری" />
+            <PropertyColumn Property="user => user.FullName" Title="نام و نام خانوادگی" />
+            <PropertyColumn Property="user => user.PhoneNumber" Title="شماره موبایل" />
+            <PropertyColumn Property="user => user.Email" Title="ایمیل" />
+            <PropertyColumn Property="user => user.Roles" Title="نقش‌ها" />
+            <TemplateColumn Title="وضعیت" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Variant="Variant.Outlined"
+                             Color="@(context.Item.IsLocked ? Color.Error : Color.Success)">
+                        @context.Item.Status
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <NoRecordsContent>
+            <div class="empty-state">
+                <MudIcon Icon="@Icons.Material.Outlined.PersonSearch" Size="Size.Large" />
+                <span>کاربری مطابق جستجو یا فیلتر پیدا نشد.</span>
+            </div>
+        </NoRecordsContent>
+        <LoadingContent>
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        </LoadingContent>
+        <PagerContent>
+            <MudDataGridPager T="UserListItem"
+                              PageSizeOptions="@_pageSizeOptions"
+                              RowsPerPageString="تعداد رکورد در صفحه:"
+                              InfoFormat="{first_item} تا {last_item} از {all_items}"
+                              AllItemsText="همه" />
+        </PagerContent>
+    </MudDataGrid>
+</section>

@@ -1,0 +1,30 @@
+.logs-page { color: var(--ink); }
+.back-link { width: fit-content; margin-bottom: 22px; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; text-decoration: none; }
+.back-link:hover { color: var(--primary); }
+.logs-header { margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+::deep .page-title { margin-bottom: 5px; font-weight: 800; }
+.logs-mark { width: 56px; height: 56px; display: grid; place-items: center; flex-shrink: 0; border: 1px solid var(--primary-border); border-radius: 18px; background: var(--primary-soft); color: var(--primary); }
+.date-filter { padding: 22px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; }
+.date-filter-heading { display: flex; align-items: center; gap: 11px; color: var(--primary); margin-bottom: 18px; }
+.date-filter-heading h2 { color: var(--ink); font-size: 14px; font-weight: 700; margin: 0 0 4px; }
+.date-filter-heading p, .date-help { color: var(--muted); font-size: 11px; line-height: 1.9; margin: 0; }
+.date-fields { display: grid; grid-template-columns: minmax(140px, 240px) minmax(140px, 240px) 1fr; gap: 16px; align-items: start; }
+.date-field { display: flex; flex-direction: column; gap: 7px; font-size: 12px; min-width: 0; }
+.date-field input { width: 100%; height: 42px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--field); color: var(--ink); font: inherit; text-align: center; transition: border-color var(--duration), box-shadow var(--duration); }
+.date-field input:focus-visible { outline: 0; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-focus); }
+.date-field input[aria-invalid="true"] { border-color: var(--error); }
+.date-field input:disabled { opacity: .65; }
+.field-error { color: var(--error); font-size: 11px; line-height: 1.8; margin: 0; }
+.field-error:empty { display: none; }
+.date-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 25px; }
+.date-help { margin-top: 13px; }
+.applied-range { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 15px 3px; font-size: 11px; color: var(--muted); }
+.read-only-note { margin-inline-start: auto; }
+::deep .logs-grid { overflow: hidden; border: 1px solid var(--border); border-radius: 0 0 16px 16px; background: var(--surface); }
+::deep .logs-grid .mud-table-head .mud-table-cell { color: var(--ink); background: color-mix(in srgb, var(--primary) 4%, var(--surface)); font-weight: 750; white-space: nowrap; }
+::deep .logs-grid .mud-table-cell { border-color: var(--border); }
+.log-description { display: inline-block; min-width: 180px; max-width: 560px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.9; }
+bdi { overflow-wrap: anywhere; }
+.empty-state { min-height: 190px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); text-align: center; }
+@media (max-width: 850px) { .date-fields { grid-template-columns: 1fr 1fr; }.date-actions { grid-column: 1 / -1; padding-top: 0; } }
+@media (max-width: 600px) { .logs-header { align-items: flex-start; }.logs-mark { width: 48px; height: 48px; border-radius: 15px; }.date-filter { padding: 17px; }.date-fields { grid-template-columns: 1fr; gap: 12px; }.read-only-note { width: 100%; margin-inline-start: 0; }.log-description { min-width: 0; } }

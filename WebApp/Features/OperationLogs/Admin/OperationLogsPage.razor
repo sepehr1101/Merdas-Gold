@@ -1,0 +1,50 @@
+@page "/admin/settings/audit-logs"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@implements IAsyncDisposable
+@using MerdasGold.Features.OperationLogs.Models
+
+<PageTitle>لاگ عملیات‌ها | مرداس گلد</PageTitle>
+
+<section class="logs-page">
+    <a class="back-link" href="/admin/settings"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />بازگشت به تنظیمات</a>
+    <header class="logs-header">
+        <div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">لاگ عملیات‌ها</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">سوابق ثبت‌شده عملیات و تغییرات کاربران در سامانه</MudText></div>
+        <span class="logs-mark" aria-hidden="true"><MudIcon Icon="@Icons.Material.Outlined.ManageSearch" Size="Size.Large" /></span>
+    </header>
+
+    <form class="date-filter" @onsubmit="ApplyDatesAsync" @onsubmit:preventDefault>
+        <div class="date-filter-heading"><MudIcon Icon="@Icons.Material.Outlined.DateRange" /><div><h2>جستجو در بازه زمانی</h2><p>تاریخ شمسی · تاریخ و ساعت بر اساس تهران</p></div></div>
+        <div class="date-fields">
+            <label class="date-field" for="logs-from"><span>از تاریخ</span><input id="logs-from" type="text" dir="ltr" placeholder="۱۴۰۵/۰۶/۰۱" @bind="_fromText" @bind:event="oninput" maxlength="10" autocomplete="off" disabled="@Busy" aria-invalid="@(_fromError is not null ? "true" : "false")" aria-describedby="logs-date-help logs-from-error" /><span id="logs-from-error" class="field-error">@_fromError</span></label>
+            <label class="date-field" for="logs-to"><span>تا تاریخ</span><input id="logs-to" type="text" dir="ltr" placeholder="۱۴۰۵/۰۶/۳۱" @bind="_toText" @bind:event="oninput" maxlength="10" autocomplete="off" disabled="@Busy" aria-invalid="@(_toError is not null ? "true" : "false")" aria-describedby="logs-date-help logs-to-error" /><span id="logs-to-error" class="field-error">@_toError</span></label>
+            <div class="date-actions"><MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Outlined.Search" Disabled="@Busy">اعمال بازه</MudButton><MudButton Variant="Variant.Text" OnClick="ClearDatesAsync" Disabled="@Busy">پاک کردن تاریخ‌ها</MudButton></div>
+        </div>
+        <div class="date-help" id="logs-date-help">قالب ورود: سال/ماه/روز؛ ارقام فارسی، عربی و انگلیسی پذیرفته می‌شوند. تاریخ پایان شامل تمام ساعات آن روز است.</div>
+        @if (_rangeError is not null) { <p class="field-error" role="alert">@_rangeError</p> }
+    </form>
+
+    <div class="applied-range" aria-live="polite"><MudIcon Icon="@Icons.Material.Outlined.Schedule" Size="Size.Small" /><span>@AppliedRange</span><span class="read-only-note">سوابق فقط قابل مشاهده‌اند</span></div>
+    @if (_loadError is not null) { <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Class="mb-4">@_loadError</MudAlert> }
+
+    <DataGridToolbar SearchText="@_searchText" SearchTextChanged="OnSearchChanged" TotalCount="@_logs.Count" FilteredCount="@FilteredCount" Busy="@Busy"
+                     FilterRequested="OpenFilters" ColumnsRequested="OpenColumnsPanel" RefreshRequested="RefreshAsync"
+                     ExportCurrentPageRequested="ExportCurrentPageAsync" ExportFilteredRequested="ExportFilteredAsync" />
+    <MudDataGrid @ref="_grid" T="OperationLogListItem" Items="@_logs" QuickFilter="@QuickFilter" Filterable="true" FilterMode="DataGridFilterMode.Simple"
+                 FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" FilterChanged="OnFilterChanged" SortMode="SortMode.Multiple"
+                 Hideable="true" ShowColumnOptions="true" ColumnsPanelReordering="true" Hover="true" Striped="true" Dense="true" Loading="@_isLoading"
+                 RowsPerPage="10" Breakpoint="Breakpoint.Sm" Class="logs-grid" Elevation="0">
+        <Columns>
+            <PropertyColumn Property="log => log.Id" Title="شناسه" />
+            <PropertyColumn Property="log => log.PersianDate" Title="تاریخ شمسی"><CellTemplate><bdi>@context.Item.PersianDate</bdi></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="log => log.Time" Title="ساعت"><CellTemplate><bdi>@context.Item.Time</bdi></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="log => log.UserName" Title="نام کاربری"><CellTemplate><bdi>@context.Item.UserName</bdi></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="log => log.Description" Title="شرح عملیات"><CellTemplate><span class="log-description">@context.Item.Description</span></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="log => log.IpAddress" Title="آدرس IP"><CellTemplate><bdi>@context.Item.IpAddress</bdi></CellTemplate></PropertyColumn>
+            <PropertyColumn Property="log => log.UserId" Title="شناسه کاربر" Hidden="true"><CellTemplate><bdi>@context.Item.UserId</bdi></CellTemplate></PropertyColumn>
+        </Columns>
+        <NoRecordsContent><div class="empty-state"><MudIcon Icon="@Icons.Material.Outlined.ManageSearch" Size="Size.Large" /><span>@(_loadError is null ? "عملیاتی مطابق بازه زمانی، جستجو یا فیلترهای انتخاب‌شده پیدا نشد." : "دریافت سوابق انجام نشد؛ از بارگذاری مجدد استفاده کنید.")</span></div></NoRecordsContent>
+        <LoadingContent><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></LoadingContent>
+        <PagerContent><MudDataGridPager T="OperationLogListItem" PageSizeOptions="@_pageSizeOptions" RowsPerPageString="تعداد رکورد در صفحه:" InfoFormat="{first_item} تا {last_item} از {all_items}" AllItemsText="همه" /></PagerContent>
+    </MudDataGrid>
+</section>

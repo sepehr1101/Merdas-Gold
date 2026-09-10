@@ -1,0 +1,12 @@
+.create-user-grid {
+    padding-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 14px;
+}
+
+@media (max-width: 600px) {
+    .create-user-grid {
+        grid-template-columns: 1fr;
+    }
+}

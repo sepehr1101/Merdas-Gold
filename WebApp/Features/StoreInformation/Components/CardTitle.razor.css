@@ -1,0 +1,3 @@
+.card-title { margin-bottom:22px; display:flex; align-items:center; gap:12px; }
+.card-title>span { width:42px; height:42px; display:grid; place-items:center; border-radius:12px; background:var(--primary-soft); color:var(--primary); }
+h2 { margin:0; font-size:15px; font-weight:800; } p { margin:4px 0 0; color:var(--muted); font-size:11px; }

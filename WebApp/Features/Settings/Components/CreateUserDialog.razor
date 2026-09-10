@@ -1,0 +1,80 @@
+@using MerdasGold.Features.Settings.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <div class="create-user-grid">
+                <MudTextField T="string"
+                              Label="نام کاربری"
+                              @bind-Value="_model.UserName"
+                              Required="true"
+                              RequiredError="نام کاربری الزامی است."
+                              Immediate="true"
+                              Variant="Variant.Outlined" />
+                <MudTextField T="string"
+                              Label="نام"
+                              @bind-Value="_model.FirstName"
+                              Required="true"
+                              RequiredError="نام الزامی است."
+                              Variant="Variant.Outlined" />
+                <MudTextField T="string"
+                              Label="نام خانوادگی"
+                              @bind-Value="_model.LastName"
+                              Required="true"
+                              RequiredError="نام خانوادگی الزامی است."
+                              Variant="Variant.Outlined" />
+                <MudTextField T="string"
+                              Label="شماره موبایل"
+                              @bind-Value="_model.PhoneNumber"
+                              Required="true"
+                              RequiredError="شماره موبایل الزامی است."
+                              Variant="Variant.Outlined" />
+                <MudTextField T="string"
+                              Label="ایمیل (اختیاری)"
+                              @bind-Value="_model.Email"
+                              InputType="InputType.Email"
+                              Variant="Variant.Outlined" />
+                <MudTextField T="string"
+                              Label="رمز عبور"
+                              @bind-Value="_model.Password"
+                              InputType="InputType.Password"
+                              Required="true"
+                              RequiredError="رمز عبور الزامی است."
+                              HelperText="حداقل ۱۲ نویسه، شامل حرف بزرگ و کوچک، عدد و نماد"
+                              Variant="Variant.Outlined" />
+                <MudTextField T="string"
+                              Label="تکرار رمز عبور"
+                              @bind-Value="_model.ConfirmPassword"
+                              InputType="InputType.Password"
+                              Required="true"
+                              RequiredError="تکرار رمز عبور الزامی است."
+                              Variant="Variant.Outlined" />
+                <MudSwitch T="bool"
+                           @bind-Value="_model.IsAdministrator"
+                           Color="Color.Primary"
+                           Label="دسترسی مدیر سیستم" />
+            </div>
+
+            @if (_errorMessage is not null)
+            {
+                <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Dense="true" Class="mt-4">
+                    @_errorMessage
+                </MudAlert>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="@_isSaving">انصراف</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Outlined.PersonAdd"
+                   Disabled="@_isSaving"
+                   OnClick="CreateAsync">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ms-2" />
+            }
+            افزودن کاربر
+        </MudButton>
+    </DialogActions>
+</MudDialog>

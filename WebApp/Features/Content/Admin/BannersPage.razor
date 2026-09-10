@@ -1,0 +1,48 @@
+@page "/admin/content/banners"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>اسلایدر و بنر | مرداس گلد</PageTitle>
+
+<section class="banner-page">
+    <a class="back-link" href="/admin/content"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به محتوا</a>
+    <header class="page-header"><div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">اسلایدر و بنر</MudText></div><a class="primary-action" href="/admin/content/banners?new=true"><MudIcon Icon="@Icons.Material.Outlined.AddPhotoAlternate" Size="Size.Small" /> بنر جدید</a></header>
+    @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")" role="status"><MudIcon Icon="@(Error is null ? Icons.Material.Outlined.CheckCircle : Icons.Material.Outlined.ErrorOutline)" />@Message</div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else
+    {
+        @if (_editor is not null)
+        {
+            <article class="banner-editor">
+                <div class="visual-side">
+                    @if (_editor.Id > 0 && _editor.ImageFileName is not null) { <img src="/content-assets/banners/@_editor.Id?v=@Uri.EscapeDataString(_editor.RowVersion)" alt="پیش‌نمایش @_editor.Title" /> }
+                    else { <div class="upload-art" aria-hidden="true"><MudIcon Icon="@Icons.Material.Outlined.Image" /><span>1920 × 760</span></div> }
+                    <div class="visual-copy"><span>تصویر شاخص</span></div>
+                </div>
+                <form method="post" action="/account/content/banners/save" enctype="multipart/form-data" data-enhance="false">
+                    <AntiforgeryToken /><input type="hidden" name="Id" value="@_editor.Id" /><input type="hidden" name="RowVersion" value="@_editor.RowVersion" />
+                    <div class="editor-title"><div><h2>@(_editor.Id == 0 ? "ساخت قاب تازه" : "ویرایش قاب")</h2></div><a href="/admin/content/banners" aria-label="بستن"><MudIcon Icon="@Icons.Material.Outlined.Close" /></a></div>
+                    <div class="form-grid"><label class="field full"><span>عنوان اصلی</span><input name="Title" value="@_editor.Title" maxlength="250" placeholder="درخشش تازه، برای لحظه‌های ماندگار" required /></label><label class="field full"><span>متن همراه</span><textarea name="Subtitle" rows="3" maxlength="600" placeholder="یک توضیح کوتاه برای کامل کردن پیام...">@_editor.Subtitle</textarea></label><label class="field"><span>جایگاه</span><select name="Placement"><option value="home-slider" selected="@(_editor.Placement == "home-slider")">اسلایدر صفحه اصلی</option><option value="home-banner" selected="@(_editor.Placement == "home-banner")">بنر میانی صفحه</option></select></label><label class="field"><span>ترتیب نمایش</span><input name="DisplayOrder" type="number" min="0" max="9999" value="@_editor.DisplayOrder" /></label><label class="field"><span>متن دکمه</span><input name="ButtonText" value="@_editor.ButtonText" maxlength="80" placeholder="مشاهده مجموعه" /></label><label class="field"><span>پیوند دکمه</span><input name="LinkUrl" value="@_editor.LinkUrl" maxlength="1000" dir="ltr" placeholder="/shop" /></label><label class="field"><span>شروع نمایش</span><input name="StartsAtUtc" type="datetime-local" value="@LocalDate(_editor.StartsAtUtc)" /></label><label class="field"><span>پایان نمایش</span><input name="EndsAtUtc" type="datetime-local" value="@LocalDate(_editor.EndsAtUtc)" /></label><label class="field full upload-field"><span>@(_editor.Id == 0 ? "انتخاب تصویر" : "جایگزینی تصویر")</span><input name="Image" type="file" accept="image/png,image/jpeg,image/webp" required="@(_editor.Id == 0)" /><small>PNG، JPG یا WebP تا ۵ مگابایت</small></label></div>
+                    <div class="save-row"><label class="toggle"><input type="checkbox" name="IsActive" value="true" checked="@_editor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span class="toggle-ui"></span><span>فعال و قابل نمایش</span></label><button class="primary-action" type="submit"><MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" /> ذخیره بنر</button></div>
+                </form>
+            </article>
+        }
+        <div class="filter-bar"><div class="segmented"><a class="@(_placement is null ? "active" : "")" href="/admin/content/banners">همه</a><a class="@(_placement == "home-slider" ? "active" : "")" href="/admin/content/banners?placement=home-slider">اسلایدرها</a><a class="@(_placement == "home-banner" ? "active" : "")" href="/admin/content/banners?placement=home-banner">بنرها</a></div><span>@FilteredItems.Count قاب</span></div>
+        @if (FilteredItems.Count == 0)
+        {
+            <div class="empty-state"><span><MudIcon Icon="@Icons.Material.Outlined.Collections" /></span><h2>هنوز قابی ساخته نشده</h2><a class="primary-action" href="/admin/content/banners?new=true">ساخت اولین بنر</a></div>
+        }
+        else
+        {
+            <div class="banner-grid">
+            @foreach (var item in FilteredItems)
+            {
+                <article class="banner-card">
+                    <div class="banner-image">@if(item.ImageFileName is not null){<img src="/content-assets/banners/@item.Id?v=@Uri.EscapeDataString(item.RowVersion)" alt="@item.Title" />}else{<MudIcon Icon="@Icons.Material.Outlined.HideImage" />}<span class="placement">@(item.Placement == "home-slider" ? "اسلایدر" : "بنر میانی")</span><span class="banner-status @(item.IsActive ? "active" : "")">@(item.IsActive ? "فعال" : "غیرفعال")</span></div>
+                    <div class="banner-copy"><div><span class="order">ترتیب @item.DisplayOrder</span><h2>@item.Title</h2><p>@(string.IsNullOrWhiteSpace(item.Subtitle) ? "بدون متن همراه" : item.Subtitle)</p></div><footer><a href="/admin/content/banners?edit=@item.Id"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> ویرایش</a><form method="post" action="/account/content/banners/delete" data-enhance="false" onsubmit="return confirm('این بنر و تصویر آن حذف شود؟')"><AntiforgeryToken /><input type="hidden" name="id" value="@item.Id" /><button type="submit"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" /></button></form></footer></div>
+                </article>
+            }
+            </div>
+        }
+    }
+</section>

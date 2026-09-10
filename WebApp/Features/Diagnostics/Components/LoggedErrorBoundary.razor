@@ -1,0 +1,23 @@
+@inherits ErrorBoundary
+@using MerdasGold.Features.Diagnostics.Services
+@inject ErrorJournal Journal
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider Authentication
+
+@if (CurrentException is null) { @ChildContent }
+else
+{
+    <div class="application-error" role="alert" dir="rtl"><span>خطای غیرمنتظره</span><h1>این بار، مسیر کامل نشد</h1><p>صفحه را دوباره بارگذاری کنید. اگر مشکل ادامه داشت، شناسه زیر را برای پیگیری نگه دارید.</p><code dir="ltr">@_incident</code><p>@(_stored ? "خطا برای بررسی ذخیره شد." : "ذخیره خطا ممکن نشد؛ شناسه را به مدیر سامانه اطلاع دهید.")</p><a href="@Navigation.Uri" data-enhance-nav="false">بارگذاری مجدد</a></div>
+}
+
+@code {
+    private string? _incident;
+    private bool _stored;
+    protected override async Task OnErrorAsync(Exception exception)
+    {
+        if (!RendererInfo.IsInteractive) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
+        var user = (await Authentication.GetAuthenticationStateAsync()).User;
+        var error = Journal.Create(exception, "Blazor", path: new Uri(Navigation.Uri).AbsolutePath, userId: user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value);
+        _incident = error.Id.ToString(); _stored = Journal.Write(error);
+    }
+}

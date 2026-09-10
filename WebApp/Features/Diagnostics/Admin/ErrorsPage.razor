@@ -1,0 +1,22 @@
+@page "/admin/settings/errors"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>خطاهای سامانه | مرداس</PageTitle>
+<section class="errors-page">
+    <a class="back" href="/admin/settings">← تنظیمات</a>
+    <header><div><span class="eyebrow">سلامت سامانه</span><h1>جزئیات، برای حل مسئله</h1></div><span class="error-symbol"><MudIcon Icon="@Icons.Material.Outlined.Troubleshoot" /></span></header>
+    <div class="summary"><div><span>نتایج جستجو</span><strong>@_count</strong></div><div><span>محدوده دسترسی</span><strong class="small">فقط مدیر سیستم</strong></div><div><span>انتقال به دیتابیس</span><strong class="small">@(_pending > 0 ? $"{_pending} خطا در صف ثبت" : "صف خالی است")</strong></div></div>
+    <article class="error-card"><EditForm Model="this" OnSubmit="Search" FormName="errors-search"><div class="filters"><label class="wide">جستجو<input @bind="_search" maxlength="200" placeholder="پیام، نوع خطا، مسیر، Stack trace یا شناسه پیگیری…" /></label><label>از روز شمسی (تهران)<input @bind="_from" placeholder="۱۴۰۵/۰۶/۰۱" /></label><label>تا روز شمسی (تهران)<input @bind="_to" placeholder="۱۴۰۵/۰۶/۳۱" /></label><label>نوع<select @bind="_source"><option value="">همه خطاها</option><option value="HTTP">HTTP 500</option><option value="Blazor">Blazor</option><option value="Background">پردازش پس‌زمینه</option></select></label><button type="submit" disabled="@_loading">جستجو / تازه‌سازی</button></div></EditForm>
+        
+        @if (_validation is not null) { <p class="validation" role="alert">@_validation</p> }
+        @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+        <div class="table-scroll"><table><thead><tr><th>زمان رخداد (تهران)</th><th>نوع</th><th>پیام</th><th>مسیر</th><th>جزئیات</th></tr></thead><tbody>@foreach (var error in _rows) { <tr><td class="nowrap">@Time(error.OccurredUtc)</td><td><span class="pill">@(error.StatusCode == 500 ? "500" : error.Source)</span></td><td class="message" title="@error.Message">@error.Message</td><td dir="ltr" class="path">@error.Path</td><td><button class="outline" @onclick="() => Show(error.Id)">مشاهده</button></td></tr> }</tbody></table></div>
+        @if (!_loading && _rows.Count == 0) { <div class="empty"><MudIcon Icon="@Icons.Material.Outlined.CheckCircle" /><h2>خطایی در این بازه پیدا نشد</h2></div> }
+        <div class="pager"><button class="outline" disabled="@(_page == 0 || _loading)" @onclick="Previous">قبلی</button><span>صفحه @(_page + 1) · @_count نتیجه</span><button class="outline" disabled="@((_page + 1) * 25 >= _count || _loading)" @onclick="Next">بعدی</button></div>
+    </article>
+    @if (_selected is { } detail)
+    {
+        <article class="error-card details" tabindex="-1"><div class="details-heading"><h2>گزارش خطا</h2><button class="outline" @onclick="() => _selected = null">بستن جزئیات</button></div><dl><dt>شناسه خطا</dt><dd dir="ltr">@detail.Id</dd><dt>شناسه درخواست / Trace ID</dt><dd dir="ltr">@detail.TraceId</dd><dt>روز و زمان تهران</dt><dd>@Time(detail.OccurredUtc)</dd><dt>زمان دقیق UTC</dt><dd dir="ltr">@detail.OccurredUtc.ToString("yyyy-MM-dd HH:mm:ss.fff 'UTC'")</dd><dt>نوع استثنا</dt><dd dir="ltr">@detail.ExceptionType</dd><dt>درخواست</dt><dd dir="ltr">@detail.Method @detail.Path</dd><dt>شناسه کاربر</dt><dd dir="ltr">@(string.IsNullOrEmpty(detail.UserId) ? "—" : detail.UserId)</dd><dt>محیط اجرا</dt><dd>@detail.Environment</dd></dl><h3>Message</h3><pre dir="auto">@detail.Message</pre><h3>Stack trace</h3><pre dir="ltr">@(string.IsNullOrWhiteSpace(detail.StackTrace) ? "برای این پاسخ استثنایی ثبت نشده؛ Stack trace در دسترس نیست." : detail.StackTrace)</pre></article>
+    }
+</section>

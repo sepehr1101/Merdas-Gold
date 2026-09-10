@@ -1,0 +1,2 @@
+using MerdasGold.Features.Catalog.Models;using MerdasGold.Features.Catalog.Services;using Microsoft.AspNetCore.Components;
+namespace MerdasGold.Features.Catalog.Admin;public partial class CatalogPage{[Inject]private CatalogService Service{get;set;}=default!;private CatalogOverviewModel? _overview;private bool _loading=true;protected override async Task OnInitializedAsync(){try{_overview=await Service.GetOverviewAsync();}finally{_loading=false;}}}

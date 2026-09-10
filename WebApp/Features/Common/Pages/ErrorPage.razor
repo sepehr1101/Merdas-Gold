@@ -1,0 +1,15 @@
+@page "/error"
+@page "/status/{StatusCode:int}"
+@layout StatusLayout
+
+<PageTitle>خطا | مرداس گلد</PageTitle>
+
+<div class="application-error" dir="rtl"><span>مرداس · @(StatusCode ?? 500)</span><h1>یک وقفه کوتاه در مسیر</h1><p>لطفاً دوباره تلاش کنید. اگر مشکل ادامه داشت، شناسه درخواست را برای پیگیری نگه دارید.</p>@if (!string.IsNullOrEmpty(RequestId)) { <code dir="ltr">@RequestId</code> }<p><a href="/" data-enhance-nav="false">بازگشت به خانه</a></p></div>
+
+@code {
+    [Parameter] public int? StatusCode { get; set; }
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId => HttpContext?.Items["ErrorIncidentId"]?.ToString() ?? HttpContext?.TraceIdentifier;
+}

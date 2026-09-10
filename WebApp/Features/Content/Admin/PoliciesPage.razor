@@ -1,0 +1,33 @@
+@page "/admin/content/policies"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>قوانین و راهنما | مرداس گلد</PageTitle>
+
+<section class="policy-page">
+    <a class="back-link" href="/admin/content"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به محتوا</a>
+    <header class="page-header"><div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">قوانین و راهنما</MudText></div><span class="header-mark"><MudIcon Icon="@Icons.Material.Outlined.Balance" /></span></header>
+    @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")" role="status"><MudIcon Icon="@(Error is null ? Icons.Material.Outlined.CheckCircle : Icons.Material.Outlined.ErrorOutline)" />@Message</div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else if (_selected is not null)
+    {
+        <div class="policy-layout">
+            <nav class="policy-nav" aria-label="بخش‌های قوانین">
+                <div class="nav-intro"><span>@_items.Count(x => x.IsPublished)/۵</span><div><strong>وضعیت انتشار</strong><small>بخش تکمیل شده</small></div></div>
+                @foreach (var item in _items)
+                {
+                    <a class="policy-link @(item.Id == _selected.Id ? "selected" : "")" href="/admin/content/policies?policy=@item.Id"><span class="link-icon"><MudIcon Icon="@PolicyIcon(item.Key)" Size="Size.Small" /></span><span><strong>@item.Title</strong><small>@(item.IsPublished ? "منتشر شده" : string.IsNullOrWhiteSpace(item.Content) ? "در انتظار محتوا" : "پیش‌نویس")</small></span><i class="state @(item.IsPublished ? "published" : "")"></i></a>
+                }
+            </nav>
+            <article class="policy-editor">
+                <header><div><span class="section-index">@_selected.Id.ToString("00")</span><div><h2>@_selected.Title</h2><p>@PolicyHint(_selected.Key)</p></div></div><span class="document-state @(_selected.IsPublished ? "published" : "")">@(_selected.IsPublished ? "منتشر شده" : "پیش‌نویس")</span></header>
+                <form method="post" action="/account/content/policies/save" data-enhance="false">
+                    <AntiforgeryToken /><input type="hidden" name="Id" value="@_selected.Id" /><input type="hidden" name="Key" value="@_selected.Key" /><input type="hidden" name="RowVersion" value="@_selected.RowVersion" />
+                    <label class="field"><span>خلاصه برای نمایش اولیه</span><textarea name="Summary" rows="3" maxlength="600" placeholder="چکیده‌ای کوتاه از مهم‌ترین نکات این بخش...">@_selected.Summary</textarea></label>
+                    <label class="field content-field"><span>متن کامل</span><div class="future-toolbar" aria-hidden="true"><b>متن ساده</b><i></i><span>B</span><span>• فهرست</span><em>ویرایشگر پیشرفته به‌زودی</em></div><textarea name="Content" rows="16" maxlength="100000" placeholder="متن کامل سیاست را اینجا بنویسید...">@_selected.Content</textarea></label>
+                    <div class="publish-row"><label class="toggle"><input type="checkbox" name="IsPublished" value="true" checked="@_selected.IsPublished" /><input type="hidden" name="IsPublished" value="false" /><span class="toggle-ui"></span><span><strong>انتشار در فروشگاه</strong></span></label><button class="primary-action" type="submit"><MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" /> ذخیره تغییرات</button></div>
+                </form>
+            </article>
+        </div>
+    }
+</section>

@@ -1,0 +1,135 @@
+@page "/admin/profile"
+@layout AdminLayout
+@attribute [Authorize]
+@implements IAsyncDisposable
+
+<PageTitle>پروفایل من | مرداس گلد</PageTitle>
+
+<section class="profile-page">
+    <header class="profile-header">
+        <div>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">پروفایل من</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">مدیریت اطلاعات حساب و امنیت ورود</MudText>
+        </div>
+        <div class="profile-avatar" aria-hidden="true">
+            <MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Large" />
+        </div>
+    </header>
+
+    @if (SuccessMessage is not null)
+    {
+        <div class="notice success" role="status">
+            <MudIcon Icon="@Icons.Material.Outlined.CheckCircle" />
+            <span>@SuccessMessage</span>
+        </div>
+    }
+    @if (ErrorMessage is not null)
+    {
+        <div class="notice error" role="alert">
+            <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" />
+            <span>@ErrorMessage</span>
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <div class="profile-grid">
+            <article class="profile-card personal-card">
+                <div class="card-heading">
+                    <span class="card-icon"><MudIcon Icon="@Icons.Material.Outlined.Badge" /></span>
+                    <div>
+                        <h2>اطلاعات شخصی</h2>
+                        
+                    </div>
+                </div>
+
+                <form method="post" action="/account/profile" data-enhance="false">
+                    <AntiforgeryToken />
+                    <div class="fields two-columns">
+                        <label class="profile-field">
+                            <span>نام</span>
+                            <input name="FirstName" data-validation-label="نام" value="@_profile.FirstName" maxlength="100" autocomplete="given-name" required />
+                        </label>
+                        <label class="profile-field">
+                            <span>نام خانوادگی</span>
+                            <input name="LastName" data-validation-label="نام خانوادگی" value="@_profile.LastName" maxlength="100" autocomplete="family-name" required />
+                        </label>
+                        <label class="profile-field">
+                            <span>شماره موبایل</span>
+                            <input name="PhoneNumber" data-validation-label="شماره موبایل" value="@_profile.PhoneNumber" maxlength="32" inputmode="tel" autocomplete="tel" dir="ltr" required />
+                        </label>
+                        <label class="profile-field">
+                            <span>ایمیل <small>اختیاری</small></span>
+                            <input name="Email" data-validation-label="ایمیل" value="@_profile.Email" maxlength="256" type="email" autocomplete="email" dir="ltr" />
+                        </label>
+                    </div>
+                    <button class="primary-action" type="submit">
+                        <MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" />
+                        <span>ذخیره تغییرات</span>
+                    </button>
+                </form>
+            </article>
+
+            <article class="profile-card password-card">
+                <div class="card-heading">
+                    <span class="card-icon"><MudIcon Icon="@Icons.Material.Outlined.Lock" /></span>
+                    <div>
+                        <h2>تغییر رمز عبور</h2>
+                        
+                    </div>
+                </div>
+
+                <form method="post" action="/account/change-password" data-enhance="false">
+                    <AntiforgeryToken />
+                    <div class="fields">
+                        <label class="profile-field">
+                            <span>رمز عبور فعلی</span>
+                            <input name="CurrentPassword" data-validation-label="رمز عبور فعلی" type="password" autocomplete="current-password" required />
+                        </label>
+                        <label class="profile-field">
+                            <span>رمز عبور جدید</span>
+                            <input name="NewPassword" data-validation-label="رمز عبور جدید" type="password" minlength="12" autocomplete="new-password" required />
+                        </label>
+                        <label class="profile-field">
+                            <span>تکرار رمز عبور جدید</span>
+                            <input name="ConfirmPassword"
+                                   data-validation-label="تکرار رمز عبور جدید"
+                                   data-match="NewPassword"
+                                   data-match-message="تکرار رمز عبور جدید باید با رمز عبور جدید یکسان باشد."
+                                   type="password"
+                                   minlength="12"
+                                   autocomplete="new-password"
+                                   required />
+                        </label>
+                    </div>
+                    <p class="password-hint">حداقل ۱۲ نویسه، شامل حرف بزرگ و کوچک، عدد و نماد</p>
+                    <button class="primary-action" type="submit">
+                        <MudIcon Icon="@Icons.Material.Outlined.Key" Size="Size.Small" />
+                        <span>تغییر رمز عبور</span>
+                    </button>
+                </form>
+            </article>
+
+            <article class="profile-card device-card">
+                <div class="card-heading">
+                    <span class="card-icon"><MudIcon Icon="@Icons.Material.Outlined.Devices" /></span>
+                    <div>
+                        <h2>مشخصات دستگاه</h2>
+                        
+                    </div>
+                </div>
+
+                <dl class="device-list">
+                    <div><dt>IP</dt><dd dir="ltr">@_deviceInfo.Ip</dd></div>
+                    <div><dt>ساعت سیستم من</dt><dd id="profile-local-clock">در حال دریافت…</dd></div>
+                    <div><dt>مرورگر</dt><dd dir="ltr">@_deviceInfo.Browser</dd></div>
+                    <div><dt>سیستم عامل</dt><dd dir="ltr">@_deviceInfo.OperatingSystem</dd></div>
+                </dl>
+            </article>
+        </div>
+    }
+</section>

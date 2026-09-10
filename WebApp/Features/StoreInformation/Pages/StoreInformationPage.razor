@@ -1,0 +1,128 @@
+@page "/admin/settings/store"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@implements IAsyncDisposable
+@using MerdasGold.Features.StoreInformation.Models
+@using MerdasGold.Features.StoreInformation.Components
+
+<PageTitle>اطلاعات فروشگاه | مرداس گلد</PageTitle>
+
+<section class="store-page">
+    <a class="back-link" href="/admin/settings"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /><span>بازگشت به تنظیمات</span></a>
+    <header class="store-header">
+        <div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">اطلاعات فروشگاه</MudText></div>
+        <span class="store-mark"><MudIcon Icon="@Icons.Material.Outlined.Storefront" Size="Size.Large" /></span>
+    </header>
+
+    @if (Message is not null) { <div class="notice @(HasError ? "error" : "success")"><MudIcon Icon="@(HasError ? Icons.Material.Outlined.ErrorOutline : Icons.Material.Outlined.CheckCircle)" /><span>@Message</span></div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+    else if (_data is not null)
+    {
+        <div class="store-cards">
+            <article class="store-card">
+                <CardTitle Icon="@Icons.Material.Outlined.Badge" Title="اطلاعات پایه فروشگاه" />
+                <form method="post" action="/account/store/profile" enctype="multipart/form-data" data-enhance="false">
+                    <AntiforgeryToken /><input type="hidden" name="RowVersion" value="@_data.Profile.RowVersion" />
+                    <div class="form-grid">
+                        <Field Label="نام فروشگاه"><input name="Name" value="@_data.Profile.Name" maxlength="200" required data-validation-label="نام فروشگاه" /></Field>
+                        <Field Label="نام انگلیسی فروشگاه"><input name="EnglishName" value="@_data.Profile.EnglishName" maxlength="200" dir="ltr" required data-validation-label="نام انگلیسی فروشگاه" /></Field>
+                        <Field Label="عنوان کوتاه / شعار"><input name="Tagline" value="@_data.Profile.Tagline" maxlength="300" /></Field>
+                        <Field Label="نوع فعالیت / دسته کسب‌وکار"><input name="BusinessCategory" value="@_data.Profile.BusinessCategory" maxlength="150" required data-validation-label="نوع فعالیت" /></Field>
+                        <Field Label="تاریخ شروع فعالیت">
+                            <MudDatePicker Date="@_activityStartDate"
+                                           DateChanged="OnActivityStartDateChanged"
+                                           Culture="@PersianCulture"
+                                           DateFormat="yyyy/MM/dd"
+                                           TitleDateFormat="dddd dd MMMM"
+                                           FirstDayOfWeek="DayOfWeek.Saturday"
+                                           PickerVariant="PickerVariant.Dialog"
+                                           OpenTo="OpenTo.Date"
+                                           AutoClose="true"
+                                           Clearable="true"
+                                           Editable="false"
+                                           Placeholder="انتخاب تاریخ شمسی"
+                                           Adornment="Adornment.End"
+                                           AdornmentIcon="@Icons.Material.Outlined.CalendarMonth"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.None"
+                                           Class="persian-date-picker" />
+                            <input type="hidden" name="ActivityStartDate" value="@ActivityStartDateValue" />
+                        </Field>
+                        <Field Label="وضعیت فروشگاه"><select name="IsActive"><option value="true" selected="@_data.Profile.IsActive">فعال</option><option value="false" selected="@(!_data.Profile.IsActive)">موقتاً غیرفعال</option></select></Field>
+                        <Field Label="لوگو"><input name="Logo" type="file" accept="image/png,image/jpeg,image/webp" /><small>@(_data.Profile.LogoFileName ?? "حداکثر ۲ مگابایت")</small></Field>
+                        <Field Label="Favicon"><input name="Favicon" type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon" /><small>@(_data.Profile.FaviconFileName ?? "حداکثر ۲ مگابایت")</small></Field>
+                        <div class="field full"><label>توضیح کوتاه درباره فروشگاه</label><textarea name="ShortDescription" maxlength="1000" rows="4">@_data.Profile.ShortDescription</textarea></div>
+                    </div>
+                    @if (_data.Profile.LogoFileName is not null || _data.Profile.FaviconFileName is not null)
+                    {
+                        <div class="asset-previews">
+                            @if (_data.Profile.LogoFileName is not null) { <div><img src="/store-assets/logo?v=@_data.Profile.RowVersion" alt="لوگوی فعلی فروشگاه" /><span>لوگوی فعلی</span></div> }
+                            @if (_data.Profile.FaviconFileName is not null) { <div><img src="/store-assets/favicon?v=@_data.Profile.RowVersion" alt="فاوآیکن فعلی فروشگاه" /><span>Favicon فعلی</span></div> }
+                        </div>
+                    }
+                    <SaveButton Text="ذخیره اطلاعات پایه" />
+                </form>
+            </article>
+
+            <article class="store-card">
+                <CardTitle Icon="@Icons.Material.Outlined.AccountBalance" Title="اطلاعات حساب‌های بانکی" />
+                <DataGridToolbar SearchText="@_bankSearch" SearchTextChanged="OnBankSearch" TotalCount="@_data.BankAccounts.Count" FilteredCount="@BankFilteredCount" ShowAddButton="true" Busy="@_loading" AddRequested="ShowNewBank" FilterRequested="OpenBankFilters" ColumnsRequested="OpenBankColumns" RefreshRequested="RefreshAsync" ExportCurrentPageRequested="ExportBankPageAsync" ExportFilteredRequested="ExportBanksAsync" />
+                @if (_bankForm is not null)
+                {
+                    <div @ref="_bankFormContainer" class="bank-form-container" tabindex="-1">
+                        <BankAccountForm Model="@_bankForm" OnCancel="CancelBank" />
+                    </div>
+                }
+                <MudDataGrid @ref="_bankGrid" T="BankAccountEditModel" Items="@_data.BankAccounts" QuickFilter="@BankFilter" Filterable="true" FilterMode="DataGridFilterMode.Simple" FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive" SortMode="SortMode.Multiple" Hideable="true" Dense="true" Hover="true" RowsPerPage="10" Class="bank-grid" Elevation="0">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Title" Title="عنوان حساب" />
+                        <PropertyColumn Property="x => x.BankName" Title="بانک" />
+                        <PropertyColumn Property="x => x.AccountHolderName" Title="صاحب حساب" />
+                        <PropertyColumn Property="x => x.CardNumber" Title="شماره کارت" />
+                        <PropertyColumn Property="x => x.Iban" Title="شماره شبا" />
+                        <TemplateColumn Title="وضعیت" Sortable="false"><CellTemplate><MudChip T="string" Size="Size.Small" Color="@(context.Item.IsActive ? Color.Success : Color.Default)" Variant="Variant.Outlined">@(context.Item.IsActive ? "فعال" : "غیرفعال")</MudChip></CellTemplate></TemplateColumn>
+                        <TemplateColumn Title="عملیات" Sortable="false" Hideable="false"><CellTemplate><MudIconButton Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditBank(context.Item))" aria-label="ویرایش حساب" /></CellTemplate></TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent><div class="empty">حساب بانکی ثبت نشده است.</div></NoRecordsContent>
+                    <PagerContent><MudDataGridPager T="BankAccountEditModel" PageSizeOptions="@_pageSizes" RowsPerPageString="تعداد در صفحه:" InfoFormat="{first_item} تا {last_item} از {all_items}" /></PagerContent>
+                </MudDataGrid>
+            </article>
+
+            <article class="store-card">
+                <CardTitle Icon="@Icons.Material.Outlined.Schedule" Title="ساعت کاری" />
+                <form method="post" action="/account/store/working-hours" data-enhance="false">
+                    <AntiforgeryToken /><div class="hours-list" role="table">
+                    @for (var index = 0; index < _data.WorkingHours.Count; index++)
+                    {
+                        var day = _data.WorkingHours[index];
+                        <div class="hours-row" role="row">
+                            <input type="hidden" name="Days[@index].Id" value="@day.Id" /><input type="hidden" name="Days[@index].DayName" value="@day.DayName" />
+                            <strong>@day.DayName</strong>
+                            <label class="check"><input type="checkbox" name="Days[@index].IsOpen" value="true" checked="@day.IsOpen" /><input type="hidden" name="Days[@index].IsOpen" value="false" /><span>فعال</span></label>
+                            <input type="time" name="Days[@index].StartTime" value="@TimeValue(day.StartTime)" aria-label="ساعت شروع @day.DayName" />
+                            <span>تا</span><input type="time" name="Days[@index].EndTime" value="@TimeValue(day.EndTime)" aria-label="ساعت پایان @day.DayName" />
+                        </div>
+                    }
+                    </div><SaveButton Text="ذخیره ساعت کاری" />
+                </form>
+            </article>
+
+            <article class="store-card">
+                <CardTitle Icon="@Icons.Material.Outlined.LocationOn" Title="موقعیت فروشگاه" />
+                <form method="post" action="/account/store/location" data-enhance="false">
+                    <AntiforgeryToken /><input type="hidden" name="RowVersion" value="@_data.Location.RowVersion" />
+                    <div id="store-location-map" class="store-map"><span class="map-loading">در حال بارگذاری نقشه…</span></div>
+                    @if (_mapError is not null)
+                    {
+                        <div class="map-error" role="alert"><MudIcon Icon="@Icons.Material.Outlined.Map" Size="Size.Small" /><span>@_mapError</span></div>
+                    }
+                    <input id="store-latitude" type="hidden" name="Latitude" value="@_data.Location.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input id="store-longitude" type="hidden" name="Longitude" value="@_data.Location.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                    <input id="store-zoom" type="hidden" name="ZoomLevel" value="@_data.Location.ZoomLevel" />
+                    <div class="field full location-address"><label>نشانی فروشگاه</label><textarea name="Address" maxlength="1000" rows="3">@_data.Location.Address</textarea></div>
+                    <SaveButton Text="ذخیره موقعیت فروشگاه" />
+                </form>
+            </article>
+        </div>
+    }
+</section>

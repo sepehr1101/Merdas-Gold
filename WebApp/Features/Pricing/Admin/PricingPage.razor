@@ -1,0 +1,75 @@
+@page "/admin/pricing"
+@page "/admin/pricing/{Section}"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using MerdasGold.Features.Pricing.Entities
+@using MerdasGold.Features.Pricing.Services
+
+<PageTitle>فروش و قیمت‌گذاری | مرداس</PageTitle>
+<section class="pricing-page">
+    <header class="pricing-hero"><div><span class="eyebrow">مرکز قیمت‌گذاری · طلای ۱۸ عیار</span><h1>قیمت دقیق، مدیریت ساده</h1></div><div class="hero-gem" aria-hidden="true"><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></div></header>
+    <nav class="pricing-tabs" aria-label="فروش و قیمت‌گذاری">
+        @foreach (var tab in Tabs) { <a class="@(Active == tab.Key ? "selected" : "")" href="/admin/pricing/@tab.Key" aria-current="@(Active == tab.Key ? "page" : null)"><MudIcon Icon="@tab.Icon" Size="Size.Small" />@tab.Title</a> }
+    </nav>
+    @if (_message is not null) { <div class="notice @(_failed ? "failure" : "")" role="status">@_message</div> }
+    @if (_settings is null || _rule is null) { <MudProgressLinear Indeterminate="true" /> }
+    else if (Active == "rates")
+    {
+        <div class="rate-banner"><div><span>هر گرم طلای ۱۸ عیار</span><strong>@(_current?.PriceToman?.ToString("N0") ?? "—") <small>تومان</small></strong><p>زمان نرخ: @LocalTime(_current?.SourceUtc) · منبع: @(_current?.Provider ?? "تنظیم نشده")</p></div><span class="badge @(Fresh ? "good" : "warning")">@(Fresh ? (_current?.Provider == "دستی" ? "نرخ دستی فعال" : "نرخ معتبر") : "نرخ معتبر در دسترس نیست")</span><button class="primary" disabled="@_busy" @onclick="Fetch">دریافت نرخ جدید</button></div>
+        @if (!Fresh) { <p class="hint">محاسبه با نرخ زنده تا دریافت نرخ معتبر متوقف است. پیش‌نمایش فرضی همچنان قابل استفاده است.</p> }
+        <div class="two-columns">
+            <article class="card"><h2>دریافت خودکار نرخ</h2>
+                <EditForm Model="_settings" OnValidSubmit="SaveSettings" FormName="rate-settings">
+                    <ValidationSummary /><fieldset disabled="@_busy"><label>تأمین‌کننده<input value="نوسان · Navasan" disabled /></label><label>کلید API<input type="password" autocomplete="new-password" @bind="_apiKey" maxlength="500" placeholder="@(_settings.ProtectedApiKey.Length > 0 ? "کلید ذخیره شده است" : "کلید سرویس را وارد کنید")" /></label>
+                    <div class="field-grid"><label>فاصله دریافت<select @bind="_settings.IntervalMinutes"><option value="1">هر ۱ دقیقه</option><option value="5">هر ۵ دقیقه</option><option value="15">هر ۱۵ دقیقه</option></select></label><label>اعتبار نرخ (دقیقه)<InputNumber @bind-Value="_settings.MaxAgeMinutes" min="1" max="1440" /></label></div>
+                    <label>واحد پاسخ تأمین‌کننده<select @bind="_settings.SourceUnit"><option value="toman">تومان</option><option value="rial">ریال؛ تبدیل خودکار به تومان</option></select></label>
+                    <label class="check"><InputCheckbox @bind-Value="_settings.Enabled" /> دریافت خودکار فعال باشد</label><button class="primary" type="submit">ذخیره تنظیمات</button></fieldset>
+                </EditForm>
+            </article>
+            <article class="card"><h2>نرخ دستی موقت</h2>
+                <EditForm Model="_settings" OnValidSubmit="SaveManual" FormName="manual-rate"><ValidationSummary /><fieldset disabled="@_busy"><label>قیمت هر گرم (تومان)<InputNumber @bind-Value="_manualPrice" min="1" /></label><label>اعتبار (دقیقه)<InputNumber @bind-Value="_manualMinutes" min="1" max="1440" /></label><label>دلیل ثبت<input @bind="_manualReason" maxlength="200" /></label><div class="actions"><button class="primary" type="submit">فعال‌سازی نرخ دستی</button><button class="secondary" type="button" @onclick="ClearManual">پایان نرخ دستی</button></div></fieldset></EditForm>
+                @if (_settings.ManualExpiresUtc.HasValue) { <p class="hint">انقضا: @LocalTime(_settings.ManualExpiresUtc)</p> }
+            </article>
+        </div>
+        <article class="card"><div class="section-heading"><div><h2>سابقه دریافت نرخ</h2></div><span class="badge">@_rateCount ردیف</span></div>
+            <div class="filters"><label>روز شمسی<input @bind="_rateDay" placeholder="۱۴۰۵/۰۶/۱۹" /></label><label>از ساعت<input type="time" @bind="_fromTime" /></label><label>تا ساعت<input type="time" @bind="_toTime" /></label><button class="secondary" disabled="@_busy" @onclick="SearchRates">نمایش</button></div>
+            <div class="table-scroll"><table><thead><tr><th>دریافت · تهران</th><th>زمان نرخ · تهران</th><th>قیمت / تومان</th><th>منبع</th><th>وضعیت</th></tr></thead><tbody>@foreach (var rate in _history) { <tr><td>@LocalTime(rate.ReceivedUtc)</td><td>@LocalTime(rate.SourceUtc)</td><td>@rate.PriceToman?.ToString("N0")</td><td>@rate.Provider</td><td>@rate.Status</td></tr> }</tbody></table></div>
+            @if (_history.Count == 0) { <div class="empty">در این بازه دریافتی ثبت نشده است.</div> }
+            <div class="pagination"><button class="secondary" disabled="@(_ratePage == 0 || _busy)" @onclick="PreviousRates">قبلی</button><span>صفحه @(_ratePage + 1)</span><button class="secondary" disabled="@((_ratePage + 1) * 30 >= _rateCount || _busy)" @onclick="NextRates">بعدی</button></div>
+        </article>
+    }
+    else if (Active == "rules")
+    {
+        <div class="two-columns"><article class="card"><h2>قاعده عمومی فروشگاه</h2>
+            <EditForm Model="_rule" OnValidSubmit="SaveRule" FormName="pricing-rule"><ValidationSummary /><fieldset disabled="@_busy">
+                <label>روش اجرت<select @bind="_rule.FeeMode"><option value="percent">درصد از ارزش طلا</option><option value="gram">تومان به‌ازای هر گرم</option><option value="fixed">تومان برای کل قطعه</option></select></label>
+                <label>مقدار اجرت<InputNumber @bind-Value="_rule.FeeValue" min="0" /></label><label>سود فروشنده؛ درصد از طلا + اجرت<InputNumber @bind-Value="_rule.ProfitPercent" min="0" max="100" /></label><label>مالیات؛ درصد از اجرت پس از تخفیف + سود<InputNumber @bind-Value="_rule.TaxPercent" min="0" max="100" /></label>
+                <label>گرد کردن مبلغ نهایی<select @bind="RoundingUnit"><option value="1">نزدیک‌ترین تومان</option><option value="100">نزدیک‌ترین ۱۰۰ تومان</option><option value="1000">نزدیک‌ترین ۱٬۰۰۰ تومان</option><option value="10000">نزدیک‌ترین ۱۰٬۰۰۰ تومان</option></select></label><button class="primary" type="submit">ذخیره قاعده قیمت‌گذاری</button>
+            </fieldset></EditForm>
+        </article><article class="card calculator"><h2>قبل از ذخیره، نتیجه را ببینید</h2>
+            <label>قطعه کاتالوگ<select value="@_pieceId" @onchange="SelectPiece"><option value="0">وزن دلخواه برای آزمایش</option>@foreach (var piece in _pieces) { <option value="@piece.Id">@piece.Title · @piece.Weight گرم</option> }</select></label><label>وزن طلای ۱۸ عیار (گرم)<input type="number" step="0.001" min="0.001" @bind="_weight" /></label>
+            <label class="check"><input type="checkbox" @bind="_useLive" /> استفاده از نرخ معتبر فعلی</label>
+            @if (!_useLive) { <label>نرخ فرضی هر گرم (تومان)<input type="number" min="1" @bind="_sampleRate" /></label><p class="hint">این نرخ فقط برای آزمایش است و ذخیره نمی‌شود.</p> }
+            @if (Preview is { } calculation) { <dl class="breakdown"><dt>ارزش طلا</dt><dd>@Money(calculation.Gold)</dd><dt>اجرت</dt><dd>@Money(calculation.Fee)</dd><dt>سود</dt><dd>@Money(calculation.Profit)</dd><dt>تخفیف اجرت</dt><dd>@Money(calculation.Discount)</dd><dt>مالیات</dt><dd>@Money(calculation.Tax)</dd><dt>تعدیل گرد کردن</dt><dd>@Money(calculation.Rounding)</dd><dt class="total">مبلغ نهایی</dt><dd class="total">@Money(calculation.Total) تومان</dd></dl><p class="hint">با قاعده ذخیره‌شده: @Money(SavedPreview?.Total ?? 0) تومان</p> }
+            else { <div class="notice failure">وزن، مقادیر فرم یا اعتبار نرخ را بررسی کنید.</div> }
+        </article></div>
+    }
+    else if (Active == "discounts")
+    {
+        <div class="two-columns"><article class="card"><h2>@(_discount.Id == 0 ? "تخفیف جدید" : "ویرایش تخفیف")</h2>
+            <EditForm Model="_discount" OnValidSubmit="SaveDiscount" FormName="discount"><ValidationSummary /><fieldset disabled="@_busy"><label>عنوان<input @bind="_discount.Title" maxlength="100" /></label><label>نوع<select @bind="_discount.Kind"><option value="percent">درصد از اجرت</option><option value="fixed">مبلغ ثابت از اجرت (تومان)</option></select></label><label>مقدار<InputNumber @bind-Value="_discount.Value" min="0" /></label><div class="field-grid"><label>شروع (شمسی)<input @bind="_discountStart" placeholder="۱۴۰۵/۰۶/۱۹" /></label><label>پایان (شمسی، شامل این روز)<input @bind="_discountEnd" placeholder="۱۴۰۵/۰۶/۲۶" /></label></div><label class="check"><InputCheckbox @bind-Value="_discount.Enabled" /> فعال</label><div class="actions"><button class="primary" type="submit">ذخیره تخفیف</button><button class="secondary" type="button" @onclick="NewDiscount">تخفیف تازه</button></div></fieldset></EditForm>
+        </article><article class="card"><h2>تخفیف‌های فروشگاه</h2>@if (_discounts.Count == 0) { <div class="empty"><MudIcon Icon="@Icons.Material.Outlined.LocalOffer" /><h3>اولین تخفیف، ساده و روشن</h3></div> }
+            @foreach (var discount in _discounts) { <div class="discount-item"><div><strong>@discount.Title</strong><p>@Money(discount.Value) @(discount.Kind == "percent" ? "درصد" : "تومان") از اجرت</p><small>@DiscountStatus(discount) · پایان @LocalTime(discount.EndsUtc.AddSeconds(-1))</small></div><button class="secondary" @onclick="() => EditDiscount(discount)">ویرایش</button></div> }
+        </article></div>
+    }
+    else if (Active == "invoice")
+    {
+        <div class="two-columns invoice-layout"><article class="card no-print"><h2>قالب صورتحساب</h2><EditForm Model="_rule" OnValidSubmit="SaveRule" FormName="invoice-settings"><ValidationSummary /><fieldset disabled="@_busy"><label>متن پایین صورتحساب<textarea rows="4" maxlength="500" @bind="_rule.InvoiceFooter"></textarea></label><button class="primary" type="submit">ذخیره متن</button></fieldset></EditForm><div class="actions"><button class="secondary" @onclick="Print">چاپ / ذخیره PDF</button><a href="/admin/settings/store">ویرایش لوگو و نشانی</a></div></article>
+        <article class="invoice-paper" id="invoice-preview"><div class="invoice-top">@if (_hasLogo) { <img src="/store-assets/logo" alt="لوگوی فروشگاه" /> } else { <span class="invoice-monogram">م</span> }<div><h2>@_storeName</h2><p>@_storeAddress</p></div><span class="sample-stamp">نمونه</span></div><div class="invoice-title"><h2>صورتحساب فروش طلا</h2><span>شماره: پیش‌نمایش<br />تاریخ: @LocalTime(DateTime.UtcNow)</span></div><p>خریدار: مشتری نمونه · عیار: ۱۸ · واحد پول: تومان</p><table><thead><tr><th>شرح</th><th>وزن</th><th>نرخ فرضی هر گرم</th><th>ارزش طلا</th></tr></thead><tbody><tr><td>انگشتر نمونه</td><td>۲ گرم</td><td>۱۰٬۰۰۰٬۰۰۰</td><td>۲۰٬۰۰۰٬۰۰۰</td></tr></tbody></table>
+            @if (InvoicePreview is { } invoice) { <dl class="breakdown"><dt>اجرت</dt><dd>@Money(invoice.Fee)</dd><dt>سود</dt><dd>@Money(invoice.Profit)</dd><dt>تخفیف اجرت</dt><dd>@Money(invoice.Discount)</dd><dt>مالیات</dt><dd>@Money(invoice.Tax)</dd><dt>گرد کردن</dt><dd>@Money(invoice.Rounding)</dd><dt class="total">جمع قابل پرداخت</dt><dd class="total">@Money(invoice.Total) تومان</dd></dl> }
+            <footer><p>@_rule.InvoiceFooter</p><small>اطلاعات فرضی برای نمایش قالب؛ فاقد اعتبار مالی و مالیاتی.</small></footer>
+        </article></div>
+    }
+</section>
+
+

@@ -1,0 +1,4 @@
+.page-help-content { line-height: 2; overflow-wrap: anywhere; }
+.page-help-content p { margin: 0; padding-block: 12px; border-bottom: 1px solid var(--mud-palette-divider); }
+.page-help-content p:first-child { padding-top: 0; }
+.page-help-content p:last-child { border-bottom: 0; }

@@ -1,0 +1,17 @@
+@using MerdasGold.Features.Common.Pages
+@using MerdasGold.Features.Authentication.Components
+
+<CascadingAuthenticationState>
+    <MerdasGold.Features.Diagnostics.Components.LoggedErrorBoundary>
+    <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(NotFoundPage)">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+    </Router>
+    </MerdasGold.Features.Diagnostics.Components.LoggedErrorBoundary>
+</CascadingAuthenticationState>

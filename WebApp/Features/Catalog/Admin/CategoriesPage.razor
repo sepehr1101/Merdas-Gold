@@ -1,0 +1,45 @@
+@page "/admin/catalog/categories"
+@layout AdminLayout
+@attribute [Authorize(Roles="Administrator")]
+<PageTitle>دسته‌بندی محصولات | مرداس گلد</PageTitle>
+
+<section class="manage-page">
+    <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small"/> بازگشت به کالاها</a>
+    <header class="page-header">
+        <div><span class="eyebrow">چیدمان فروشگاه</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">دسته‌بندی‌ها</MudText></div>
+        <a class="primary-action" href="/admin/catalog/categories?edit=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small"/> دسته جدید</a>
+    </header>
+    @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")">@Message</div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary"/> }
+    else {
+        <div class="management-toolbar"><label><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small"/><input placeholder="جست‌وجوی نام، نامک یا توضیح" @bind="_search" @bind:event="oninput"/></label><div class="segments"><button class="@(_stateFilter == "all" ? "active" : "")" @onclick="ShowAll">همه</button><button class="@(_stateFilter == "active" ? "active" : "")" @onclick="ShowActive">فعال</button><button class="@(_stateFilter == "inactive" ? "active" : "")" @onclick="ShowInactive">غیرفعال</button></div><span>@VisibleItems.Count مورد</span></div>
+        @if (_editor is not null) {
+            <article class="edit-card">
+                <header><span><MudIcon Icon="@Icons.Material.Outlined.Category"/></span><div><h2>@(_editor.Id == 0 ? "دسته تازه" : "ویرایش دسته")</h2></div></header>
+                <form method="post" action="/account/catalog/categories/save" data-enhance="false">
+                    <AntiforgeryToken/><input type="hidden" name="Id" value="@_editor.Id"/><input type="hidden" name="RowVersion" value="@_editor.RowVersion"/>
+                    <div class="form-grid">
+                        <label class="field"><span>نام دسته *</span><input name="Name" value="@_editor.Name" maxlength="160" required/></label>
+                        <label class="field"><span>نامک آدرس *</span><input name="Slug" value="@_editor.Slug" maxlength="180" dir="ltr" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="gold-rings" required/></label>
+                        <label class="field"><span>دسته مادر</span><select name="ParentId"><option value="">بدون دسته مادر</option>@foreach (var item in ParentChoices) { <option value="@item.Id" selected="@(item.Id == _editor.ParentId)">@item.Name</option> }</select></label>
+                        <label class="field"><span>ترتیب نمایش</span><input type="number" name="DisplayOrder" value="@_editor.DisplayOrder" min="0"/></label>
+                        <label class="field full"><span>توضیح کوتاه</span><textarea name="Description" rows="3" maxlength="600">@_editor.Description</textarea></label>
+                    </div>
+                    <div class="form-actions"><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_editor.IsActive"/><input type="hidden" name="IsActive" value="false"/><i></i>فعال باشد</label><div><a href="/admin/catalog/categories">انصراف</a><button type="submit">ذخیره دسته</button></div></div>
+                </form>
+                @if (_editor.Id > 0) { <form class="delete-zone" method="post" action="/account/catalog/categories/delete" data-enhance="false" onsubmit="return confirm('این دسته حذف شود؟ این عمل فقط برای دسته بدون محصول و زیردسته انجام می‌شود.');"><AntiforgeryToken/><input type="hidden" name="Id" value="@_editor.Id"/><input type="hidden" name="RowVersion" value="@_editor.RowVersion"/><span><MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small"/> دسته‌های در حال استفاده قابل حذف نیستند؛ می‌توانید آن‌ها را غیرفعال کنید.</span><button type="submit"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small"/> حذف دسته</button></form> }
+            </article>
+        }
+        <div class="summary-strip"><span><MudIcon Icon="@Icons.Material.Outlined.AccountTree"/></span><div><strong>@_items.Count دسته</strong><small>@_items.Count(x => !x.ParentId.HasValue) ریشه و @(_items.Count - _items.Count(x => !x.ParentId.HasValue)) زیرمجموعه</small></div><div><strong>@_items.Sum(x => x.ProductCount) اتصال</strong><small>محصولات دسته‌بندی‌شده</small></div></div>
+        <div class="item-list">
+            @foreach (var item in VisibleItems) {
+                <a class="manage-row @(item.ParentId.HasValue ? "child" : "root")" style="--depth:@DepthOf(item)" href="/admin/catalog/categories?edit=@item.Id">
+                    <span class="row-icon"><MudIcon Icon="@(item.ParentId.HasValue ? Icons.Material.Outlined.SubdirectoryArrowLeft : Icons.Material.Outlined.FolderOpen)"/></span>
+                    <div class="row-copy"><h2>@item.Name</h2><p>@(item.ParentName is null ? "دسته اصلی" : $"زیرمجموعه {item.ParentName}") · <b dir="ltr">/@item.Slug</b></p></div>
+                    <span class="count">@item.ProductCount محصول</span><span class="state @(item.IsActive ? "on" : "off")">@(item.IsActive ? "فعال" : "غیرفعال")</span><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small"/>
+                </a>
+            }
+            @if (VisibleItems.Count == 0) { <div class="compact-empty"><MudIcon Icon="@Icons.Material.Outlined.SearchOff"/><strong>دسته‌ای با این مشخصات پیدا نشد</strong><span>عبارت جست‌وجو یا فیلتر وضعیت را تغییر دهید.</span></div> }
+        </div>
+    }
+</section>

@@ -1,0 +1,46 @@
+@page "/admin/content"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>مدیریت محتوا | مرداس گلد</PageTitle>
+
+<section class="content-hub">
+    <header class="hub-hero">
+        <div class="hero-copy">
+            <span class="eyebrow"><MudIcon Icon="@Icons.Material.Outlined.AutoAwesome" Size="Size.Small" /> ویترین محتوای فروشگاه</span>
+            <MudText Typo="Typo.h3" HtmlTag="h1" Class="page-title">محتوایی که اعتماد می‌سازد</MudText>
+            
+        </div>
+        <div class="hero-orbit" aria-hidden="true"><span></span><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></div>
+    </header>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <div class="content-grid">
+            <a class="feature-card faq" href="/admin/content/faqs">
+                <span class="card-number">01</span>
+                <span class="feature-icon"><MudIcon Icon="@Icons.Material.Outlined.QuestionAnswer" /></span>
+                <div><h2>سؤالات پرتکرار</h2><p>پاسخ‌های روشن برای پرسش‌هایی که مشتریان بیشتر می‌پرسند.</p></div>
+                <footer><span>@(_overview?.ActiveFaqCount ?? 0) پاسخ فعال</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
+            </a>
+            <a class="feature-card policies" href="/admin/content/policies">
+                <span class="card-number">02</span>
+                <span class="feature-icon"><MudIcon Icon="@Icons.Material.Outlined.Policy" /></span>
+                <div><h2>قوانین و راهنما</h2><p>ارسال، پرداخت، مرجوعی و تعهدات حقوقی فروشگاه.</p></div>
+                <footer><span>@(_overview?.PublishedPolicyCount ?? 0) از ۵ بخش منتشر شده</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
+            </a>
+            <a class="feature-card banners" href="/admin/content/banners">
+                <span class="card-number">03</span>
+                <span class="feature-icon"><MudIcon Icon="@Icons.Material.Outlined.ViewCarousel" /></span>
+                <div><h2>اسلایدر و بنر</h2><p>تصاویر و پیام‌های برجسته‌ای که نگاه کاربر را هدایت می‌کنند.</p></div>
+                <footer><span>@(_overview?.ActiveBannerCount ?? 0) بنر فعال</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
+            </a>
+        </div>
+    }
+
+    <div class="phase-note"><MudIcon Icon="@Icons.Material.Outlined.EditNote" /><span>ویرایشگر حرفه‌ای متن در فاز بعد به بخش قوانین و پاسخ‌ها افزوده می‌شود.</span></div>
+</section>

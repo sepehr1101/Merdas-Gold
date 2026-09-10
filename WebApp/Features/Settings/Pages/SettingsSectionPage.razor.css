@@ -1,0 +1,30 @@
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.section-placeholder {
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-align: center;
+}
+
+.section-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 7px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--primary-border);
+    border-radius: 20px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}

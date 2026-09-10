@@ -1,0 +1,38 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IDialogService Dialogs
+
+@if (_help is not null)
+{
+    <span class="page-help-host">
+    <MudTooltip Text="@($"راهنمای {_help.Title}")">
+        <MudButton OnClick="OpenHelp" Variant="Variant.Outlined" Color="Color.Inherit"
+                   Class="page-help-button" aria-label="@($"راهنمای {_help.Title}")">؟</MudButton>
+    </MudTooltip>
+    </span>
+}
+
+@code {
+    private PageHelpContent? _help;
+
+    protected override void OnInitialized()
+    {
+        UpdateHelp();
+        Navigation.LocationChanged += LocationChanged;
+    }
+
+    private void UpdateHelp() => _help = PageHelpCatalog.Find(new Uri(Navigation.Uri).AbsolutePath);
+
+    private void LocationChanged(object? sender, LocationChangedEventArgs args) =>
+        _ = InvokeAsync(() => { UpdateHelp(); StateHasChanged(); });
+
+    private async Task OpenHelp()
+    {
+        if (_help is null) return;
+        var parameters = new DialogParameters<PageHelpDialog> { { x => x.Content, _help } };
+        await Dialogs.ShowAsync<PageHelpDialog>($"راهنمای {_help.Title}", parameters,
+            new DialogOptions { CloseButton = true, CloseOnEscapeKey = true, FullWidth = true, MaxWidth = MaxWidth.Small });
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= LocationChanged;
+}

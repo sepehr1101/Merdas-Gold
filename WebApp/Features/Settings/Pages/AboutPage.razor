@@ -1,0 +1,89 @@
+@page "/admin/settings/about"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>درباره @ProductName | مرداس گلد</PageTitle>
+
+<section class="about-page" dir="rtl">
+    <header class="page-heading">
+        <div>
+            <a class="back-link" href="/admin/settings"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />تنظیمات</a>
+            <h1>درباره نرم‌افزار</h1>
+        </div>
+        <span class="edition-label" dir="ltr">THE DIAMOND EDITION</span>
+    </header>
+
+    <article class="brand-panel" aria-labelledby="product-title">
+        <div class="brand-copy">
+            <span class="eyebrow"><span></span>دقت در جزئیات. تمایز در تجربه.</span>
+            <h2 id="product-title">@ProductName<span>ارزشمند، مثل کسب‌وکار شما.</span></h2>
+            <p>نگاهی تازه به مدیریت دنیای طلا و جواهر؛<br />جایی که نظم، زیبایی و دقت، کنار هم می‌نشینند.</p>
+            <div class="brand-signature"><span dir="ltr">MERDAS</span><i></i><span>برای درخشش شما</span></div>
+        </div>
+        <div class="jewel-stage" aria-hidden="true">
+            <div class="orbit orbit-outer"></div><div class="orbit orbit-inner"></div>
+            <span class="spark spark-one">✦</span><span class="spark spark-two">✧</span><span class="spark spark-three">✦</span>
+            <div class="jewel-float">
+                <svg class="hero-jewel" viewBox="0 0 320 280" fill="none">
+                    <defs>
+                        <linearGradient id="about-gem-body" x1="70" y1="30" x2="240" y2="255" gradientUnits="userSpaceOnUse"><stop stop-color="var(--primary-border)"/><stop offset=".45" stop-color="var(--primary)"/><stop offset="1" stop-color="var(--primary-hover)"/></linearGradient>
+                        <linearGradient id="about-gem-light" x1="80" y1="40" x2="210" y2="210" gradientUnits="userSpaceOnUse"><stop stop-color="white" stop-opacity=".85"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient>
+                    </defs>
+                    <path d="M78 48H242L286 110L160 254L34 110Z" fill="url(#about-gem-body)"/>
+                    <path d="M78 48L104 110L160 48L216 110L242 48M34 110H286M104 110L160 254L216 110" stroke="white" stroke-opacity=".55" stroke-width="1.2"/>
+                    <path d="M78 48L104 110H34ZM160 48L216 110H104Z" fill="url(#about-gem-light)"/>
+                    <path d="M242 48L286 110H216ZM104 110L160 254L34 110Z" fill="white" fill-opacity=".14"/>
+                    <path d="M216 110L160 254L286 110Z" fill="var(--primary-hover)" fill-opacity=".45"/>
+                    <path d="M78 48H242L286 110L160 254L34 110Z" stroke="white" stroke-opacity=".65" stroke-width="1.5"/>
+                    <path class="gem-glint" d="M78 48H242L286 110L160 254L34 110Z" stroke="white" stroke-width="2" stroke-dasharray="65 750"/>
+                </svg>
+            </div>
+            <span class="jewel-caption" dir="ltr">PRECISION MEETS ELEGANCE</span>
+        </div>
+        <div class="product-meta">
+            <div><span>نسخه نرم‌افزار</span><strong dir="ltr">@ProductVersion</strong></div>
+            <div><span>لایسنس فعلی</span><strong><MudIcon Icon="@Icons.Material.Outlined.Diamond" Size="Size.Small" />الماس</strong></div>
+            <div><span>خانواده محصول</span><strong>مدیریت طلا و جواهر</strong></div>
+        </div>
+    </article>
+
+    <section class="license-section" aria-labelledby="license-title">
+        <div class="section-heading"><div><span class="section-kicker" dir="ltr">A LEVEL FOR EVERY AMBITION</span><h2 id="license-title">سه گوهر، سه سطح تجربه</h2></div><p>انتخاب شما، در بالاترین سطح.</p></div>
+        <div class="license-grid" role="group" aria-label="سطوح لایسنس">
+            @for (var index = 0; index < Editions.Length; index++)
+            {
+                var editionIndex = index;
+                var edition = Editions[index];
+                <button type="button" id="edition-@index" class="license-card @(index == _selectedEdition ? "selected" : "")" aria-pressed="@(index == _selectedEdition ? "true" : "false")" aria-controls="edition-details" @onclick="() => _selectedEdition = editionIndex">
+                    <span class="license-top"><span class="gem-icon" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="@edition.Shape" fill="currentColor" fill-opacity=".09" stroke="currentColor" stroke-width="1.5"/><path d="M10 18H38M17 7L19 18L24 41L29 18L31 7M19 18L24 7L29 18" stroke="currentColor" stroke-width="1" opacity=".6"/></svg></span><span class="tier-number" dir="ltr">0@(index + 1)</span></span>
+                    <span class="license-name">@edition.Name<span dir="ltr">@edition.EnglishName</span></span>
+                    <span class="license-description">@edition.Description</span>
+                    <span class="license-bottom">@if (index == CurrentEdition) { <span class="current-badge"><span></span>لایسنس فعلی شما</span> } else { <span>مشاهده سطح</span> }<MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></span>
+                </button>
+            }
+        </div>
+        <div id="edition-details" class="edition-details" role="region" aria-label="جزئیات سطح انتخاب‌شده" aria-live="polite" aria-atomic="true">
+            <div class="detail-title"><MudIcon Icon="@Icons.Material.Outlined.Diamond" /><div><h3>تجربه @SelectedEdition.Name</h3><p>@SelectedEdition.Detail</p></div></div>
+            <div class="edition-highlights">@foreach (var highlight in SelectedEdition.Highlights) { <span><MudIcon Icon="@Icons.Material.Outlined.Check" Size="Size.Small" />@highlight</span> }</div>
+        </div>
+    </section>
+
+    <footer class="about-footer"><span class="footer-brand">@ProductName<span dir="ltr">MERDAS</span></span><p>ساخته‌شده با توجه به آنچه برای شما ارزشمند است.</p><span class="footer-note">طراحی دقیق · تجربه یکپارچه</span></footer>
+</section>
+
+@code {
+    // Product identity and edition descriptions are provisional until commercial licensing is connected.
+    private const string ProductName = "مرداس";
+    private const int CurrentEdition = 2;
+    private int _selectedEdition = CurrentEdition;
+    private static string ProductVersion => typeof(AboutPage).Assembly.GetName().Version is { } version
+        ? $"{version.Major}.{version.Minor}.{Math.Max(0, version.Build)}" : "—";
+    private Edition SelectedEdition => Editions[_selectedEdition];
+    private static readonly Edition[] Editions =
+    [
+        new("زمرد", "EMERALD", "شروعی ارزشمند", "سطح پایه؛ برای شروعی منظم و تجربه‌ای ساده.", ["سطح پایه", "تمرکز بر سادگی", "آغاز مسیر"], "M17 7H31L38 14V32L31 41H17L10 32V14Z"),
+        new("یاقوت", "RUBY", "همراه مسیر رشد", "سطح حرفه‌ای؛ برای کسب‌وکاری با نیازهای گسترده‌تر.", ["سطح حرفه‌ای", "همراه توسعه", "یک گام فراتر"], "M24 5L39 17L35 33L24 43L13 33L9 17Z"),
+        new("الماس", "DIAMOND", "اوج تجربه مرداس", "بالاترین سطح خانواده مرداس؛ انتخابی برای نگاه‌های بلندپرواز.", ["بالاترین سطح", "نسخه ممتاز", "انتخاب فعلی شما"], "M17 7H31L42 18L24 41L6 18Z")
+    ];
+    private sealed record Edition(string Name, string EnglishName, string Description, string Detail, string[] Highlights, string Shape);
+}

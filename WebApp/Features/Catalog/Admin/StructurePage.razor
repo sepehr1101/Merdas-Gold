@@ -1,0 +1,86 @@
+@page "/admin/catalog/structure"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>الگوها و ویژگی‌های محصول | مرداس گلد</PageTitle>
+
+<section class="manage-page structure-page">
+    <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به کالاها</a>
+    <header class="page-header">
+        <div><span class="eyebrow">ساختار کاتالوگ</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">الگوها و ویژگی‌ها</MudText></div>
+        <a class="primary-action" href="@(IsAttributes ? "/admin/catalog/structure?view=attributes&edit=0" : "/admin/catalog/structure?view=types&edit=0")"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> @(IsAttributes ? "ویژگی جدید" : "الگوی جدید")</a>
+    </header>
+
+    <nav class="view-tabs"><a class="@(!IsAttributes ? "active" : "")" href="/admin/catalog/structure?view=types"><MudIcon Icon="@Icons.Material.Outlined.ViewModule" Size="Size.Small" /> الگوهای محصول <b>@_types.Count</b></a><a class="@(IsAttributes ? "active" : "")" href="/admin/catalog/structure?view=attributes"><MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" /> ویژگی‌ها <b>@_attributes.Count</b></a></nav>
+    @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")">@Message</div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else
+    {
+        <div class="management-toolbar"><label><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" /><input placeholder="@(IsAttributes ? "جست‌وجوی نام، کد یا واحد" : "جست‌وجوی نام یا توضیح الگو")" @bind="_search" @bind:event="oninput" /></label><div class="segments"><button class="@(_stateFilter == "all" ? "active" : "")" @onclick="ShowAll">همه</button><button class="@(_stateFilter == "active" ? "active" : "")" @onclick="ShowActive">فعال</button><button class="@(_stateFilter == "inactive" ? "active" : "")" @onclick="ShowInactive">غیرفعال</button><button class="@(_stateFilter == "unused" ? "active" : "")" @onclick="ShowUnused">@(IsAttributes ? "بدون استفاده" : "سفارشی")</button></div><span>@(IsAttributes ? FilteredAttributes.Count : FilteredTypes.Count) مورد</span></div>
+
+        @if (IsAttributes)
+        {
+            @if (_attributeEditor is not null)
+            {
+                <article class="edit-card">
+                    <header><span><MudIcon Icon="@Icons.Material.Outlined.Tune" /></span><div><h2>@(_attributeEditor.Id == 0 ? "ویژگی تازه" : "ویرایش ویژگی")</h2></div></header>
+                    <form method="post" action="/account/catalog/attributes/save" data-enhance="false">
+                        <AntiforgeryToken /><input type="hidden" name="Id" value="@_attributeEditor.Id" /><input type="hidden" name="RowVersion" value="@_attributeEditor.RowVersion" />
+                        <div class="form-grid"><label class="field"><span>نام ویژگی *</span><input name="Name" value="@_attributeEditor.Name" maxlength="120" required /></label><label class="field"><span>کد سیستمی *</span><input name="Code" value="@_attributeEditor.Code" maxlength="100" dir="ltr" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="gold-color" required /></label><label class="field"><span>نوع ورودی</span><select name="DataType" @bind="_attributeDataType"><option value="text">متن</option><option value="number">عدد</option><option value="boolean">بله / خیر</option><option value="select">انتخاب از فهرست</option><option value="color">رنگ</option></select></label><label class="field"><span>واحد</span><input name="Unit" value="@_attributeEditor.Unit" maxlength="30" placeholder="مثلاً سانتی‌متر" /></label></div>
+
+                        @if (_attributeDataType is "select" or "color")
+                        {
+                            <section class="options-builder">
+                                <header><div><h3>گزینه‌های قابل انتخاب</h3></div><button type="button" @onclick="AddOption"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> افزودن گزینه</button></header>
+                                <div class="option-head"><span>عنوان نمایشی</span><span>مقدار سیستمی</span><span>@(_attributeDataType == "color" ? "رنگ" : "")</span><span></span></div>
+                                @foreach (var option in _optionRows)
+                                {
+                                    <div class="option-row"><input name="option-label-@option.Key" @bind="option.Label" placeholder="مثلاً رزگلد" required /><input name="option-value-@option.Key" @bind="option.Value" dir="ltr" placeholder="rose-gold" />@if (_attributeDataType == "color") { <label class="color-input"><input type="color" name="option-color-@option.Key" @bind="option.Color" /><span dir="ltr">@option.Color</span></label> } else { <span></span> }<button type="button" disabled="@(_optionRows.Count == 1)" @onclick="() => RemoveOption(option.Key)" aria-label="حذف گزینه"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" /></button></div>
+                                }
+                            </section>
+                        }
+
+                        <div class="form-actions"><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_attributeEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><i></i>فعال باشد</label><div><a href="/admin/catalog/structure?view=attributes">انصراف</a><button type="submit">ذخیره ویژگی</button></div></div>
+                    </form>
+                    @if (_attributeEditor.Id > 0) { <form class="delete-zone" method="post" action="/account/catalog/attributes/delete" data-enhance="false" onsubmit="return confirm('این ویژگی حذف شود؟');"><AntiforgeryToken /><input type="hidden" name="Id" value="@_attributeEditor.Id" /><input type="hidden" name="RowVersion" value="@_attributeEditor.RowVersion" /><span><MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" /> ویژگی استفاده‌شده حذف نمی‌شود؛ ابتدا اتصال آن به الگوها را بردارید.</span><button type="submit"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" /> حذف ویژگی</button></form> }
+                </article>
+            }
+
+            <div class="summary-strip"><span><MudIcon Icon="@Icons.Material.Outlined.Tune" /></span><div><strong>@_attributes.Count ویژگی</strong><small>@_attributes.Count(x => x.IsActive) فعال</small></div><div><strong>@_attributes.Sum(x => x.UsageCount) اتصال</strong><small>@_attributes.Count(x => x.UsageCount == 0) ویژگی بدون استفاده</small></div></div>
+            <div class="attribute-list">
+                @foreach (var item in FilteredAttributes) { <a class="attribute-row @(!item.IsActive ? "disabled" : "")" href="/admin/catalog/structure?view=attributes&edit=@item.Id"><span class="type-symbol">@DataTypeSymbol(item.DataType)</span><div><h2>@item.Name @if (!string.IsNullOrWhiteSpace(item.Unit)) { <small>@item.Unit</small> }</h2><p><b dir="ltr">@item.Code</b> · @DataTypeLabel(item.DataType) · استفاده در @item.UsageCount الگو</p></div><span class="option-count">@(item.Options.Count > 0 ? $"{item.Options.Count} گزینه" : "ورودی آزاد")</span><span class="state @(item.IsActive ? "on" : "off")">@(item.IsActive ? "فعال" : "غیرفعال")</span><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /></a> }
+                @if (FilteredAttributes.Count == 0) { <div class="compact-empty"><MudIcon Icon="@Icons.Material.Outlined.SearchOff" /><strong>ویژگی‌ای پیدا نشد</strong><span>عبارت جست‌وجو یا فیلتر را تغییر دهید.</span></div> }
+            </div>
+        }
+        else
+        {
+            @if (_typeEditor is not null)
+            {
+                <article class="edit-card type-editor">
+                    <header><span><MudIcon Icon="@Icons.Material.Outlined.ViewModule" /></span><div><h2>@(_typeEditor.Id == 0 ? "الگوی تازه" : "ویرایش الگو")</h2></div></header>
+                    <form method="post" action="/account/catalog/types/save" data-enhance="false">
+                        <AntiforgeryToken /><input type="hidden" name="Id" value="@_typeEditor.Id" /><input type="hidden" name="RowVersion" value="@_typeEditor.RowVersion" />
+                        <div class="form-grid"><label class="field"><span>نام الگو *</span><input name="Name" value="@_typeEditor.Name" maxlength="150" required /></label><label class="field full"><span>توضیح</span><textarea name="Description" rows="2" maxlength="600">@_typeEditor.Description</textarea></label></div>
+                        <section class="attribute-matrix">
+                            <header><div><h3>ویژگی‌های این الگو</h3></div><span>@_typeEditor.Attributes.Count انتخاب‌شده</span></header>
+                            <div class="matrix-head"><span>ویژگی</span><span>محل استفاده</span><span>ضروری</span><span>فیلتر</span><span>مقایسه</span><span>ترتیب</span></div>
+                            @foreach (var attr in AvailableTypeAttributes)
+                            {
+                                var selected = TypeAttribute(_typeEditor, attr.Id); var scope = selected?.Scope ?? "product";
+                                <div class="matrix-row @(!attr.IsActive ? "inactive" : "")"><label class="attribute-choice"><input type="checkbox" name="attr-@attr.Id" value="true" checked="@(selected is not null)" /><span><strong>@attr.Name</strong><small>@DataTypeLabel(attr.DataType)@if (!attr.IsActive) { <em>غیرفعال</em> }</small></span></label><select name="scope-@attr.Id" aria-label="محل استفاده @attr.Name"><option value="product" selected="@(scope == "product")">مشخصات محصول</option><option value="variant" selected="@(scope == "variant")">انتخاب تنوع</option></select><label class="matrix-check"><input type="checkbox" name="required-@attr.Id" value="true" checked="@(selected?.IsRequired ?? false)" /><span></span></label><label class="matrix-check"><input type="checkbox" name="filterable-@attr.Id" value="true" checked="@(selected?.IsFilterable ?? true)" /><span></span></label><label class="matrix-check"><input type="checkbox" name="comparable-@attr.Id" value="true" checked="@(selected?.IsComparable ?? true)" /><span></span></label><input class="order-input" type="number" name="order-@attr.Id" value="@(selected?.DisplayOrder ?? attr.Id)" min="0" aria-label="ترتیب @attr.Name" /></div>
+                            }
+                        </section>
+                        <div class="form-actions"><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_typeEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><i></i>فعال باشد</label><div><a href="/admin/catalog/structure?view=types">انصراف</a><button type="submit">ذخیره الگو</button></div></div>
+                    </form>
+                    @if (_typeEditor.Id > 0) { <form class="delete-zone" method="post" action="/account/catalog/types/delete" data-enhance="false" onsubmit="return confirm('این الگو حذف شود؟');"><AntiforgeryToken /><input type="hidden" name="Id" value="@_typeEditor.Id" /><input type="hidden" name="RowVersion" value="@_typeEditor.RowVersion" /><span><MudIcon Icon="@Icons.Material.Outlined.Info" Size="Size.Small" /> الگوهای پایه یا متصل به محصول حذف نمی‌شوند و فقط قابل غیرفعال‌سازی هستند.</span><button type="submit"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" /> حذف الگو</button></form> }
+                </article>
+            }
+
+            <div class="summary-strip"><span><MudIcon Icon="@Icons.Material.Outlined.ViewModule" /></span><div><strong>@_types.Count الگو</strong><small>@_types.Count(x => x.IsActive) فعال</small></div><div><strong>@_types.Sum(x => x.Attributes.Count) ویژگی متصل</strong><small>@_types.Count(x => !x.IsSystem) الگوی سفارشی</small></div></div>
+            <div class="type-grid">
+                @foreach (var item in FilteredTypes) { <a class="type-card @(!item.IsActive ? "disabled" : "")" href="/admin/catalog/structure?view=types&edit=@item.Id"><span class="type-icon"><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></span><div><small>@(item.IsSystem ? "الگوی پایه مرداس" : "الگوی سفارشی")</small><h2>@item.Name</h2><p>@(string.IsNullOrWhiteSpace(item.Description) ? "ساختار آماده برای ثبت سریع محصول" : item.Description)</p></div><footer><span>@item.Attributes.Count ویژگی</span><span>@item.Attributes.Count(x => x.Scope == "variant") انتخاب تنوع</span><span class="state @(item.IsActive ? "on" : "off")">@(item.IsActive ? "فعال" : "غیرفعال")</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer></a> }
+                @if (FilteredTypes.Count == 0) { <div class="compact-empty"><MudIcon Icon="@Icons.Material.Outlined.SearchOff" /><strong>الگویی پیدا نشد</strong><span>عبارت جست‌وجو یا فیلتر را تغییر دهید.</span></div> }
+            </div>
+        }
+    }
+</section>

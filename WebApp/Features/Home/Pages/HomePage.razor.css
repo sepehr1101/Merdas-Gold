@@ -1,0 +1,8 @@
+.welcome {
+    padding-block: 4rem;
+    text-align: center;
+}
+
+.welcome ::deep .mud-typography-overline {
+    letter-spacing: 0.15em;
+}

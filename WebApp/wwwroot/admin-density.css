@@ -1,0 +1,465 @@
+/*
+ * Admin density layer
+ * -------------------
+ * A single desktop-first scale for all authenticated management pages.
+ * Component styles keep each page's identity; this final layer normalizes
+ * hierarchy, spacing, controls, cards and data density.
+ */
+.admin-shell {
+    --admin-space-1: 4px;
+    --admin-space-2: 8px;
+    --admin-space-3: 12px;
+    --admin-space-4: 16px;
+    --admin-space-5: 20px;
+    --admin-space-6: 24px;
+    --admin-control-height: 38px;
+    --admin-card-padding: 18px;
+    --admin-card-radius: 12px;
+    --admin-control-radius: 8px;
+    --admin-shadow: 0 2px 10px color-mix(in srgb, var(--ink) 5%, transparent);
+    --admin-shadow-hover: 0 6px 18px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+/* Shell and navigation */
+.admin-shell .admin-container {
+    width: 100%;
+    padding: var(--admin-space-5) var(--admin-space-6) var(--admin-space-6) !important;
+}
+
+.admin-shell .nav-header {
+    min-height: 76px;
+    padding: 16px;
+    gap: 10px;
+}
+
+.admin-shell .nav-header::after { right: 16px; left: 16px; }
+.admin-shell .brand-mark { width: 40px; height: 40px; border-radius: 10px; box-shadow: none; }
+.admin-shell .brand-mark svg { width: 25px; height: 25px; }
+.admin-shell .nav-menu { padding: 10px 8px 12px; }
+.admin-shell .nav-section-title { margin: 16px 10px 6px; }
+.admin-shell .nav-link.mud-nav-link {
+    min-height: 40px;
+    margin: 2px 0;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+.admin-shell .nav-link .mud-nav-link-icon {
+    width: 28px;
+    height: 28px;
+    margin-inline-end: 8px;
+    border-radius: 7px;
+}
+.admin-shell .nav-link.mud-nav-link.active { box-shadow: none; }
+.admin-shell .nav-footer { margin: 0 10px 10px; padding: 9px; border-radius: 10px; box-shadow: none; }
+.admin-shell .footer-icon { width: 32px; height: 32px; border-radius: 8px; }
+
+/* Page hierarchy */
+.admin-shell .back-link { margin-bottom: 12px; font-size: 12px; }
+.admin-shell .page-header,
+.admin-shell .store-header,
+.admin-shell .logs-header,
+.admin-shell .users-header,
+.admin-shell .security-header,
+.admin-shell .profile-header { margin-bottom: var(--admin-space-5); gap: var(--admin-space-3); }
+.admin-shell .page-title,
+.admin-shell .mud-typography-h4 { font-size: 1.45rem; line-height: 1.45; letter-spacing: -.35px; }
+.admin-shell .page-header p,
+.admin-shell .store-header .mud-typography-body2,
+.admin-shell .logs-header .mud-typography-body2,
+.admin-shell .users-header p,
+.admin-shell .security-header p { font-size: 12px; }
+.admin-shell .eyebrow { margin-bottom: 6px; padding: 4px 8px; font-size: 10px; }
+.admin-shell .notice { margin-bottom: var(--admin-space-4); padding: 10px 12px; border-radius: 8px; font-size: 12px; }
+.admin-shell .header-mark,
+.admin-shell .store-mark,
+.admin-shell .logs-mark,
+.admin-shell .users-mark { width: 44px; height: 44px; border-radius: 10px; }
+
+/* Actions and controls */
+.admin-shell .primary-action,
+.admin-shell .secondary-action,
+.admin-shell .mini-action,
+.admin-shell .form-actions button,
+.admin-shell .editor-actions button,
+.admin-shell .save-row button,
+.admin-shell .piece-editor button,
+.admin-shell .inline-actions button {
+    min-height: var(--admin-control-height);
+    padding: 0 13px;
+    border-radius: var(--admin-control-radius);
+    box-shadow: none;
+    font-size: 11px;
+}
+.admin-shell .field { gap: 6px; }
+.admin-shell .field > span,
+.admin-shell .field > label,
+.admin-shell .attribute-field > span { font-size: 11px; }
+.admin-shell .field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-shell .field select,
+.admin-shell .attribute-field input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell .attribute-field select {
+    min-height: var(--admin-control-height);
+    height: var(--admin-control-height);
+    padding: 7px 10px;
+    border-radius: var(--admin-control-radius);
+    font-size: 12px;
+}
+.admin-shell .field textarea { padding: 9px 10px; border-radius: var(--admin-control-radius); font-size: 12px; line-height: 1.75; }
+.admin-shell .field small,
+.admin-shell .attribute-field small { font-size: 9px; }
+.admin-shell .form-grid,
+.admin-shell .attribute-grid { gap: var(--admin-space-3) var(--admin-space-4); }
+.admin-shell .form-actions,
+.admin-shell .editor-actions,
+.admin-shell .save-row,
+.admin-shell .publish-row { margin-top: var(--admin-space-4); padding-top: var(--admin-space-4); }
+
+/* Shared surface language */
+.admin-shell .editor-card,
+.admin-shell .edit-card,
+.admin-shell .store-card,
+.admin-shell .security-card,
+.admin-shell .profile-card,
+.admin-shell .product-card,
+.admin-shell .banner-card,
+.admin-shell .faq-item,
+.admin-shell .policy-nav,
+.admin-shell .policy-editor,
+.admin-shell .summary-card,
+.admin-shell .date-filter,
+.admin-shell .logs-grid,
+.admin-shell .users-grid {
+    border-radius: var(--admin-card-radius);
+    box-shadow: var(--admin-shadow);
+}
+.admin-shell .editor-card:hover,
+.admin-shell .product-card:hover,
+.admin-shell .banner-card:hover,
+.admin-shell .faq-item[open] { box-shadow: var(--admin-shadow-hover); }
+.admin-shell .store-cards { gap: var(--admin-space-5); }
+.admin-shell .store-card,
+.admin-shell .security-card,
+.admin-shell .profile-card,
+.admin-shell .date-filter { padding: var(--admin-card-padding); }
+.admin-shell .editor-card > header,
+.admin-shell .edit-card > header,
+.admin-shell .policy-editor > header { min-height: 64px; padding: 14px var(--admin-card-padding); }
+.admin-shell .editor-card > header > span:first-child,
+.admin-shell .edit-card > header > span:first-child,
+.admin-shell .editor-heading > span,
+.admin-shell .section-index { width: 36px; height: 36px; flex-basis: 36px; border-radius: 9px; }
+.admin-shell .editor-card header h2,
+.admin-shell .edit-card header h2,
+.admin-shell .editor-heading h2,
+.admin-shell .list-heading h2,
+.admin-shell .policy-editor h2 { font-size: 15px; }
+.admin-shell .card-body,
+.admin-shell .edit-card > form,
+.admin-shell .policy-editor form { padding: var(--admin-card-padding); }
+.admin-shell .empty,
+.admin-shell .empty-state { min-height: 210px; padding: var(--admin-space-6); border-radius: var(--admin-card-radius); }
+.admin-shell .empty > span,
+.admin-shell .empty-state > span { width: 48px; height: 48px; margin-bottom: 10px; border-radius: 12px; }
+.admin-shell .empty h2,
+.admin-shell .empty-state h2 { font-size: 15px; }
+
+/* Dashboard and placeholders */
+.admin-shell .dashboard-page .summary-card { min-height: 88px; padding: 14px 16px; gap: 12px; border-radius: var(--admin-card-radius); }
+.admin-shell .dashboard-page .summary-card .mud-icon-root { font-size: 25px; }
+.admin-shell .dashboard-page .summary-value { margin-top: 1px; font-size: 1.1rem; }
+.admin-shell .dashboard-page .content-card { padding: var(--admin-card-padding); border-radius: var(--admin-card-radius); }
+.admin-shell .dashboard-page .content-card-large { min-height: 240px; }
+.admin-shell .dashboard-page .empty-state { min-height: 175px; }
+.admin-shell .section-placeholder { min-height: 240px; }
+.admin-shell .section-icon { width: 48px; height: 48px; margin-bottom: 4px; border-radius: 12px; }
+
+/* Hub pages: retain identity without landing-page scale */
+.admin-shell .hub-hero,
+.admin-shell .settings-hero {
+    min-height: 164px;
+    margin-bottom: var(--admin-space-5);
+    padding: var(--admin-space-6);
+    border-radius: 14px;
+    box-shadow: 0 5px 18px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+.admin-shell .hub-hero .eyebrow,
+.admin-shell .settings-hero .eyebrow { margin-bottom: 10px; padding: 5px 8px; font-size: 10px; }
+.admin-shell .hero-copy .page-title { margin-bottom: 6px; font-size: 1.65rem; letter-spacing: -.6px; }
+.admin-shell .hero-copy p { font-size: 12px; line-height: 1.8; }
+.admin-shell .hero-orbit { width: 88px; height: 88px; }
+.admin-shell .hero-orbit::before { inset: 10px; }
+.admin-shell .hero-orbit::after { inset: 23px; }
+.admin-shell .hero-orbit span { width: 8px; height: 8px; top: 8px; right: 16px; box-shadow: 0 0 12px var(--metal); }
+.admin-shell .hero-orbit svg { font-size: 30px; }
+.admin-shell .stats { margin-bottom: var(--admin-space-4); gap: var(--admin-space-2); }
+.admin-shell .stats > div { padding: 10px 14px; border-radius: 9px; font-size: 11px; }
+.admin-shell .stats strong { font-size: 16px; }
+.admin-shell .content-grid,
+.admin-shell .settings-grid,
+.admin-shell .feature-grid { gap: var(--admin-space-3); }
+.admin-shell .catalog-hub .feature-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.admin-shell .feature-card,
+.admin-shell .settings-card {
+    min-height: 190px;
+    padding: var(--admin-card-padding);
+    border-radius: var(--admin-card-radius);
+    box-shadow: var(--admin-shadow);
+}
+.admin-shell .feature-card:hover,
+.admin-shell .settings-card:hover { transform: translateY(-2px); box-shadow: var(--admin-shadow-hover); }
+.admin-shell .feature-card::after,
+.admin-shell .settings-card::after { width: 90px; height: 90px; top: -50px; left: -35px; }
+.admin-shell .card-number { top: 16px; left: 16px; font-size: 10px; }
+.admin-shell .feature-icon,
+.admin-shell .settings-icon { width: 40px; height: 40px; margin-bottom: 20px; border-radius: 10px; }
+.admin-shell .feature-card h2,
+.admin-shell .settings-copy h2 { margin-bottom: 5px; font-size: 15px; }
+.admin-shell .feature-card p,
+.admin-shell .settings-copy p { font-size: 11px; line-height: 1.75; }
+.admin-shell .feature-card footer,
+.admin-shell .settings-card footer { padding-top: 12px; font-size: 10px; }
+.admin-shell .phase-note,
+.admin-shell .settings-note { margin-top: var(--admin-space-4); padding: 10px 12px; border-radius: 9px; font-size: 11px; }
+
+/* Catalog and content collections */
+.admin-shell .toolbar { margin-bottom: var(--admin-space-4); padding: 7px 9px; border-radius: 10px; }
+.admin-shell .product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--admin-space-3); }
+.admin-shell .product-card { border-radius: var(--admin-card-radius); }
+.admin-shell .product-card:hover { transform: translateY(-2px); }
+.admin-shell .product-card .image { aspect-ratio: 1.55 / 1; }
+.admin-shell .product-card .copy { padding: 12px; }
+.admin-shell .product-card .copy h2 { font-size: 14px; }
+.admin-shell .product-card .updated { margin-top: 8px; display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 9px; }
+.admin-shell .product-card .copy footer { margin-top: 10px; padding-top: 10px; }
+.admin-shell .banner-editor { margin-bottom: var(--admin-space-5); border-radius: var(--admin-card-radius); box-shadow: var(--admin-shadow); }
+.admin-shell .banner-editor form,
+.admin-shell .visual-side { padding: var(--admin-card-padding); }
+.admin-shell .editor-title { margin-bottom: var(--admin-space-4); }
+.admin-shell .banner-grid { gap: var(--admin-space-3); }
+.admin-shell .banner-card { border-radius: var(--admin-card-radius); }
+.admin-shell .banner-copy { padding: 12px; }
+.admin-shell .banner-copy p { min-height: 34px; font-size: 11px; }
+.admin-shell .faq-page .editor-card,
+.admin-shell .manage-page > .editor-card { margin-bottom: var(--admin-space-6); padding: var(--admin-card-padding); }
+.admin-shell .editor-heading { margin-bottom: var(--admin-space-4); }
+.admin-shell .faq-item summary { min-height: 52px; padding: 9px 12px; }
+.admin-shell .faq-answer { padding-bottom: 12px; }
+.admin-shell .faq-answer > p { padding: 10px 12px; font-size: 12px; line-height: 1.8; }
+.admin-shell .policy-layout { grid-template-columns: 250px minmax(0, 1fr); gap: var(--admin-space-4); }
+.admin-shell .policy-nav { padding: 8px; }
+.admin-shell .nav-intro { padding: 10px; border-radius: 9px; }
+.admin-shell .policy-link { min-height: 52px; padding: 8px; border-radius: 8px; }
+
+/* Product workflow */
+.admin-shell .stepper { margin-bottom: var(--admin-space-4); padding: 6px; border-radius: 12px; box-shadow: var(--admin-shadow); }
+.admin-shell .step { padding: 8px 10px; border-radius: 8px; }
+.admin-shell .step-number { width: 28px; height: 28px; flex-basis: 28px; border-radius: 7px; }
+.admin-shell .step-actions { min-height: 60px; padding: 10px var(--admin-card-padding); }
+.admin-shell .type-intro { padding: 12px var(--admin-card-padding); }
+.admin-shell .image-upload { min-height: 220px; }
+.admin-shell .inventory-guide { padding: 10px var(--admin-card-padding); }
+.admin-shell .variant-list { padding: var(--admin-card-padding); }
+.admin-shell .variant-head { padding: 10px 12px; }
+.admin-shell .piece-editor { padding: 12px; }
+
+/* Tables and data grids */
+.admin-shell .mud-table-container { border-radius: 0; }
+.admin-shell .mud-table-cell,
+.admin-shell .logs-grid .mud-table-cell,
+.admin-shell .users-grid .mud-table-cell,
+.admin-shell .bank-grid .mud-table-cell { height: 42px; padding: 7px 10px; font-size: 11px; }
+.admin-shell .mud-table-head .mud-table-cell,
+.admin-shell .logs-grid .mud-table-head .mud-table-cell,
+.admin-shell .users-grid .mud-table-head .mud-table-cell,
+.admin-shell .bank-grid .mud-table-head .mud-table-cell { height: 40px; padding: 7px 10px; font-size: 10px; }
+.admin-shell .mud-table-pagination { min-height: 44px; font-size: 10px; }
+.admin-shell .table-head,
+.admin-shell .piece-row { min-height: 38px; padding: 6px 10px; }
+.admin-shell .hours-row { min-height: 48px; padding: 7px 12px; }
+
+/* Store and settings details */
+.admin-shell .store-map { height: 300px; border-radius: 10px; }
+.admin-shell .asset-previews { margin-top: var(--admin-space-3); gap: var(--admin-space-3); }
+.admin-shell .security-grid { gap: var(--admin-space-4); }
+.admin-shell .license-card { min-height: 0; padding: var(--admin-space-4); border-radius: var(--admin-card-radius); }
+
+/* Account and security forms */
+.admin-shell .profile-grid { gap: var(--admin-space-4); }
+.admin-shell .profile-avatar,
+.admin-shell .security-mark { width: 44px; height: 44px; border-radius: 10px; }
+.admin-shell .profile-card { padding: var(--admin-card-padding); }
+.admin-shell .card-heading { margin-bottom: var(--admin-space-4); gap: 10px; }
+.admin-shell .card-icon { width: 36px; height: 36px; border-radius: 9px; }
+.admin-shell .card-heading h2 { font-size: 14px; }
+.admin-shell .fields { gap: var(--admin-space-3); }
+.admin-shell .profile-field > span { margin-bottom: 6px; font-size: 11px; }
+.admin-shell .profile-field input,
+.admin-shell .security-field > input,
+.admin-shell .input-with-unit { height: var(--admin-control-height); min-height: var(--admin-control-height); border-radius: var(--admin-control-radius); }
+.admin-shell .profile-field input { padding-inline: 10px; }
+.admin-shell .profile-card .primary-action { margin-top: var(--admin-space-4); }
+.admin-shell .device-list > div { min-height: 40px; padding-block: 8px; }
+.admin-shell .number-fields { gap: var(--admin-space-3) var(--admin-space-4); }
+.admin-shell .password-rules { margin-top: var(--admin-space-4); padding: 14px; gap: 10px 16px; border-radius: 10px; }
+
+/* Catalog structure lists */
+.admin-shell .management-toolbar { margin-bottom: var(--admin-space-4); padding: 7px 9px; display: flex; align-items: center; gap: var(--admin-space-3); border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.admin-shell .management-toolbar > label { min-width: 220px; display: flex; align-items: center; gap: 7px; flex: 1; color: var(--muted); }
+.admin-shell .management-toolbar input { width: 100%; min-height: 32px; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 12px; }
+.admin-shell .management-toolbar > span { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.admin-shell .segments { padding: 3px; display: flex; border-radius: 8px; background: var(--field); }
+.admin-shell .segments button { min-height: 29px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; }
+.admin-shell .segments button.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 5px #0000000c; }
+.admin-shell .summary-strip { margin-bottom: var(--admin-space-4); padding: 10px 12px; border-radius: 9px; }
+.admin-shell .item-list { gap: var(--admin-space-2); }
+.admin-shell .manage-row { min-height: 54px; padding: 9px 12px; padding-inline-start: calc(12px + var(--depth, 0) * 22px); border-radius: 10px; }
+.admin-shell .row-icon { width: 34px; height: 34px; border-radius: 8px; }
+.admin-shell .row-copy strong { font-size: 12px; }
+.admin-shell .view-tabs { margin-bottom: var(--admin-space-4); padding: 4px; border-radius: 9px; }
+.admin-shell .view-tabs a { min-height: 34px; padding: 0 12px; border-radius: 7px; }
+.admin-shell .type-grid { gap: var(--admin-space-3); }
+.admin-shell .type-card { min-height: 180px; padding: var(--admin-card-padding); border-radius: var(--admin-card-radius); box-shadow: var(--admin-shadow); }
+.admin-shell .type-card:hover { transform: translateY(-2px); box-shadow: var(--admin-shadow-hover); }
+.admin-shell .type-icon { width: 38px; height: 38px; margin-bottom: var(--admin-space-4); border-radius: 9px; }
+.admin-shell .type-card h2 { font-size: 15px; }
+.admin-shell .type-card p { font-size: 11px; line-height: 1.75; }
+.admin-shell .scope-grid { gap: var(--admin-space-3); }
+.admin-shell .scope-grid section { padding: 12px; border-radius: 9px; }
+.admin-shell .tag-cloud { gap: var(--admin-space-2); }
+.admin-shell .tag-tile { min-height: 42px; padding: 8px 10px; border-radius: 9px; }
+.admin-shell .tag-state { margin-inline-start: auto; color: var(--muted); font-size: 8px; font-style: normal; }
+.admin-shell .compact-empty { min-height: 150px; grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border: 1px dashed var(--border); border-radius: var(--admin-card-radius); color: var(--muted); text-align: center; }
+.admin-shell .compact-empty svg { margin-bottom: 4px; color: var(--primary); }
+.admin-shell .compact-empty strong { color: var(--ink); font-size: 12px; }
+.admin-shell .compact-empty span { font-size: 10px; }
+.admin-shell .delete-zone { padding: 10px var(--admin-card-padding); display: flex; align-items: center; justify-content: space-between; gap: var(--admin-space-3); border-top: 1px solid color-mix(in srgb, var(--error) 18%, var(--border)); background: color-mix(in srgb, var(--error) 2.5%, var(--surface)); }
+.admin-shell .delete-zone.standalone { margin: calc(-1 * var(--admin-space-3)) 0 var(--admin-space-4); border: 1px solid color-mix(in srgb, var(--error) 18%, var(--border)); border-radius: 0 0 var(--admin-card-radius) var(--admin-card-radius); }
+.admin-shell .delete-zone > span { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 9px; }
+.admin-shell .delete-zone button { min-height: 34px; padding: 0 10px; display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; border: 1px solid color-mix(in srgb, var(--error) 25%, var(--border)); border-radius: 7px; background: var(--surface); color: var(--error); font-size: 10px; cursor: pointer; }
+.admin-shell .options-builder,
+.admin-shell .attribute-matrix { margin-top: var(--admin-space-4); overflow: hidden; border: 1px solid var(--border); border-radius: 10px; }
+.admin-shell .options-builder > header,
+.admin-shell .attribute-matrix > header { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--border); background: var(--field); }
+.admin-shell .options-builder h3,
+.admin-shell .attribute-matrix h3 { margin: 0; font-size: 12px; }
+.admin-shell .options-builder header p,
+.admin-shell .attribute-matrix header p { margin: 2px 0 0; color: var(--muted); font-size: 9px; }
+.admin-shell .options-builder header button { min-height: 32px; padding: 0 9px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--primary-border); border-radius: 7px; background: var(--primary-soft); color: var(--primary); font-size: 9px; cursor: pointer; }
+.admin-shell .option-head,
+.admin-shell .option-row { min-height: 40px; padding: 5px 10px; display: grid; grid-template-columns: minmax(140px, 1fr) minmax(130px, 1fr) 130px 32px; align-items: center; gap: 8px; }
+.admin-shell .option-head { min-height: 32px; color: var(--muted); font-size: 8px; }
+.admin-shell .option-row { border-top: 1px solid var(--border); }
+.admin-shell .option-row > input:not([type="color"]),
+.admin-shell .attribute-matrix select,
+.admin-shell .order-input { width: 100%; min-height: 32px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; outline: 0; background: var(--surface); color: var(--ink); font-size: 10px; }
+.admin-shell .option-row > button { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; }
+.admin-shell .option-row > button:hover:not(:disabled) { background: var(--error-soft); color: var(--error); }
+.admin-shell .option-row > button:disabled { opacity: .35; cursor: default; }
+.admin-shell .color-input { min-height: 32px; padding: 3px 6px; display: flex; align-items: center; gap: 7px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); font-size: 9px; }
+.admin-shell .color-input input { width: 24px; height: 24px; padding: 0; border: 0; background: transparent; }
+.admin-shell .attribute-matrix > header > span { padding: 4px 7px; border-radius: 99px; background: var(--primary-soft); color: var(--primary); font-size: 8px; }
+.admin-shell .matrix-head,
+.admin-shell .matrix-row { min-height: 42px; padding: 5px 10px; display: grid; grid-template-columns: minmax(180px, 1fr) 140px 56px 56px 56px 62px; align-items: center; gap: 8px; }
+.admin-shell .matrix-head { min-height: 32px; color: var(--muted); font-size: 8px; }
+.admin-shell .matrix-row { border-top: 1px solid var(--border); }
+.admin-shell .matrix-row.inactive { opacity: .6; }
+.admin-shell .attribute-choice { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.admin-shell .attribute-choice > input { width: 15px; height: 15px; accent-color: var(--primary); }
+.admin-shell .attribute-choice > span { display: flex; flex-direction: column; }
+.admin-shell .attribute-choice strong { font-size: 10px; }
+.admin-shell .attribute-choice small { color: var(--muted); font-size: 8px; }
+.admin-shell .attribute-choice em { margin-right: 5px; color: var(--error); font-style: normal; }
+.admin-shell .matrix-check { display: grid; place-items: center; cursor: pointer; }
+.admin-shell .matrix-check input { width: 15px; height: 15px; accent-color: var(--primary); }
+.admin-shell .order-input { text-align: center; }
+
+/* About page: product identity retained at admin-panel scale */
+.admin-shell .about-page { max-width: 1080px; }
+.admin-shell .page-heading { margin-bottom: var(--admin-space-4); }
+.admin-shell .page-heading h1 { margin-top: 6px; font-size: 20px; }
+.admin-shell .brand-panel { border-radius: var(--admin-card-radius); box-shadow: var(--admin-shadow); }
+.admin-shell .brand-copy { padding: 28px 28px 24px 12px; }
+.admin-shell .brand-copy h2 { margin: 12px 0 10px; font-size: clamp(32px, 4vw, 44px); letter-spacing: -1px; }
+.admin-shell .brand-copy h2 > span { margin-top: 4px; font-size: 17px; }
+.admin-shell .brand-copy p { font-size: 11px; line-height: 1.9; }
+.admin-shell .brand-signature { margin-top: var(--admin-space-4); }
+.admin-shell .jewel-stage { min-height: 240px; }
+.admin-shell .jewel-float { width: min(62%, 210px); }
+.admin-shell .orbit { width: 190px; height: 190px; }
+.admin-shell .orbit-outer { width: 225px; height: 225px; }
+.admin-shell .product-meta { padding: 12px 20px; }
+.admin-shell .license-section { margin-top: var(--admin-space-6); }
+.admin-shell .section-heading { margin-bottom: var(--admin-space-3); }
+.admin-shell .section-heading h2 { font-size: 16px; }
+.admin-shell .license-grid { gap: var(--admin-space-3); }
+.admin-shell .license-card { padding: 14px 16px 0; }
+.admin-shell .license-card:hover { transform: translateY(-2px); box-shadow: var(--admin-shadow-hover); }
+.admin-shell .license-top { margin-bottom: 10px; }
+.admin-shell .gem-icon { width: 36px; height: 36px; border-radius: 9px; }
+.admin-shell .gem-icon svg { width: 24px; height: 24px; }
+.admin-shell .license-name { font-size: 16px; }
+.admin-shell .license-description { margin: 5px 0 14px; font-size: 10px; }
+.admin-shell .license-bottom { min-height: 40px; }
+.admin-shell .edition-details { margin-top: var(--admin-space-3); padding: 14px 16px; border-radius: 10px; }
+.admin-shell .about-footer { margin-top: var(--admin-space-5); padding-top: var(--admin-space-4); }
+
+/* MudBlazor control density */
+.admin-shell .mud-input-control { margin-top: 0; }
+.admin-shell .mud-input.mud-input-outlined { min-height: var(--admin-control-height); }
+.admin-shell .mud-input-slot { padding-block: 7px; font-size: 12px; }
+.admin-shell .persian-date-picker .mud-input,
+.admin-shell .persian-date-picker input.mud-input-root,
+.admin-shell .persian-date-picker .mud-input-adornment { height: var(--admin-control-height); min-height: var(--admin-control-height); line-height: var(--admin-control-height); }
+.admin-shell .mud-button-root { min-height: 36px; border-radius: var(--admin-control-radius); font-size: 11px; }
+.admin-shell .mud-icon-button { width: 36px; height: 36px; padding: 6px; }
+.admin-shell .mud-dialog { border-radius: var(--admin-card-radius); }
+.admin-shell .mud-dialog-title { padding: 16px 18px 10px; font-size: 16px; }
+.admin-shell .mud-dialog-content { padding: 12px 18px; }
+.admin-shell .mud-dialog-actions { padding: 10px 18px 16px; gap: 8px; }
+
+@media (max-width: 1180px) {
+    .admin-shell .catalog-hub .feature-grid,
+    .admin-shell .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+    .admin-shell .admin-container { padding: var(--admin-space-4) !important; }
+    .admin-shell .catalog-hub .feature-grid,
+    .admin-shell .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .admin-shell .attribute-matrix,
+    .admin-shell .options-builder { overflow-x: auto; }
+    .admin-shell .matrix-head,
+    .admin-shell .matrix-row { min-width: 720px; }
+    .admin-shell .option-head,
+    .admin-shell .option-row { min-width: 600px; }
+}
+
+@media (max-width: 650px) {
+    .admin-shell .page-title,
+    .admin-shell .mud-typography-h4 { font-size: 1.3rem; }
+    .admin-shell .hub-hero,
+    .admin-shell .settings-hero { min-height: 150px; padding: var(--admin-space-5); border-radius: 12px; }
+    .admin-shell .hero-copy .page-title { font-size: 1.45rem; }
+    .admin-shell .catalog-hub .feature-grid,
+    .admin-shell .product-grid { grid-template-columns: 1fr; }
+    .admin-shell .feature-card,
+    .admin-shell .settings-card { min-height: 170px; }
+    .admin-shell .store-card,
+    .admin-shell .security-card,
+    .admin-shell .profile-card,
+    .admin-shell .date-filter,
+    .admin-shell .card-body { padding: var(--admin-space-4); }
+    .admin-shell .management-toolbar { align-items: stretch; flex-direction: column; }
+    .admin-shell .management-toolbar > label { min-width: 0; }
+    .admin-shell .segments { width: 100%; }
+    .admin-shell .segments button { flex: 1; }
+    .admin-shell .delete-zone { align-items: stretch; flex-direction: column; }
+    .admin-shell .delete-zone button { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-shell *,
+    .admin-shell *::before,
+    .admin-shell *::after { scroll-behavior: auto !important; transition-duration: 0s !important; }
+}

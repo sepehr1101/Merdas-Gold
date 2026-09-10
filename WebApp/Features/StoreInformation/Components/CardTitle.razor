@@ -1,0 +1,2 @@
+<div class="card-title"><span><MudIcon Icon="@Icon" /></span><div><h2>@Title</h2>@if (!string.IsNullOrWhiteSpace(Description)) { <p>@Description</p> }</div></div>
+@code { [Parameter] public string Icon { get; set; } = string.Empty; [Parameter] public string Title { get; set; } = string.Empty; [Parameter] public string Description { get; set; } = string.Empty; }

@@ -1,0 +1,61 @@
+@page "/admin/settings"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>تنظیمات | مرداس گلد</PageTitle>
+
+<section class="settings-page">
+    <header class="settings-hero">
+        <div class="hero-copy">
+            <span class="eyebrow">
+                <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
+                مرکز کنترل مرداس
+            </span>
+            <MudText Typo="Typo.h3" HtmlTag="h1" Class="page-title">همه‌چیز، دقیق و تحت کنترل</MudText>
+            
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+            <span></span>
+            <MudIcon Icon="@Icons.Material.Outlined.SettingsSuggest" />
+        </div>
+    </header>
+
+    <div class="settings-grid">
+        @for (var index = 0; index < SettingsItems.Length; index++)
+        {
+            var item = SettingsItems[index];
+            <a class="settings-card @item.Accent" href="@item.Route">
+                <span class="card-number">@((index + 1).ToString("00"))</span>
+                <span class="settings-icon" aria-hidden="true">
+                    <MudIcon Icon="@item.Icon" Size="Size.Medium" />
+                </span>
+                <div class="settings-copy">
+                    <h2>@item.Title</h2>
+                    <p>@item.Description</p>
+                </div>
+                <footer>
+                    <span>@item.Footer</span>
+                    <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" />
+                </footer>
+            </a>
+        }
+    </div>
+
+    
+</section>
+
+@code {
+    private static readonly SettingsItem[] SettingsItems =
+    [
+        new("کاربران", "مدیریت حساب‌ها، نقش‌ها و سطح دسترسی کاربران", "مدیریت اعضای سامانه", Icons.Material.Outlined.PeopleAlt, "/admin/settings/users", "accent-primary"),
+        new("امنیت", "سیاست رمز عبور، نشست‌ها و تنظیمات ورود", "حفاظت از دسترسی‌ها", Icons.Material.Outlined.Security, "/admin/settings/security", "accent-gold"),
+        new("لاگ عملیات‌ها", "مشاهده ورودها و تغییرات مهم انجام‌شده در سامانه", "ردیابی رویدادها", Icons.Material.Outlined.ManageSearch, "/admin/settings/audit-logs", "accent-green"),
+        new("خطاهای سامانه", "پیام و جزئیات خطاهای ۵۰۰ و خطاهای تعاملی برنامه", "جستجو و پیگیری خطاها", Icons.Material.Outlined.Troubleshoot, "/admin/settings/errors", "accent-rose"),
+        new("اطلاعات فروشگاه", "نام، لوگو، اطلاعات تماس و مشخصات فروشگاه", "هویت و اطلاعات پایه", Icons.Material.Outlined.Storefront, "/admin/settings/store", "accent-blue"),
+        new("پشتیبان‌گیری", "ایجاد، بازیابی و مدیریت نسخه‌های پشتیبان", "حفاظت از داده‌ها", Icons.Material.Outlined.Backup, "/admin/settings/backups", "accent-rose"),
+        new("اعلان‌ها", "تنظیم پیامک، ایمیل و اعلان‌های مدیریتی", "مدیریت پیام‌رسانی", Icons.Material.Outlined.NotificationsActive, "/admin/settings/notifications", "accent-orange"),
+        new("درباره نرم‌افزار", "آشنایی با مرداس، نسخه برنامه و سطوح لایسنس", "مشخصات و لایسنس", Icons.Material.Outlined.Info, "/admin/settings/about", "accent-primary")
+    ];
+
+    private sealed record SettingsItem(string Title, string Description, string Footer, string Icon, string Route, string Accent);
+}

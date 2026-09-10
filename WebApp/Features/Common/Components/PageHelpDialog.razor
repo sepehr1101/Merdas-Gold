@@ -1,0 +1,19 @@
+<MudDialog>
+    <DialogContent>
+        <div class="page-help-content" dir="rtl">
+            @foreach (var paragraph in Content.Paragraphs)
+            {
+                <p>@paragraph</p>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close" Color="Color.Primary" Variant="Variant.Filled">متوجه شدم</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired] public PageHelpContent Content { get; set; } = default!;
+    [CascadingParameter] private IMudDialogInstance Dialog { get; set; } = default!;
+    private void Close() => Dialog.Close();
+}

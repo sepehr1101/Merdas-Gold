@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Local application data and secrets
+appsettings.Local.json
+App_Data/error-spool/

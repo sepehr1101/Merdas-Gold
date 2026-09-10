@@ -1,0 +1,48 @@
+@page "/admin/content/faqs"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>سؤالات پرتکرار | مرداس گلد</PageTitle>
+
+<section class="manage-page">
+    <a class="back-link" href="/admin/content"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به محتوا</a>
+    <header class="page-header">
+        <div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">سؤالات پرتکرار</MudText></div>
+        <a class="primary-action" href="/admin/content/faqs?edit=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> سؤال جدید</a>
+    </header>
+    @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")" role="status"><MudIcon Icon="@(Error is null ? Icons.Material.Outlined.CheckCircle : Icons.Material.Outlined.ErrorOutline)" />@Message</div> }
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
+    else
+    {
+        @if (_editor is not null)
+        {
+            <article class="editor-card">
+                <div class="editor-heading"><span><MudIcon Icon="@Icons.Material.Outlined.QuestionMark" /></span><div><h2>@(_editor.Id == 0 ? "افزودن پرسش تازه" : "ویرایش پرسش")</h2></div></div>
+                <form method="post" action="/account/content/faqs/save" data-enhance="false">
+                    <AntiforgeryToken /><input type="hidden" name="Id" value="@_editor.Id" /><input type="hidden" name="RowVersion" value="@_editor.RowVersion" />
+                    <label class="field full"><span>سؤال</span><input name="Question" value="@_editor.Question" maxlength="500" placeholder="مثلاً چطور می‌توانم سایز انگشتر را انتخاب کنم؟" required /></label>
+                    <label class="field full"><span>پاسخ</span><textarea name="Answer" rows="6" maxlength="4000" placeholder="پاسخ کامل و قابل فهم را بنویسید..." required>@_editor.Answer</textarea></label>
+                    <div class="form-row"><label class="field compact"><span>ترتیب نمایش</span><input name="DisplayOrder" type="number" min="0" max="9999" value="@_editor.DisplayOrder" /></label><label class="toggle"><input type="checkbox" name="IsActive" value="true" checked="@_editor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span class="toggle-ui"></span><span>نمایش در سایت</span></label></div>
+                    <div class="editor-actions"><a class="secondary-action" href="/admin/content/faqs">انصراف</a><button class="primary-action" type="submit"><MudIcon Icon="@Icons.Material.Outlined.Save" Size="Size.Small" /> ذخیره سؤال</button></div>
+                </form>
+            </article>
+        }
+        <div class="list-heading"><div><h2>فهرست پرسش‌ها</h2><p>@_items.Count پرسش ثبت شده است</p></div><span class="live-count">@_items.Count(x => x.IsActive) فعال</span></div>
+        @if (_items.Count == 0)
+        {
+            <div class="empty-state"><span><MudIcon Icon="@Icons.Material.Outlined.QuestionAnswer" /></span><h2>هنوز پرسشی ثبت نشده</h2><a class="primary-action" href="/admin/content/faqs?edit=0">افزودن اولین سؤال</a></div>
+        }
+        else
+        {
+            <div class="faq-list">
+            @foreach (var item in _items)
+            {
+                <details class="faq-item">
+                    <summary><span class="order">@item.DisplayOrder.ToString("00")</span><strong>@item.Question</strong><span class="status @(item.IsActive ? "active" : "")">@(item.IsActive ? "فعال" : "پنهان")</span><MudIcon Icon="@Icons.Material.Outlined.ExpandMore" /></summary>
+                    <div class="faq-answer"><p>@item.Answer</p><div class="item-actions"><a href="/admin/content/faqs?edit=@item.Id"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> ویرایش</a><form method="post" action="/account/content/faqs/delete" data-enhance="false" onsubmit="return confirm('این سؤال حذف شود؟')"><AntiforgeryToken /><input type="hidden" name="id" value="@item.Id" /><button type="submit"><MudIcon Icon="@Icons.Material.Outlined.DeleteOutline" Size="Size.Small" /> حذف</button></form></div></div>
+                </details>
+            }
+            </div>
+        }
+    }
+</section>

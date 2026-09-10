@@ -1,0 +1,88 @@
+<div class="grid-toolbar">
+    <div class="grid-toolbar__search">
+        <MudTextField T="string"
+                      Value="@SearchText"
+                      ValueChanged="@SearchTextChanged"
+                      Placeholder="جستجو در جدول..."
+                      aria-label="جستجو در جدول"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Outlined.Search"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Immediate="true"
+                      DebounceInterval="250"
+                      Clearable="true" />
+    </div>
+
+    <div class="grid-toolbar__actions">
+        @if (ShowAddButton)
+        {
+            <MudTooltip Text="افزودن رکورد جدید">
+                <MudIconButton Icon="@Icons.Material.Outlined.Add"
+                               Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               ButtonType="ButtonType.Button"
+                               OnClick="HandleAddRequestedAsync"
+                               aria-label="افزودن رکورد جدید" />
+            </MudTooltip>
+        }
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Outlined.FilterAlt"
+                   OnClick="@FilterRequested">
+            فیلتر
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Outlined.ViewColumn"
+                   OnClick="@ColumnsRequested">
+            ستون‌ها
+        </MudButton>
+        <MudTooltip Text="بارگذاری مجدد">
+            <MudIconButton Icon="@Icons.Material.Outlined.Refresh"
+                           Disabled="@Busy"
+                           OnClick="@RefreshRequested"
+                           aria-label="بارگذاری مجدد جدول" />
+        </MudTooltip>
+
+        <MudMenu Label="خروجی Excel"
+                 StartIcon="@Icons.Material.Outlined.TableView"
+                 Color="Color.Success"
+                 Variant="Variant.Filled"
+                 Disabled="@Busy">
+            <MudMenuItem Icon="@Icons.Material.Outlined.Description" OnClick="@ExportCurrentPageRequested">
+                صفحه فعلی
+            </MudMenuItem>
+            <MudMenuItem Icon="@Icons.Material.Outlined.FilterAlt" OnClick="@ExportFilteredRequested">
+                همه داده‌های فیلترشده
+            </MudMenuItem>
+        </MudMenu>
+    </div>
+
+    <div class="grid-toolbar__count" aria-live="polite">
+        <MudIcon Icon="@Icons.Material.Outlined.FormatListNumbered" Size="Size.Small" />
+        <span>تعداد کل: <strong>@TotalCount.ToString("N0")</strong></span>
+        @if (FilteredCount is not null && FilteredCount != TotalCount)
+        {
+            <span class="grid-toolbar__filtered">فیلترشده: <strong>@FilteredCount.Value.ToString("N0")</strong></span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? SearchText { get; set; }
+    [Parameter] public EventCallback<string?> SearchTextChanged { get; set; }
+    [Parameter] public int TotalCount { get; set; }
+    [Parameter] public int? FilteredCount { get; set; }
+    [Parameter] public bool ShowAddButton { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> AddRequested { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> FilterRequested { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> ColumnsRequested { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> RefreshRequested { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> ExportCurrentPageRequested { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> ExportFilteredRequested { get; set; }
+
+    private Task HandleAddRequestedAsync(MouseEventArgs args) => AddRequested.InvokeAsync(args);
+}

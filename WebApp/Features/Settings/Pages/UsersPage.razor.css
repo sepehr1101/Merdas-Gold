@@ -1,0 +1,83 @@
+.users-page {
+    color: var(--ink);
+}
+
+.back-link {
+    width: fit-content;
+    margin-bottom: 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--primary);
+}
+
+.users-header {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+::deep .page-title {
+    margin-bottom: 5px;
+    font-weight: 800;
+}
+
+.users-mark {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border: 1px solid var(--primary-border);
+    border-radius: 18px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+::deep .users-grid {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 0 0 16px 16px;
+    background: var(--surface);
+}
+
+::deep .users-grid .mud-table-head .mud-table-cell {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+::deep .users-grid .mud-table-cell {
+    border-color: var(--border);
+}
+
+.empty-state {
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--muted);
+}
+
+@media (max-width: 600px) {
+    .users-header {
+        align-items: flex-start;
+    }
+
+    .users-mark {
+        width: 48px;
+        height: 48px;
+        border-radius: 15px;
+    }
+}

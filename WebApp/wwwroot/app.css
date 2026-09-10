@@ -1,0 +1,30 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--canvas);
+}
+
+body {
+    margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+::selection {
+    color: var(--on-primary);
+    background: var(--primary);
+}
+.application-error{max-width:680px;margin:12vh auto;padding:48px 30px;text-align:center;background:var(--surface);border:1px solid var(--primary-border);border-radius:24px;color:var(--ink);box-shadow:var(--shadow)}
+.application-error>span{color:var(--primary);font-size:13px}.application-error h1{font-size:30px;font-weight:800;margin:20px 0}.application-error p{color:var(--muted);line-height:2;font-size:14px}.application-error code{display:block;background:var(--primary-soft);padding:12px;margin:20px 0;overflow-wrap:anywhere}.application-error a{display:inline-block;background:var(--primary);color:white;padding:12px 22px;border-radius:9px;margin-top:16px}
+@media print{body *{visibility:hidden!important}#invoice-preview,#invoice-preview *{visibility:visible!important}#invoice-preview{position:absolute!important;inset:0!important;width:100%!important;border:0!important;box-shadow:none!important;margin:0!important;padding:12mm!important}.no-print{display:none!important}@page{size:A4;margin:10mm}}

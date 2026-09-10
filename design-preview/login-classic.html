@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#594ae2">
+  <title>ورود به مدیریت | مرداس گلد</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap">
+  <style>
+    /* THEME: change only --primary to recolor the entire brand palette.
+       Semantic colors intentionally remain independent of the brand color. */
+    :root {
+      --primary: #594ae2;
+      --primary-hover: color-mix(in srgb, var(--primary), #000 14%);
+      --primary-soft: color-mix(in srgb, var(--primary) 7%, #fff);
+      --primary-line: color-mix(in srgb, var(--primary) 18%, #fff);
+      --canvas: color-mix(in srgb, var(--primary) 3%, #f8f8fa);
+      --surface: #fff;
+      --text: #242433;
+      --muted: #717181;
+      --border: #e5e5ed;
+      --error: #b42338;
+      --on-primary: #fff;
+      --radius: 12px;
+      --space: 8px;
+      --font: 'Vazirmatn', Tahoma, sans-serif;
+      --shadow: 0 24px 80px color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; min-height: 100svh; font-family: var(--font); color: var(--text); background: var(--canvas); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .page { min-height: 100svh; display: flex; flex-direction: column; padding: 32px 48px 22px; position: relative; isolation: isolate; overflow: hidden; }
+    .page::before { content: ''; position: absolute; width: 680px; height: 680px; border-radius: 50%; border: 1px solid var(--primary-line); inset: -460px auto auto -230px; z-index: -1; }
+    .page::after { content: ''; position: absolute; width: 520px; height: 520px; border-radius: 50%; border: 1px solid var(--primary-line); inset: auto -350px -280px auto; z-index: -1; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-symbol { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--primary-line); border-radius: var(--radius); background: var(--surface); color: var(--primary); }
+    svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .brand-name { font-size: 18px; font-weight: 800; }
+    .brand-en { display: block; color: var(--muted); font-size: 9px; letter-spacing: 2.8px; margin-top: 1px; }
+    .area-label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .area-label::before { content: ''; height: 5px; width: 5px; background: var(--primary); border-radius: 50%; }
+    main { flex: 1; display: grid; place-items: center; padding: 48px 0; }
+    .login-wrap { width: min(100%, 440px); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) * 2); padding: 38px; box-shadow: var(--shadow); position: relative; }
+    .card::before { content: ''; position: absolute; width: 48px; height: 3px; top: -1px; right: 38px; background: var(--primary); border-radius: 0 0 5px 5px; }
+    .welcome-icon { width: 48px; height: 48px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); border-radius: 15px; margin-bottom: 23px; }
+    .welcome-icon svg { width: 24px; height: 24px; }
+    .eyebrow { margin: 0 0 8px; color: var(--primary); font-size: 11px; font-weight: 600; }
+    h1 { margin: 0; font-size: 25px; font-weight: 800; letter-spacing: -.8px; }
+    .intro { color: var(--muted); margin: 10px 0 29px; font-size: 12px; line-height: 2; }
+    .field { margin-bottom: 20px; }
+    label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 9px; }
+    .input-wrap { display: flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius); min-height: 52px; padding: 0 14px; gap: 10px; transition: border-color .15s, box-shadow .15s; }
+    .input-wrap > svg { color: var(--muted); width: 18px; height: 18px; }
+    .input-wrap:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+    input { width: 100%; min-width: 0; border: 0; outline: 0; color: var(--text); background: transparent; height: 50px; font-size: 13px; }
+    input::placeholder { color: var(--muted); font-size: 11px; }
+    .visibility { padding: 8px; margin-left: -8px; display: grid; place-items: center; background: none; color: var(--muted); border: 0; border-radius: 8px; }
+    .visibility:hover { color: var(--primary); background: var(--primary-soft); }
+    button:focus-visible { outline: 3px solid var(--primary-line); outline-offset: 3px; }
+    .submit { width: 100%; height: 51px; border: 0; border-radius: var(--radius); color: var(--on-primary); background: var(--primary); display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 13px; font-weight: 600; margin-top: 27px; transition: background .15s, transform .15s; }
+    .submit:hover { background: var(--primary-hover); }
+    .submit:active { transform: translateY(1px); }
+    .submit svg { width: 18px; }
+    .restricted { border-top: 1px solid var(--border); margin: 26px 0 0; padding-top: 20px; display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--muted); font-size: 10px; }
+    .restricted svg { width: 14px; height: 14px; }
+    .below-card { text-align: center; font-size: 11px; color: var(--muted); margin: 22px 0 0; }
+    footer { display: flex; align-items: center; justify-content: space-between; color: var(--muted); gap: 16px; font-size: 10px; }
+    .footer-en { letter-spacing: 1.6px; font-size: 9px; }
+    .error { color: var(--error); margin: 6px 0 0; font-size: 11px; }
+    .input-wrap.invalid { border-color: var(--error); }
+    .notice { color: var(--primary); background: var(--primary-soft); font-size: 12px; line-height: 1.9; padding: 12px; border-radius: var(--radius); margin-top: 18px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 540px) {
+      .page { padding: 22px 20px; }
+      .area-label { font-size: 10px; }
+      .brand-name { font-size: 16px; }
+      main { padding: 38px 0; }
+      .card { padding: 30px 24px; border-radius: 20px; }
+      h1 { font-size: 23px; }
+      footer { justify-content: center; }
+      .footer-en { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 8 4-5h10l4 5-9 13L3 8Z M3 8h18 M7 3l5 18 5-18 M7 3l5 5 5-5"/></svg></span>
+        <div><span class="brand-name">مرداس گلد</span><span class="brand-en" lang="en" dir="ltr">MERDAS GOLD</span></div>
+      </div>
+      <span class="area-label">پنل مدیریت فروشگاه</span>
+    </header>
+    <main>
+      <div class="login-wrap">
+        <section class="card" aria-labelledby="login-title">
+          <div class="welcome-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3 M12 14v3"/></svg></div>
+          <p class="eyebrow">خوش آمدید</p>
+          <h1 id="login-title">ورود به پنل مدیریت</h1>
+          <p class="intro">برای مدیریت فروشگاه، وارد حساب کاربری خود شوید.</p>
+          <form id="login-form" novalidate>
+            <div class="field">
+              <label for="username">نام کاربری</label>
+              <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><input id="username" autocomplete="username" placeholder="نام کاربری خود را وارد کنید" required aria-describedby="username-error"></div>
+              <p class="error" id="username-error" hidden>نام کاربری را وارد کنید.</p>
+            </div>
+            <div class="field">
+              <label for="password">رمز عبور</label>
+              <div class="input-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><input type="password" id="password" autocomplete="current-password" placeholder="رمز عبور خود را وارد کنید" required aria-describedby="password-error"><button class="visibility" type="button" aria-label="نمایش رمز عبور" aria-pressed="false" aria-controls="password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path id="eye-slash" d="m3 3 18 18" hidden/></svg></button></div>
+              <p class="error" id="password-error" hidden>رمز عبور را وارد کنید.</p>
+            </div>
+            <button class="submit" type="submit">ورود به پنل<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></button>
+            <div class="notice" id="notice" role="status" hidden>این صفحه نمونه طراحی است؛ ورود به حساب در مرحله بعد فعال می‌شود.</div>
+          </form>
+          <p class="restricted"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>دسترسی ویژه کارکنان مجاز مرداس گلد</p>
+        </section>
+        <p class="below-card">برای دریافت دسترسی، با مدیر سیستم تماس بگیرید.</p>
+      </div>
+    </main>
+    <footer><span>© مرداس گلد · سامانه مدیریت فروشگاه</span><span class="footer-en" lang="en" dir="ltr">MERDAS GOLD / ADMINISTRATION</span></footer>
+  </div>
+  <script>
+    const form = document.querySelector('#login-form');
+    const password = document.querySelector('#password');
+    const visibility = document.querySelector('.visibility');
+    visibility.addEventListener('click', () => {
+      const showing = password.type === 'password';
+      password.type = showing ? 'text' : 'password';
+      visibility.setAttribute('aria-pressed', String(showing));
+      visibility.setAttribute('aria-label', showing ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور');
+      document.querySelector('#eye-slash').toggleAttribute('hidden', !showing);
+    });
+    const fields = [...form.querySelectorAll('input')];
+    function setInvalid(input, invalid) {
+      input.setAttribute('aria-invalid', String(invalid));
+      input.parentElement.classList.toggle('invalid', invalid);
+      document.querySelector('#' + input.id + '-error').hidden = !invalid;
+    }
+    fields.forEach(input => input.addEventListener('input', () => {
+      setInvalid(input, false);
+      document.querySelector('#notice').hidden = true;
+    }));
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      let firstInvalid;
+      fields.forEach(input => {
+        const invalid = input.id === 'username' ? !input.value.trim() : !input.value;
+        setInvalid(input, invalid);
+        if (invalid && !firstInvalid) firstInvalid = input;
+      });
+      document.querySelector('#notice').hidden = Boolean(firstInvalid);
+      if (firstInvalid) firstInvalid.focus();
+    });
+  </script>
+</body>
+</html>

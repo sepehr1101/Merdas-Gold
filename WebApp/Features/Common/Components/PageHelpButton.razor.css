@@ -1,0 +1,2 @@
+::deep .page-help-button { min-width: 36px; width: 36px; height: 36px; border-radius: 50%; font-size: 1.35rem; margin-inline: 8px; }
+@media print { .page-help-host { display: none; } }
