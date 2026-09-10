@@ -1,11 +1,11 @@
 .login-page {
-    height: 100svh;
-    min-height: 0;
+    min-height: 100svh;
     padding: 28px 32px 16px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     background: var(--canvas);
     color: var(--ink);
 }
@@ -34,9 +34,8 @@
 
 .portal {
     width: min(100%, 1392px);
-    height: min(810px, calc(100svh - 84px));
-    min-height: 0;
-    flex-shrink: 1;
+    min-height: min(810px, calc(100svh - 84px));
+    flex-shrink: 0;
     margin-inline: auto;
     padding: 12px;
     display: grid;
@@ -541,7 +540,7 @@
 
 @media (max-width: 760px) {
     .login-page { padding: 16px 16px 13px; }
-    .portal { width: min(100%, 500px); min-height: calc(100svh - 62px); padding: 7px; display: flex; flex-direction: column; border-radius: 24px; }
+    .portal { width: min(100%, 500px); min-height: calc(100svh - 62px); height: auto; padding: 7px; display: flex; flex-direction: column; border-radius: 24px; }
     .workspace { flex: 1; padding: 24px 23px 19px; }
     .workspace-label { display: block; }
     .form-area { padding-block: 43px 32px; }
@@ -583,3 +582,4 @@
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+

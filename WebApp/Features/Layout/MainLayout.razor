@@ -6,19 +6,23 @@
     <MudDialogProvider />
     <MudSnackbarProvider />
 
-    <MudLayout>
-        <MudAppBar Elevation="1">
-            <MudLink Href="/" Color="Color.Inherit" Underline="Underline.None">
-                <MudText Typo="Typo.h6">مرداس گلد</MudText>
-            </MudLink>
-        </MudAppBar>
-
-        <MudMainContent>
-            <MudContainer MaxWidth="MaxWidth.Large" Class="py-12">
-                @Body
-            </MudContainer>
-        </MudMainContent>
-    </MudLayout>
+    <div class="storefront-shell">
+        <a class="skip-link" href="#main-content">رفتن به محتوای اصلی</a>
+        <header class="storefront-header">
+            <a class="storefront-brand" href="/" aria-label="مرداس گلد، صفحه اصلی">
+                <span class="brand-gem" aria-hidden="true"><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></span>
+                <span><strong>مرداس گلد</strong><small lang="en" dir="ltr">MERDAS GOLD</small></span>
+            </a>
+            <nav class="storefront-nav" aria-label="ناوبری اصلی">
+                <a href="/#collection">محصولات</a>
+                <a href="/#services">خدمات</a>
+                <a href="/#about">درباره مرداس</a>
+            </nav>
+            <a class="storefront-account" href="/login"><MudIcon Icon="@Icons.Material.Outlined.Person" Size="Size.Small" /><span>ورود مدیر</span></a>
+        </header>
+        <main id="main-content" class="storefront-main">@Body</main>
+        <footer class="storefront-footer"><span>مرداس گلد؛ انتخابی مطمئن برای طلای ماندگار</span><span lang="en" dir="ltr">© @DateTime.Now.Year MERDAS GOLD</span></footer>
+    </div>
 </MudRTLProvider>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -26,3 +30,4 @@
     <a href="." class="reload">بارگذاری مجدد</a>
     <button type="button" class="dismiss" aria-label="بستن">×</button>
 </div>
+
