@@ -1,0 +1,26 @@
+<section class="best-section storefront-section">
+    <StorefrontSectionTitle Kicker="MERDAS" Title="پرفروش‌ترین محصولات" />
+    <div class="best-row storefront-container">
+        @foreach (var product in Products)
+        {
+            <article>
+                <img src="@product.ImageUrl" alt="@product.Title" width="300" height="300" loading="lazy" />
+                <h3>@product.Title</h3>
+                <p>@product.Price</p>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly ProductSummary[] Products =
+    [
+        new("دستبند e45", "۱۲۵,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-15-700x700-1-300x300.jpg"),
+        new("دستبند کد e67", "۱۲۰,۵۰۰ تومان", "/assets/storefront/images/product-jew-img-4-700x700-1-300x300.jpg"),
+        new("گوشواره کد c68", "۱,۲۳۶,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-7-700x700-1-300x300.jpg"),
+        new("گوشواره کد b62", "۱۲۶,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-1-700x700-1-300x300.jpg"),
+        new("گوشواره کد e91", "۱,۲۵۰,۰۰۰ تومان", "/assets/storefront/images/2-300x300.jpg")
+    ];
+
+    private sealed record ProductSummary(string Title, string Price, string ImageUrl);
+}

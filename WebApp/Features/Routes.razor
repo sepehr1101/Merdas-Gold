@@ -5,7 +5,7 @@
     <MerdasGold.Features.Diagnostics.Components.LoggedErrorBoundary>
     <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(NotFoundPage)">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(StorefrontLayout)">
                 <NotAuthorized>
                     <RedirectToLogin />
                 </NotAuthorized>

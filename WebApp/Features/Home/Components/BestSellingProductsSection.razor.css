@@ -1,0 +1,16 @@
+.best-section { background: var(--storefront-canvas); }
+.best-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.best-row article { padding: 10px; border-radius: 8px; background: var(--storefront-surface); text-align: center; }
+.best-row img { width: 100%; aspect-ratio: 1; background: #f8f8f8; object-fit: cover; }
+.best-row h3 { margin: 8px 0 0; font-size: 15px; font-weight: 300; }
+.best-row p { margin: 0; color: var(--storefront-primary); }
+
+@media (max-width: 820px) {
+    .best-row { grid-template-columns: repeat(3, 1fr); }
+    .best-row article:nth-child(n + 4) { display: none; }
+}
+
+@media (max-width: 520px) {
+    .best-row { grid-template-columns: repeat(2, 1fr); }
+    .best-row article:nth-child(3) { display: none; }
+}

@@ -331,6 +331,8 @@ IFileStorage
 
 ## منابع مرجع
 
+- [تصمیم‌های معماری و مسیر اجرای Storefront](STOREFRONT-ARCHITECTURE.md)
+
 - [DNTips source code](https://github.com/VahidN/DntSite)
 - [ASP.NET Core Blazor project structure](https://learn.microsoft.com/aspnet/core/blazor/project-structure)
 - [ASP.NET Core feature organization](https://learn.microsoft.com/dotnet/architecture/modern-web-apps-azure/develop-asp-net-core-mvc-apps)

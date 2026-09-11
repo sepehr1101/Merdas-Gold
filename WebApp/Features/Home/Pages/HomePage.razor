@@ -1,18 +1,19 @@
 @page "/"
+@layout StorefrontLayout
 
-<PageTitle>مرداس گلد</PageTitle>
+<PageTitle>مرداس گلد | زیبایی ماندگار</PageTitle>
+<HeadContent>
+    <meta name="theme-color" content="#2d203d" />
+    <meta name="description" content="مرداس گلد؛ مجموعه‌ای منتخب از طلا و جواهر برای انتخابی ماندگار." />
+</HeadContent>
 
-<section class="hero">
-    <div class="hero-copy">
-        <span class="eyebrow">زیبایی ماندگار، انتخاب مطمئن</span>
-        <h1>طلایی برای قصه‌ای که<br />فقط متعلق به شماست</h1>
-        <p>مجموعه‌ای منتخب از طلا و جواهر با طراحی اصیل، جزئیات دقیق و تجربه‌ای آرام برای یک انتخاب ارزشمند.</p>
-        <div class="hero-actions"><a class="primary" href="#collection">مشاهده مجموعه</a><a class="secondary" href="#about">آشنایی با مرداس</a></div>
-        <dl class="trust-row"><div><dt>اصالت</dt><dd>تضمین کیفیت و عیار</dd></div><div><dt>انتخاب</dt><dd>طراحی‌های ماندگار</dd></div><div><dt>همراهی</dt><dd>مشاوره تخصصی</dd></div></dl>
-    </div>
-    <div class="hero-visual"><img src="/assets/images/jewelry-editorial.png" alt="انگشتر طلایی ظریف با نگین درخشان" width="1024" height="1536" /><span class="image-note">جزئیات، امضای زیبایی‌اند</span></div>
-</section>
-<section id="collection" class="collection-intro"><span>مجموعه مرداس</span><h2>برای لحظه‌هایی که ماندگار می‌شوند</h2><p>ویترین آنلاین محصولات به‌زودی در همین بخش در دسترس خواهد بود.</p></section>
-<section id="services" class="service-strip"><article><MudIcon Icon="@Icons.Material.Outlined.Verified" /><div><h2>تضمین اصالت</h2><p>شفافیت در مشخصات و عیار هر قطعه</p></div></article><article><MudIcon Icon="@Icons.Material.Outlined.SupportAgent" /><div><h2>مشاوره انتخاب</h2><p>همراهی برای انتخاب متناسب با سلیقه شما</p></div></article><article><MudIcon Icon="@Icons.Material.Outlined.LocalShipping" /><div><h2>ارسال مطمئن</h2><p>بسته‌بندی امن و پیگیری سفارش</p></div></article></section>
-<section id="about" class="about-strip"><span lang="en" dir="ltr">MERDAS GOLD</span><p>ترکیبی از طراحی معاصر، اصالت و توجه به جزئیات؛ برای انتخابی که ارزش آن فراتر از زمان است.</p></section>
+<div class="home-page">
+    <HeroSlider />
+    <FeaturedCategoriesSection />
+    <StoreIntroductionSection />
+    <FeaturedProductsSection />
+    <BrandStorySection />
+    <BestSellingProductsSection />
+    <LatestArticlesSection />
+</div>
 

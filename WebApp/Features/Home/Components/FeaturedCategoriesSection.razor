@@ -1,0 +1,42 @@
+<section class="categories-section storefront-section" id="categories">
+    <StorefrontSectionTitle Kicker="categories" Title="دسته‌بندی محصولات" />
+
+    <div class="categories storefront-container">
+        @foreach (var category in Categories)
+        {
+            <CategoryCard Title="@category.Title" ImageUrl="@category.ImageUrl" />
+        }
+    </div>
+
+    <div class="features storefront-container" aria-label="مزایای خرید از مرداس">
+        @foreach (var benefit in Benefits)
+        {
+            <article>
+                <img src="@benefit.ImageUrl" alt="" width="400" height="400" loading="lazy" />
+                <div><h3>@benefit.Title</h3><p>@benefit.Description</p></div>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly CategoryItem[] Categories =
+    [
+        new("پابند", "/assets/storefront/images/Untitl555ed-4-min.png"),
+        new("دستبند", "/assets/storefront/images/Untitled72-4-min.png"),
+        new("گردنبند", "/assets/storefront/images/Untitled-44-min.png"),
+        new("آویز", "/assets/storefront/images/Untitled-q4-min.png"),
+        new("حلقه", "/assets/storefront/images/Untitled-4-min.png"),
+        new("گوشواره", "/assets/storefront/images/421-min.png")
+    ];
+
+    private static readonly BenefitItem[] Benefits =
+    [
+        new("قیمت مناسب", "حفظ کیفیت مناسب در کنار قیمت", "/assets/storefront/images/35.png"),
+        new("تضمین کیفیت کالا", "ساختار زیبا و منحصر به فرد محصولات", "/assets/storefront/images/1412.png"),
+        new("تنوع محصولات", "محصولاتی برای هر سلیقه‌ای", "/assets/storefront/images/ad-1.png")
+    ];
+
+    private sealed record CategoryItem(string Title, string ImageUrl);
+    private sealed record BenefitItem(string Title, string Description, string ImageUrl);
+}

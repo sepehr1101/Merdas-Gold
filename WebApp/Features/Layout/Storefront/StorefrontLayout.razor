@@ -1,0 +1,95 @@
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject StorefrontUiState UiState
+@inject IJSRuntime Js
+
+<MudRTLProvider RightToLeft="true">
+    <MudThemeProvider Theme="StorefrontTheme.Default" />
+    <MudPopoverProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+
+    <div class="storefront-shell">
+        <a class="skip-link" href="#storefront-content">رفتن به محتوای اصلی</a>
+        <StorefrontHeader />
+        <main id="storefront-content" class="storefront-main">@Body</main>
+        <StorefrontFooter />
+
+        <button id="storefront-back-top" class="back-top" type="button" aria-label="بازگشت به بالا" @onclick="ScrollToTop">⌃</button>
+
+        <div class="toast @(ToastVisible ? "toast--visible" : null)" role="status" aria-live="polite">
+            @ToastMessage
+        </div>
+    </div>
+</MudRTLProvider>
+
+<div id="blazor-error-ui" data-nosnippet>
+    خطایی رخ داده است.
+    <a href="." class="reload">بارگذاری مجدد</a>
+    <button type="button" class="dismiss" aria-label="بستن">×</button>
+</div>
+
+@code {
+    private CancellationTokenSource? _toastCancellation;
+    private bool _scrollInteropInitialized;
+    private string ToastMessage { get; set; } = string.Empty;
+    private bool ToastVisible { get; set; }
+
+    protected override void OnInitialized() => UiState.NotificationRequested += ShowToast;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Js.InvokeVoidAsync("storefrontScroll.initialize", "storefront-back-top");
+            _scrollInteropInitialized = true;
+        }
+    }
+
+    private async Task ScrollToTop() => await Js.InvokeVoidAsync("storefrontScroll.toTop");
+
+    private async void ShowToast(string message)
+    {
+        _toastCancellation?.Cancel();
+        _toastCancellation?.Dispose();
+        _toastCancellation = new CancellationTokenSource();
+        var cancellationToken = _toastCancellation.Token;
+
+        ToastMessage = message;
+        ToastVisible = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(2200), cancellationToken);
+            ToastVisible = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        UiState.NotificationRequested -= ShowToast;
+        _toastCancellation?.Cancel();
+        _toastCancellation?.Dispose();
+
+        if (!_scrollInteropInitialized)
+        {
+            return;
+        }
+
+        try
+        {
+            await Js.InvokeVoidAsync("storefrontScroll.dispose", "storefront-back-top");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+}

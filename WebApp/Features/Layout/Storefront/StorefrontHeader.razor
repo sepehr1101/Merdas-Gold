@@ -1,0 +1,86 @@
+@implements IDisposable
+@inject StorefrontUiState UiState
+
+<div class="announcement" role="note">
+    <p>ارسال امن و بیمه‌شده به سراسر ایران</p>
+    <span aria-hidden="true"></span>
+    <p>مشاوره تخصصی پیش از خرید</p>
+</div>
+
+<header class="site-header">
+    <div class="header-inner storefront-container">
+        <StorefrontBrand />
+
+        <button class="menu-toggle"
+                type="button"
+                aria-label="@(MenuOpen ? "بستن منو" : "باز کردن منو")"
+                aria-expanded="@MenuOpen.ToString().ToLowerInvariant()"
+                aria-controls="storefront-main-nav"
+                @onclick="ToggleMenu">
+            <span></span><span></span><span></span>
+        </button>
+
+        <nav class="main-nav @(MenuOpen ? "main-nav--open" : null)" id="storefront-main-nav" aria-label="منوی اصلی">
+            <a class="active" href="/" @onclick="CloseMenu">خانه</a>
+            <a href="#products" @onclick="CloseMenu">فروشگاه</a>
+            <a href="#categories" @onclick="CloseMenu">مجموعه‌ها</a>
+            <a href="#blog" @onclick="CloseMenu">مجله مرداس</a>
+            <a href="#about" @onclick="CloseMenu">درباره ما</a>
+            <a href="#contact" @onclick="CloseMenu">تماس</a>
+        </nav>
+
+        <div class="header-actions">
+            <button type="button" aria-label="جستجو" aria-expanded="@SearchOpen.ToString().ToLowerInvariant()" @onclick="ToggleSearch">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+            </button>
+            <a href="#products" aria-label="علاقه‌مندی‌ها">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l7.8-7.5a5.5 5.5 0 0 0-.2-7.8Z" /></svg>
+            </a>
+            <a class="bag" href="#products" aria-label="سبد خرید، @PersianCount محصول">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 13H6L5 8Z" /><path d="M9 9V6a3 3 0 0 1 6 0v3" /></svg>
+                <span>@PersianCount</span>
+            </a>
+        </div>
+    </div>
+
+    @if (SearchOpen)
+    {
+        <form class="search-panel storefront-container" role="search" @onsubmit="SubmitSearch" @onsubmit:preventDefault>
+            <label for="storefront-search">جستجو در محصولات</label>
+            <div>
+                <input id="storefront-search" name="q" type="search" placeholder="مثلاً انگشتر طلا" @bind="SearchTerm" />
+                <button type="submit">جستجو</button>
+            </div>
+        </form>
+    }
+</header>
+
+@code {
+    private bool MenuOpen { get; set; }
+    private bool SearchOpen { get; set; }
+    private string SearchTerm { get; set; } = string.Empty;
+
+    private string PersianCount => ToPersianDigits(UiState.CartCount.ToString());
+
+    protected override void OnInitialized() => UiState.Changed += HandleStateChanged;
+
+    private void ToggleMenu() => MenuOpen = !MenuOpen;
+    private void CloseMenu() => MenuOpen = false;
+    private void ToggleSearch() => SearchOpen = !SearchOpen;
+
+    private void SubmitSearch()
+    {
+        var message = string.IsNullOrWhiteSpace(SearchTerm)
+            ? "عبارت جستجو را وارد کنید"
+            : $"جستجوی «{SearchTerm.Trim()}» در فاز اتصال داده فعال می‌شود";
+        UiState.Notify(message);
+    }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
+
+    private static string ToPersianDigits(string value) => value
+        .Replace('0', '۰').Replace('1', '۱').Replace('2', '۲').Replace('3', '۳').Replace('4', '۴')
+        .Replace('5', '۵').Replace('6', '۶').Replace('7', '۷').Replace('8', '۸').Replace('9', '۹');
+
+    public void Dispose() => UiState.Changed -= HandleStateChanged;
+}

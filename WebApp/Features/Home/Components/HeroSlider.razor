@@ -1,0 +1,83 @@
+@implements IDisposable
+
+<section class="hero" aria-label="محصولات ویژه" aria-roledescription="اسلایدر">
+    <div class="hero-watermark" aria-hidden="true">MERDAS</div>
+    <button class="slider-arrow slider-arrow--previous" type="button" aria-label="اسلاید قبلی" @onclick="PreviousSlide">‹</button>
+
+    <div class="slides">
+        @for (var index = 0; index < Slides.Length; index++)
+        {
+            var slide = Slides[index];
+            var isActive = index == ActiveSlide;
+            <article class="slide @(isActive ? "slide--active" : null)" aria-hidden="@(!isActive).ToString().ToLowerInvariant()">
+                <div class="hero-copy">
+                    <span lang="en" dir="ltr">MERDAS</span>
+                    @if (index == 0)
+                    {
+                        <h1>@slide.Title</h1>
+                    }
+                    else
+                    {
+                        <h2>@slide.Title</h2>
+                    }
+                    <p>@slide.Description</p>
+                </div>
+                <img src="@slide.ImageUrl" alt="@slide.AlternativeText" width="600" height="606" />
+            </article>
+        }
+    </div>
+
+    <button class="slider-arrow slider-arrow--next" type="button" aria-label="اسلاید بعدی" @onclick="NextSlide">›</button>
+    <div class="slider-dots" aria-label="انتخاب اسلاید">
+        @for (var index = 0; index < Slides.Length; index++)
+        {
+            var targetIndex = index;
+            <button class="@(targetIndex == ActiveSlide ? "active" : null)"
+                    type="button"
+                    aria-label="اسلاید @(targetIndex + 1)"
+                    aria-current="@(targetIndex == ActiveSlide ? "true" : null)"
+                    @onclick="() => SelectSlide(targetIndex)"></button>
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly SlideItem[] Slides =
+    [
+        new("فـروشگاه مرداس گلد", "کالکشنی از بهترین جواهراتـــ", "/assets/storefront/images/6786867-min.png", "حلقه‌های نقره مرداس"),
+        new("درخشش یک انتخاب", "طراحی‌های چشم‌نواز برای لحظه‌های خاص", "/assets/storefront/images/image-56-min.png", "انگشتر نقره نگین‌دار"),
+        new("ظرافتی از جنس طلا", "جواهری هماهنگ با سبک منحصربه‌فرد شما", "/assets/storefront/images/ertertrei-min.png", "دستبند طلایی نگین‌دار")
+    ];
+
+    private System.Threading.Timer? _timer;
+    private int ActiveSlide { get; set; }
+
+    protected override void OnInitialized() => RestartTimer();
+
+    private void PreviousSlide() => SelectSlide(ActiveSlide - 1);
+    private void NextSlide() => SelectSlide(ActiveSlide + 1);
+
+    private void SelectSlide(int index)
+    {
+        ActiveSlide = (index + Slides.Length) % Slides.Length;
+        RestartTimer();
+    }
+
+    private void RestartTimer()
+    {
+        _timer?.Dispose();
+        _timer = new System.Threading.Timer(
+            _ => InvokeAsync(() =>
+            {
+                ActiveSlide = (ActiveSlide + 1) % Slides.Length;
+                StateHasChanged();
+            }),
+            null,
+            TimeSpan.FromMilliseconds(5200),
+            TimeSpan.FromMilliseconds(5200));
+    }
+
+    public void Dispose() => _timer?.Dispose();
+
+    private sealed record SlideItem(string Title, string Description, string ImageUrl, string AlternativeText);
+}

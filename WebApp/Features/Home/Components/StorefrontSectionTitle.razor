@@ -1,0 +1,13 @@
+<div class="section-title">
+    <small lang="en" dir="ltr">@Kicker</small>
+    <h2>@Title</h2>
+    <span aria-hidden="true"></span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Kicker { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+}

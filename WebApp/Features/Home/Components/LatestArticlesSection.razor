@@ -1,0 +1,31 @@
+@inject StorefrontUiState UiState
+
+<section class="blog-section storefront-section" id="blog">
+    <StorefrontSectionTitle Kicker="blog" Title="بلاگ مرداس" />
+    <div class="blog-grid storefront-container">
+        @foreach (var article in Articles)
+        {
+            <article class="blog-card">
+                <img src="@article.ImageUrl" alt="@article.AlternativeText" width="626" height="417" loading="lazy" />
+                <div>
+                    <h3>@article.Title</h3>
+                    <p>@article.Summary</p>
+                    <button class="read-more" type="button" @onclick="ShowArticleNotice">ادامه مطلب ←</button>
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly ArticleItem[] Articles =
+    [
+        new("نکاتی برای خرید گردنبند هدیه دادن به عزیزان", "گردنبندها اولین چیزی هستند که در میان جواهرات شما خودنمایی می‌کنند. شکل و جنس و تناسب آن‌ها با استایل...", "/assets/storefront/images/valentine-s-gift_53876-14595-1.jpg", "هدیه دادن گردنبند"),
+        new("نکات مهم در خرید و فروش جواهرات و طلا", "نکات مهم در خرید و فروش جواهرات و طلا و انتخاب آگاهانه هنگام خرید زیورآلات ارزشمند...", "/assets/storefront/images/gold-earrings-women-s-jewelry-vintage-decoration-background-beautiful-golden-tones-brooches-bracelets-necklaces-earrings-wooden-tray-flat-lay-top-view_96872-3129-1.jpg", "خرید و فروش جواهرات"),
+        new("همه چیز درباره حلقه ازدواج و حلقه نامزدی", "سنت گرفتن و دادن حلقه ازدواج به ۴۸۰۰ سال گذشته یعنی به دوران مصر باستان برمی‌گردد...", "/assets/storefront/images/groom-demonstrates-two-wedding-rings-without-face_8353-11020-1.jpg", "حلقه ازدواج")
+    ];
+
+    private void ShowArticleNotice() => UiState.Notify("صفحه مقاله در فاز Blog فعال می‌شود");
+
+    private sealed record ArticleItem(string Title, string Summary, string ImageUrl, string AlternativeText);
+}

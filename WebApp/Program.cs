@@ -19,6 +19,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using MerdasGold.Features.Pricing.Services;
 using MerdasGold.Features.Diagnostics.Services;
+using MerdasGold.Features.Layout.Storefront;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddMudServices();
 builder.Services.AddTransient<MudLocalizer, PersianMudLocalizer>();
+builder.Services.AddScoped<StorefrontUiState>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");

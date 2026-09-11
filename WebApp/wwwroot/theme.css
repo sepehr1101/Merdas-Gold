@@ -34,8 +34,10 @@
     --text-label: 13px;
     --text-body: 14px;
     --text-body-comfortable: 15px;
+}
+
+.admin-shell {
     --control-height-admin: 40px;
-    --control-height-storefront: 44px;
     --admin-space-1: 4px;
     --admin-space-2: 8px;
     --admin-space-3: 12px;

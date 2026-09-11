@@ -10,7 +10,7 @@
 .storefront-nav{margin-inline:auto;display:flex;align-items:center;gap:28px}
 .storefront-nav a{padding-block:10px;color:var(--muted);font-size:14px;text-decoration:none}
 .storefront-nav a:hover{color:var(--primary)}
-.storefront-account{min-height:var(--control-height-storefront);padding-inline:15px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:10px;color:var(--ink);font-size:13px;text-decoration:none}
+.storefront-account{min-height:var(--storefront-control-height);padding-inline:15px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);border-radius:10px;color:var(--ink);font-size:13px;text-decoration:none}
 .storefront-account:hover{border-color:var(--primary-border);background:var(--primary-subtle);color:var(--primary)}
 .storefront-main{flex:1}
 .storefront-footer{width:min(100% - 40px,1200px);margin-inline:auto;padding:24px 0;display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
