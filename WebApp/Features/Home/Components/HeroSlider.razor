@@ -1,11 +1,14 @@
 @implements IDisposable
+@inject MerdasGold.Features.Content.Services.ContentManagementService ContentService
 
+@if (Slides.Count > 0)
+{
 <section class="hero" aria-label="محصولات ویژه" aria-roledescription="اسلایدر">
     <div class="hero-watermark" aria-hidden="true">MERDAS</div>
     <button class="slider-arrow slider-arrow--previous" type="button" aria-label="اسلاید قبلی" @onclick="PreviousSlide">‹</button>
 
     <div class="slides">
-        @for (var index = 0; index < Slides.Length; index++)
+        @for (var index = 0; index < Slides.Count; index++)
         {
             var slide = Slides[index];
             var isActive = index == ActiveSlide;
@@ -20,16 +23,16 @@
                     {
                         <h2>@slide.Title</h2>
                     }
-                    <p>@slide.Description</p>
+                    <p>@slide.Subtitle</p>
                 </div>
-                <img src="@slide.ImageUrl" alt="@slide.AlternativeText" width="600" height="606" />
+                <img src="/content-assets/banners/@slide.Id" alt="@slide.Title" width="600" height="606" />
             </article>
         }
     </div>
 
     <button class="slider-arrow slider-arrow--next" type="button" aria-label="اسلاید بعدی" @onclick="NextSlide">›</button>
     <div class="slider-dots" aria-label="انتخاب اسلاید">
-        @for (var index = 0; index < Slides.Length; index++)
+        @for (var index = 0; index < Slides.Count; index++)
         {
             var targetIndex = index;
             <button class="@(targetIndex == ActiveSlide ? "active" : null)"
@@ -40,36 +43,38 @@
         }
     </div>
 </section>
+}
 
 @code {
-    private static readonly SlideItem[] Slides =
-    [
-        new("فـروشگاه مرداس گلد", "کالکشنی از بهترین جواهراتـــ", "/assets/storefront/images/6786867-min.png", "حلقه‌های نقره مرداس"),
-        new("درخشش یک انتخاب", "طراحی‌های چشم‌نواز برای لحظه‌های خاص", "/assets/storefront/images/image-56-min.png", "انگشتر نقره نگین‌دار"),
-        new("ظرافتی از جنس طلا", "جواهری هماهنگ با سبک منحصربه‌فرد شما", "/assets/storefront/images/ertertrei-min.png", "دستبند طلایی نگین‌دار")
-    ];
+    private IReadOnlyList<MerdasGold.Features.Content.Models.StorefrontSlideModel> Slides { get; set; } = [];
 
     private System.Threading.Timer? _timer;
     private int ActiveSlide { get; set; }
 
-    protected override void OnInitialized() => RestartTimer();
+    protected override async Task OnInitializedAsync()
+    {
+        Slides = await ContentService.GetActiveHomeSlidesAsync();
+        if (Slides.Count > 1) RestartTimer();
+    }
 
     private void PreviousSlide() => SelectSlide(ActiveSlide - 1);
     private void NextSlide() => SelectSlide(ActiveSlide + 1);
 
     private void SelectSlide(int index)
     {
-        ActiveSlide = (index + Slides.Length) % Slides.Length;
+        if (Slides.Count == 0) return;
+        ActiveSlide = (index + Slides.Count) % Slides.Count;
         RestartTimer();
     }
 
     private void RestartTimer()
     {
         _timer?.Dispose();
+        if (Slides.Count <= 1) return;
         _timer = new System.Threading.Timer(
             _ => InvokeAsync(() =>
             {
-                ActiveSlide = (ActiveSlide + 1) % Slides.Length;
+                ActiveSlide = (ActiveSlide + 1) % Slides.Count;
                 StateHasChanged();
             }),
             null,
@@ -78,6 +83,4 @@
     }
 
     public void Dispose() => _timer?.Dispose();
-
-    private sealed record SlideItem(string Title, string Description, string ImageUrl, string AlternativeText);
 }

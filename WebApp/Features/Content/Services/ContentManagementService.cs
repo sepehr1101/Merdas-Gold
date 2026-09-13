@@ -38,6 +38,21 @@ public sealed class ContentManagementService(IDbContextFactory<MerdasGoldDbConte
         return items.Select(x => new BannerEditModel { Id = x.Id, Title = x.Title, Subtitle = x.Subtitle, ButtonText = x.ButtonText, LinkUrl = x.LinkUrl, Placement = x.Placement, DisplayOrder = x.DisplayOrder, IsActive = x.IsActive, StartsAtUtc = x.StartsAtUtc, EndsAtUtc = x.EndsAtUtc, ImageFileName = x.ImageFileName, RowVersion = Convert.ToBase64String(x.RowVersion) }).ToList();
     }
 
+    public async Task<IReadOnlyList<StorefrontSlideModel>> GetActiveHomeSlidesAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var now = DateTime.UtcNow;
+        return await db.Set<PromotionBanner>()
+            .AsNoTracking()
+            .Where(x => x.Placement == "home-slider" && x.IsActive && x.ImageData != null
+                && (x.StartsAtUtc == null || x.StartsAtUtc <= now)
+                && (x.EndsAtUtc == null || x.EndsAtUtc >= now))
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Id)
+            .Select(x => new StorefrontSlideModel(x.Id, x.Title, x.Subtitle))
+            .ToListAsync(ct);
+    }
+
     public async Task<ContentSaveResult> SaveFaqAsync(FaqEditModel model, ContentActor actor, CancellationToken ct)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);

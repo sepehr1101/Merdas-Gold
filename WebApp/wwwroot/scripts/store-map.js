@@ -51,6 +51,30 @@ export async function initializeStoreMap(mapId, latitudeId, longitudeId, zoomId,
     requestAnimationFrame(() => storeMap?.invalidateSize());
 }
 
+export async function initializeDisplayMap(mapId, latitude, longitude, zoom, label) {
+    if (!window.L) {
+        throw new Error("Leaflet is not available.");
+    }
+
+    const mapElement = await waitForMapContainer(mapId);
+    if (storeMap) {
+        storeMap.remove();
+    }
+
+    storeMap = L.map(mapElement, { scrollWheelZoom: false }).setView([latitude, longitude], zoom);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(storeMap);
+
+    L.marker([latitude, longitude]).addTo(storeMap).bindTooltip(label, {
+        direction: "top",
+        offset: [0, -12]
+    });
+
+    requestAnimationFrame(() => storeMap?.invalidateSize());
+}
+
 export function disposeStoreMap() {
     if (storeMap) {
         storeMap.remove();

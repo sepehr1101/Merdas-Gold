@@ -1,0 +1,115 @@
+@page "/contact"
+@layout StorefrontLayout
+@implements IAsyncDisposable
+@inject StorefrontUiState UiState
+@inject IJSRuntime JsRuntime
+
+<PageTitle>ارتباط با ما | مرداس گلد</PageTitle>
+
+<section class="inner-content">
+    <div class="storefront-container">
+        <div class="offline-note" role="note">فرم این صفحه در این مرحله نمایشی است و اطلاعاتی ارسال نمی‌شود.</div>
+
+        <div class="contact-grid">
+            <div class="contact-aside">
+                <section class="contact-info">
+                    <h1>ارتباط با ما</h1>
+                    <p>برای دریافت راهنمایی درباره محصولات و خدمات مرداس با ما در تماس باشید.</p>
+                    <div class="contact-line">
+                        <b>آدرس:</b>
+                        <span>مشهد، بلوار کوثر، میدان پژوهش، کارخانه نوآوری</span>
+                    </div>
+                    <div class="contact-line">
+                        <b>شماره تماس:</b>
+                        <a href="tel:+985138554460" dir="ltr">۰۵۱۳۸۵۵۴۴۶۰</a>
+                    </div>
+                    <div class="contact-line">
+                        <b>ایمیل:</b>
+                        <a href="mailto:info@yourdomain.com" dir="ltr">info@yourdomain.com</a>
+                    </div>
+                </section>
+
+                <section class="location-card" aria-labelledby="location-title">
+                    <div class="location-heading">
+                        <div>
+                            <h2 id="location-title">مسیر فروشگاه</h2>
+                            <p>موقعیت فعلی نمایشی است.</p>
+                        </div>
+                        <span class="location-pin" aria-hidden="true">⌖</span>
+                    </div>
+                    <div id="contact-location-map" class="contact-map" aria-label="موقعیت فروشگاه روی نقشه">
+                        <span class="map-loading">در حال بارگذاری نقشه…</span>
+                    </div>
+                    <nav class="route-actions" aria-label="انتخاب مسیریاب">
+                        <a href="https://balad.ir/location?latitude=36.2995&amp;longitude=59.5274" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/balad.ico" alt="" aria-hidden="true" />بلد</a>
+                        <a href="https://neshan.org/maps/places/36.2995,59.5274" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/neshan.ico" alt="" aria-hidden="true" />نشان</a>
+                        <a href="https://www.google.com/maps/dir/?api=1&amp;destination=36.2995%2C59.5274" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/google-maps.png" alt="" aria-hidden="true" />گوگل مپ</a>
+                    </nav>
+                </section>
+            </div>
+
+            <form class="contact-form" @onsubmit="SubmitContactForm" @onsubmit:preventDefault>
+                <h2>فرم ارتباط با ما</h2>
+                <div class="form-grid">
+                    <label class="field">
+                        <span>نام</span>
+                        <input name="name" autocomplete="name" required />
+                    </label>
+                    <label class="field">
+                        <span>شماره تماس</span>
+                        <input name="phone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" required />
+                    </label>
+                    <label class="field full">
+                        <span>ایمیل</span>
+                        <input name="email" type="email" autocomplete="email" dir="ltr" />
+                    </label>
+                    <label class="field full">
+                        <span>پیام شما</span>
+                        <textarea name="message" rows="6" required></textarea>
+                    </label>
+                    <div class="field full">
+                        <button class="storefront-action" type="submit">ارسال پیام</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <section class="faq" id="faq">
+            <h2>سؤالات متداول</h2>
+            <details open>
+                <summary>پرسش شما در این قسمت قرار می‌گیرد؟</summary>
+                <p>متن پاسخ شما در این قسمت قرار می‌گیرد. برای راهنمایی بیشتر می‌توانید با فروشگاه تماس بگیرید.</p>
+            </details>
+            <details>
+                <summary>زمان ارسال محصولات چقدر است؟</summary>
+                <p>زمان ارسال برای تهران و شهرستان‌ها بین ۵ تا ۷ روز کاری است.</p>
+            </details>
+            <details>
+                <summary>آیا امکان بازگشت کالا وجود دارد؟</summary>
+                <p>شرایط بازگشت کالا در صفحه قوانین فروشگاه توضیح داده شده است.</p>
+            </details>
+        </section>
+    </div>
+</section>
+
+@code {
+    private IJSObjectReference? _mapModule;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./scripts/store-map.js");
+        await _mapModule.InvokeVoidAsync("initializeDisplayMap", "contact-location-map", 36.2995, 59.5274, 15, "فروشگاه مرداس گلد");
+    }
+
+    private void SubmitContactForm() =>
+        UiState.Notify("فرم تماس در این مرحله نمایشی است و اطلاعاتی ارسال نشد");
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_mapModule is null) return;
+        try { await _mapModule.InvokeVoidAsync("disposeStoreMap"); }
+        catch (JSDisconnectedException) { }
+        await _mapModule.DisposeAsync();
+    }
+}

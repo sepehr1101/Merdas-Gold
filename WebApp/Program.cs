@@ -3,6 +3,7 @@ using MerdasGold.Features.Authentication;
 using MerdasGold.Features.Authentication.Data;
 using MerdasGold.Features.Authentication.Entities;
 using MerdasGold.Features.Content;
+using MerdasGold.Features.Content.Data;
 using MerdasGold.Features.Content.Services;
 using MerdasGold.Features.Catalog;
 using MerdasGold.Features.Catalog.Services;
@@ -71,6 +72,7 @@ builder.Services.AddSingleton<SecuritySettingsRuntimeApplier>();
 builder.Services.AddScoped<SecuritySettingsService>();
 builder.Services.AddScoped<StoreInformationService>();
 builder.Services.AddScoped<ContentManagementService>();
+builder.Services.AddScoped<ContentSeeder>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
@@ -93,6 +95,7 @@ try
     await using var scope = app.Services.CreateAsyncScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<MerdasGoldDbContext>();
     await dbContext.Database.MigrateAsync();
+    await scope.ServiceProvider.GetRequiredService<ContentSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<SecuritySettingsService>().ApplyCurrentSettingsAsync();
     await scope.ServiceProvider.GetRequiredService<AdminAccountSeeder>().SeedAsync();
 }

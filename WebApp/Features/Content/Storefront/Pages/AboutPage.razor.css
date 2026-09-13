@@ -1,0 +1,130 @@
+.about-page {
+    display: grid;
+    grid-template-columns: .85fr 1.15fr;
+    gap: 65px;
+    align-items: center;
+}
+
+.about-photo {
+    position: relative;
+}
+
+.about-photo > img {
+    width: 100%;
+    height: 520px;
+    object-fit: cover;
+    border-radius: var(--storefront-radius-lg);
+    box-shadow: var(--storefront-shadow-md);
+}
+
+.about-badge {
+    position: absolute;
+    left: -28px;
+    bottom: 30px;
+    width: 155px;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 50%;
+    background: var(--storefront-aubergine);
+    color: var(--storefront-gold-soft);
+    box-shadow: var(--storefront-shadow-md);
+    font-family: Georgia, serif;
+    font-size: 18px;
+    letter-spacing: .14em;
+}
+
+.about-page-copy small {
+    display: block;
+    color: color-mix(in srgb, var(--storefront-aubergine) 9%, transparent);
+    font-family: Arial, sans-serif;
+    font-size: clamp(42px, 5vw, 58px);
+    font-weight: 900;
+    line-height: 1;
+}
+
+.about-page-copy h1 {
+    margin: -10px 0 10px;
+    color: var(--storefront-aubergine);
+    font-size: clamp(30px, 3.2vw, 38px);
+    line-height: 1.5;
+}
+
+.about-page-copy p {
+    margin: 0 0 12px;
+    color: var(--storefront-muted);
+    font-size: 16px;
+    line-height: 2.35;
+    text-align: justify;
+}
+
+.about-page-copy .storefront-action {
+    margin-top: 12px;
+}
+
+.about-values {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 45px;
+}
+
+.about-values article {
+    padding: 25px;
+    border: 1px solid var(--storefront-border);
+    border-radius: var(--storefront-radius-md);
+    background: var(--storefront-surface);
+    box-shadow: var(--storefront-shadow-sm);
+    text-align: center;
+}
+
+.about-values b {
+    display: block;
+    color: var(--storefront-primary);
+    font-size: 25px;
+}
+
+.about-values span {
+    color: var(--storefront-muted);
+}
+
+@media (max-width: 900px) {
+    .about-page {
+        grid-template-columns: 1fr;
+        gap: 38px;
+    }
+
+    .about-photo > img {
+        height: 410px;
+    }
+
+    .about-badge {
+        left: 24px;
+    }
+}
+
+@media (max-width: 620px) {
+    .about-page {
+        gap: 28px;
+    }
+
+    .about-photo > img {
+        height: 340px;
+    }
+
+    .about-badge {
+        width: 112px;
+        bottom: 18px;
+        font-size: 14px;
+    }
+
+    .about-page-copy small {
+        font-size: 38px;
+    }
+
+    .about-values {
+        grid-template-columns: 1fr;
+        margin-top: 32px;
+    }
+}

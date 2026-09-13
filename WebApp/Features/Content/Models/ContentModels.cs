@@ -43,5 +43,6 @@ public sealed class BannerEditModel
 
 public sealed record ContentActor(string UserId, string UserName, string IpAddress);
 public sealed record ContentOverviewModel(int FaqCount, int ActiveFaqCount, int PublishedPolicyCount, int BannerCount, int ActiveBannerCount);
+public sealed record StorefrontSlideModel(int Id, string Title, string Subtitle);
 
 public enum ContentSaveResult { Saved, Conflict, Invalid, NotFound }

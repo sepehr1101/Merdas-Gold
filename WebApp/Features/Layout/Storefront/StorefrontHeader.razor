@@ -21,22 +21,22 @@
         </button>
 
         <nav class="main-nav @(MenuOpen ? "main-nav--open" : null)" id="storefront-main-nav" aria-label="منوی اصلی">
-            <a class="active" href="/" @onclick="CloseMenu">خانه</a>
-            <a href="#products" @onclick="CloseMenu">فروشگاه</a>
-            <a href="#categories" @onclick="CloseMenu">مجموعه‌ها</a>
-            <a href="#blog" @onclick="CloseMenu">مجله مرداس</a>
-            <a href="#about" @onclick="CloseMenu">درباره ما</a>
-            <a href="#contact" @onclick="CloseMenu">تماس</a>
+            <NavLink href="/" Match="NavLinkMatch.All" @onclick="CloseMenu">خانه</NavLink>
+            <a href="/#products" @onclick="CloseMenu">فروشگاه</a>
+            <a href="/#categories" @onclick="CloseMenu">مجموعه‌ها</a>
+            <a href="/#blog" @onclick="CloseMenu">مجله مرداس</a>
+            <NavLink href="/about" @onclick="CloseMenu">درباره ما</NavLink>
+            <NavLink href="/contact" @onclick="CloseMenu">تماس</NavLink>
         </nav>
 
         <div class="header-actions">
             <button type="button" aria-label="جستجو" aria-expanded="@SearchOpen.ToString().ToLowerInvariant()" @onclick="ToggleSearch">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
             </button>
-            <a href="#products" aria-label="علاقه‌مندی‌ها">
+            <a href="/#products" aria-label="علاقه‌مندی‌ها">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l7.8-7.5a5.5 5.5 0 0 0-.2-7.8Z" /></svg>
             </a>
-            <a class="bag" href="#products" aria-label="سبد خرید، @PersianCount محصول">
+            <a class="bag" href="/#products" aria-label="سبد خرید، @PersianCount محصول">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 13H6L5 8Z" /><path d="M9 9V6a3 3 0 0 1 6 0v3" /></svg>
                 <span>@PersianCount</span>
             </a>
