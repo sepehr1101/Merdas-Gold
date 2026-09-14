@@ -15,6 +15,7 @@ public sealed class StoreInformationService(IDbContextFactory<MerdasGoldDbContex
         var accounts = await db.Set<StoreBankAccount>().AsNoTracking().OrderByDescending(x => x.IsDefault).ThenBy(x => x.Title).ToListAsync(cancellationToken);
         var hours = await db.Set<StoreWorkingHour>().AsNoTracking().OrderBy(x => x.DayOrder).ToListAsync(cancellationToken);
         var location = await db.Set<StoreLocation>().AsNoTracking().SingleAsync(x => x.Id == 1, cancellationToken);
+        var socialNetworks = await db.Set<StoreSocialNetwork>().AsNoTracking().OrderBy(x => x.DisplayOrder).ToListAsync(cancellationToken);
 
         return new StoreInformationPageModel
         {
@@ -22,6 +23,7 @@ public sealed class StoreInformationService(IDbContextFactory<MerdasGoldDbContex
             {
                 Name = profile.Name, EnglishName = profile.EnglishName, Tagline = profile.Tagline,
                 ShortDescription = profile.ShortDescription, BusinessCategory = profile.BusinessCategory,
+                PhoneNumber = profile.PhoneNumber, Email = profile.Email,
                 IsActive = profile.IsActive, ActivityStartDate = profile.ActivityStartDate,
                 LogoFileName = profile.LogoFileName, FaviconFileName = profile.FaviconFileName,
                 RowVersion = Convert.ToBase64String(profile.RowVersion)
@@ -41,8 +43,47 @@ public sealed class StoreInformationService(IDbContextFactory<MerdasGoldDbContex
             {
                 Address = location.Address, Latitude = location.Latitude, Longitude = location.Longitude,
                 ZoomLevel = location.ZoomLevel, RowVersion = Convert.ToBase64String(location.RowVersion)
-            }
+            },
+            SocialNetworks = socialNetworks.Select(x => new SocialNetworkEditModel
+            {
+                Id = x.Id, Key = x.Key, DisplayName = x.DisplayName, Username = x.Username,
+                IsActive = x.IsActive, RowVersion = Convert.ToBase64String(x.RowVersion)
+            }).ToList()
         };
+    }
+
+    public async Task<IReadOnlyList<StorefrontSocialLinkModel>> GetActiveSocialLinksAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.Set<StoreSocialNetwork>().AsNoTracking()
+            .Where(x => x.IsActive && x.Username != "")
+            .OrderBy(x => x.DisplayOrder)
+            .Select(x => new StorefrontSocialLinkModel(x.Key, x.DisplayName, x.Username, x.BaseUrl + x.Username))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<StorefrontAboutModel> GetStorefrontAboutAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await db.Set<StoreProfile>().AsNoTracking()
+            .Where(x => x.Id == StoreProfile.SingletonId)
+            .Select(x => new StorefrontAboutModel(x.Name, x.EnglishName, x.ShortDescription))
+            .SingleAsync(cancellationToken);
+    }
+
+    public async Task<StorefrontContactModel> GetStorefrontContactAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var profile = await db.Set<StoreProfile>().AsNoTracking()
+            .Where(x => x.Id == StoreProfile.SingletonId)
+            .Select(x => new { x.Name, x.PhoneNumber, x.Email })
+            .SingleAsync(cancellationToken);
+        var location = await db.Set<StoreLocation>().AsNoTracking()
+            .Where(x => x.Id == StoreLocation.SingletonId)
+            .Select(x => new { x.Address, x.Latitude, x.Longitude, x.ZoomLevel })
+            .SingleAsync(cancellationToken);
+        return new StorefrontContactModel(profile.Name, location.Address, profile.PhoneNumber, profile.Email,
+            location.Latitude, location.Longitude, location.ZoomLevel);
     }
 
     public async Task<byte[]?> GetAssetAsync(bool favicon, CancellationToken cancellationToken = default)
@@ -68,7 +109,8 @@ public sealed class StoreInformationService(IDbContextFactory<MerdasGoldDbContex
 
         entity.Name = model.Name.Trim(); entity.EnglishName = model.EnglishName.Trim();
         entity.Tagline = model.Tagline.Trim(); entity.ShortDescription = model.ShortDescription.Trim();
-        entity.BusinessCategory = model.BusinessCategory.Trim(); entity.IsActive = model.IsActive;
+        entity.BusinessCategory = model.BusinessCategory.Trim(); entity.PhoneNumber = model.PhoneNumber.Trim();
+        entity.Email = model.Email.Trim().ToLowerInvariant(); entity.IsActive = model.IsActive;
         entity.ActivityStartDate = model.ActivityStartDate;
         if (logo is not null) { entity.LogoData = logo; entity.LogoContentType = model.Logo!.ContentType; entity.LogoFileName = Path.GetFileName(model.Logo.FileName); }
         if (favicon is not null) { entity.FaviconData = favicon; entity.FaviconContentType = model.Favicon!.ContentType; entity.FaviconFileName = Path.GetFileName(model.Favicon.FileName); }
@@ -136,6 +178,26 @@ public sealed class StoreInformationService(IDbContextFactory<MerdasGoldDbContex
         entity.Address = model.Address.Trim(); entity.Latitude = model.Latitude; entity.Longitude = model.Longitude; entity.ZoomLevel = model.ZoomLevel;
         AddLog(db, actor, $"ویرایش موقعیت فروشگاه به مختصات {model.Latitude}, {model.Longitude}");
         return await SaveAsync(db, tx, entity, ct);
+    }
+
+    public async Task<StoreSaveResult> UpdateSocialNetworksAsync(SocialNetworksFormModel model, OperationActor actor, CancellationToken ct)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var entities = await db.Set<StoreSocialNetwork>().OrderBy(x => x.DisplayOrder).ToListAsync(ct);
+        if (model.Items.Count != entities.Count) return StoreSaveResult.Invalid;
+
+        foreach (var entity in entities)
+        {
+            var updated = model.Items.SingleOrDefault(x => x.Id == entity.Id);
+            if (updated is null || !SetVersion(db, entity, nameof(StoreSocialNetwork.RowVersion), updated.RowVersion))
+                return StoreSaveResult.Conflict;
+            entity.Username = updated.Username.Trim().TrimStart('@');
+            entity.IsActive = updated.IsActive;
+        }
+
+        AddLog(db, actor, "ویرایش شبکه‌های اجتماعی فروشگاه");
+        return await SaveAsync(db, tx, entities[0], ct);
     }
 
     private static bool SetVersion<TEntity>(DbContext db, TEntity entity, string property, string version) where TEntity : class

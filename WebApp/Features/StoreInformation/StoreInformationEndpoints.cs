@@ -19,13 +19,17 @@ public static class StoreInformationEndpoints
         admin.MapPost("/bank-account", SaveBankAccountAsync);
         admin.MapPost("/working-hours", UpdateWorkingHoursAsync);
         admin.MapPost("/location", UpdateLocationAsync);
+        admin.MapPost("/social-networks", UpdateSocialNetworksAsync);
         endpoints.MapGet("/store-assets/{asset}", GetAssetAsync);
         return endpoints;
     }
 
     private static async Task<IResult> UpdateProfileAsync([FromForm] StoreProfileFormModel model, HttpContext context, UserManager<ApplicationUser> users, StoreInformationService service)
     {
-        if (string.IsNullOrWhiteSpace(model.Name) || string.IsNullOrWhiteSpace(model.EnglishName) || string.IsNullOrWhiteSpace(model.BusinessCategory)) return RedirectError("profile-invalid");
+        if (string.IsNullOrWhiteSpace(model.Name) || string.IsNullOrWhiteSpace(model.EnglishName) || string.IsNullOrWhiteSpace(model.BusinessCategory) ||
+            string.IsNullOrWhiteSpace(model.PhoneNumber) || model.PhoneNumber.Length > 30 || string.IsNullOrWhiteSpace(model.Email) || model.Email.Length > 254 ||
+            model.ShortDescription.Length > 1000 || !model.Email.Contains('@'))
+            return RedirectError("profile-invalid");
         if (!ValidImage(model.Logo) || !ValidImage(model.Favicon)) return RedirectError("image-invalid");
         var actor = await GetActorAsync(context, users); if (actor is null) return Results.LocalRedirect("/login");
         var logo = await ReadAsync(model.Logo, context.RequestAborted);
@@ -53,6 +57,15 @@ public static class StoreInformationEndpoints
         if (model.Latitude is < -90 or > 90 || model.Longitude is < -180 or > 180 || model.ZoomLevel is < 1 or > 19) return RedirectError("location-invalid");
         var actor = await GetActorAsync(context, users); if (actor is null) return Results.LocalRedirect("/login");
         return Redirect(await service.UpdateLocationAsync(model, actor, context.RequestAborted), "location");
+    }
+
+    private static async Task<IResult> UpdateSocialNetworksAsync([FromForm] SocialNetworksFormModel model, HttpContext context, UserManager<ApplicationUser> users, StoreInformationService service)
+    {
+        if (model.Items.Count != 5 || model.Items.Select(x => x.Id).Distinct().Count() != 5 ||
+            model.Items.Any(x => x.Username.Length > 100 || x.Username.Any(ch => !(char.IsAsciiLetterOrDigit(ch) || ch is '_' or '.' or '-'))))
+            return RedirectError("social-invalid");
+        var actor = await GetActorAsync(context, users); if (actor is null) return Results.LocalRedirect("/login");
+        return Redirect(await service.UpdateSocialNetworksAsync(model, actor, context.RequestAborted), "social-networks");
     }
 
     private static async Task<IResult> GetAssetAsync(string asset, StoreInformationService service, CancellationToken ct)

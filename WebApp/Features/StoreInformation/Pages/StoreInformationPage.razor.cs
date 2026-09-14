@@ -40,11 +40,13 @@ public partial class StoreInformationPage
     {
         "profile-invalid" => "اطلاعات پایه فروشگاه کامل نیست.", "image-invalid" => "فرمت یا حجم تصویر معتبر نیست؛ فقط PNG، JPG، WebP یا ICO تا ۲ مگابایت مجاز است.",
         "bank-invalid" => "اطلاعات حساب بانکی را کامل وارد کنید.", "hours-invalid" => "ساعت شروع باید قبل از ساعت پایان باشد.",
-        "location-invalid" => "مختصات انتخاب‌شده معتبر نیست.", "conflict" => "اطلاعات هم‌زمان تغییر کرده‌اند؛ صفحه را دوباره بارگذاری کنید.", _ => "ذخیره اطلاعات انجام نشد."
+        "location-invalid" => "مختصات انتخاب‌شده معتبر نیست.", "social-invalid" => "نام کاربری شبکه‌های اجتماعی معتبر نیست.",
+        "conflict" => "اطلاعات هم‌زمان تغییر کرده‌اند؛ صفحه را دوباره بارگذاری کنید.", _ => "ذخیره اطلاعات انجام نشد."
     } : Status switch
     {
         "profile" => "اطلاعات پایه فروشگاه ذخیره شد.", "bank-added" => "حساب بانکی افزوده شد.", "bank-updated" => "حساب بانکی ویرایش شد.",
-        "hours" => "ساعت کاری ذخیره شد.", "location" => "موقعیت فروشگاه ذخیره شد.", "no-changes" => "تغییری برای ذخیره وجود نداشت.", _ => null
+        "hours" => "ساعت کاری ذخیره شد.", "location" => "موقعیت فروشگاه ذخیره شد.", "social-networks" => "شبکه‌های اجتماعی فروشگاه ذخیره شدند.",
+        "no-changes" => "تغییری برای ذخیره وجود نداشت.", _ => null
     });
     private string ActivityStartDateValue => _activityStartDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
     private int BankFilteredCount => _bankGrid?.FilteredItems.Count() ?? _data?.BankAccounts.Count ?? 0;
@@ -104,6 +106,7 @@ public partial class StoreInformationPage
     private void OpenBankColumns(MouseEventArgs args) => _bankGrid?.ShowColumnsPanel(args);
     private async Task RefreshAsync(MouseEventArgs _) { await LoadAsync(); if (_mapModule is not null) { _mapError = null; try { await InitializeMapAsync(); } catch (JSException) { _mapError = "بارگذاری نقشه انجام نشد."; } } Snackbar.Add("اطلاعات به‌روز شد.", Severity.Success); }
     private static string TimeValue(TimeOnly? time) => time?.ToString("HH:mm") ?? string.Empty;
+    private static string SocialIcon(string key) => $"/assets/storefront/icons/social/{key}.{(key is "instagram" or "telegram" ? "svg" : key == "rubika" ? "png" : "ico")}";
 
     private Task ExportBankPageAsync(MouseEventArgs _) => ExportBanksAsync(true);
     private Task ExportBanksAsync(MouseEventArgs _) => ExportBanksAsync(false);

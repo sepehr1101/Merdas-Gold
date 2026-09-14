@@ -28,6 +28,8 @@
                         <Field Label="نام انگلیسی فروشگاه"><input name="EnglishName" value="@_data.Profile.EnglishName" maxlength="200" dir="ltr" required data-validation-label="نام انگلیسی فروشگاه" /></Field>
                         <Field Label="عنوان کوتاه / شعار"><input name="Tagline" value="@_data.Profile.Tagline" maxlength="300" /></Field>
                         <Field Label="نوع فعالیت / دسته کسب‌وکار"><input name="BusinessCategory" value="@_data.Profile.BusinessCategory" maxlength="150" required data-validation-label="نوع فعالیت" /></Field>
+                        <Field Label="تلفن تماس"><input name="PhoneNumber" value="@_data.Profile.PhoneNumber" maxlength="30" inputmode="tel" dir="ltr" required data-validation-label="تلفن تماس" /></Field>
+                        <Field Label="ایمیل"><input name="Email" value="@_data.Profile.Email" maxlength="254" type="email" dir="ltr" required data-validation-label="ایمیل" /></Field>
                         <Field Label="تاریخ شروع فعالیت">
                             <MudDatePicker Date="@_activityStartDate"
                                            DateChanged="OnActivityStartDateChanged"
@@ -51,7 +53,7 @@
                         <Field Label="وضعیت فروشگاه"><select name="IsActive"><option value="true" selected="@_data.Profile.IsActive">فعال</option><option value="false" selected="@(!_data.Profile.IsActive)">موقتاً غیرفعال</option></select></Field>
                         <Field Label="لوگو"><input name="Logo" type="file" accept="image/png,image/jpeg,image/webp" /><small>@(_data.Profile.LogoFileName ?? "حداکثر ۲ مگابایت")</small></Field>
                         <Field Label="Favicon"><input name="Favicon" type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon" /><small>@(_data.Profile.FaviconFileName ?? "حداکثر ۲ مگابایت")</small></Field>
-                        <div class="field full"><label>توضیح کوتاه درباره فروشگاه</label><textarea name="ShortDescription" maxlength="1000" rows="4">@_data.Profile.ShortDescription</textarea></div>
+                        <div class="field full"><label>متن صفحه درباره ما</label><textarea name="ShortDescription" maxlength="1000" rows="8">@_data.Profile.ShortDescription</textarea><small>این متن در صفحه «درباره ما» فروشگاه نمایش داده می‌شود.</small></div>
                     </div>
                     @if (_data.Profile.LogoFileName is not null || _data.Profile.FaviconFileName is not null)
                     {
@@ -61,6 +63,40 @@
                         </div>
                     }
                     <SaveButton Text="ذخیره اطلاعات پایه" />
+                </form>
+            </article>
+
+            <article class="store-card">
+                <CardTitle Icon="@Icons.Material.Outlined.Share" Title="شبکه‌های اجتماعی فروشگاه" />
+                <form method="post" action="/account/store/social-networks" data-enhance="false">
+                    <AntiforgeryToken />
+                    <div class="social-admin-list">
+                        @for (var index = 0; index < _data.SocialNetworks.Count; index++)
+                        {
+                            var network = _data.SocialNetworks[index];
+                            <div class="social-admin-row">
+                                <input type="hidden" name="Items[@index].Id" value="@network.Id" />
+                                <input type="hidden" name="Items[@index].Key" value="@network.Key" />
+                                <input type="hidden" name="Items[@index].DisplayName" value="@network.DisplayName" />
+                                <input type="hidden" name="Items[@index].RowVersion" value="@network.RowVersion" />
+                                <div class="social-admin-name">
+                                    <span class="social-icon"><img class="social-@network.Key" src="@SocialIcon(network.Key)" alt="" aria-hidden="true" /></span>
+                                    <strong>@network.DisplayName</strong>
+                                </div>
+                                <label class="social-username">
+                                    <span class="visually-hidden">نام کاربری @network.DisplayName</span>
+                                    <span aria-hidden="true">@@</span>
+                                    <input name="Items[@index].Username" value="@network.Username" maxlength="100" dir="ltr" aria-label="نام کاربری @network.DisplayName" />
+                                </label>
+                                <label class="check social-status">
+                                    <input type="checkbox" name="Items[@index].IsActive" value="true" checked="@network.IsActive" />
+                                    <input type="hidden" name="Items[@index].IsActive" value="false" />
+                                    <span>نمایش در سایت</span>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                    <SaveButton Text="ذخیره شبکه‌های اجتماعی" />
                 </form>
             </article>
 

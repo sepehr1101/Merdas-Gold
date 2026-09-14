@@ -35,6 +35,19 @@
     font-weight: 700;
 }
 
+.rules-list h2 {
+    margin: 0 0 6px;
+    color: var(--storefront-aubergine);
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.rules-list p {
+    margin: 4px 0 0;
+    color: var(--storefront-muted);
+    line-height: 2;
+}
+
 .rules-list li:target {
     border-color: var(--storefront-primary);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--storefront-primary) 12%, transparent);
@@ -44,4 +57,21 @@
     .rules-list li {
         padding: 16px 50px 16px 14px;
     }
+}
+.rules-header {
+    max-width: 760px;
+    margin-bottom: 28px;
+}
+
+.rules-header h1 {
+    margin: 0;
+    color: var(--storefront-aubergine);
+    font-size: 30px;
+    line-height: 1.6;
+}
+
+.rules-header p {
+    margin: 6px 0 0;
+    color: var(--storefront-muted);
+    line-height: 2;
 }

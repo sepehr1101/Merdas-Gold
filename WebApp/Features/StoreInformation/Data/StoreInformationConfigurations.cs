@@ -16,13 +16,26 @@ public sealed class StoreProfileConfiguration : IEntityTypeConfiguration<StorePr
         builder.Property(item => item.Tagline).HasMaxLength(300);
         builder.Property(item => item.ShortDescription).HasMaxLength(1000);
         builder.Property(item => item.BusinessCategory).HasMaxLength(150).IsRequired();
+        builder.Property(item => item.PhoneNumber).HasMaxLength(30).IsRequired();
+        builder.Property(item => item.Email).HasMaxLength(254).IsRequired();
         builder.Property(item => item.ActivityStartDate).HasColumnType("date");
         builder.Property(item => item.LogoContentType).HasMaxLength(100);
         builder.Property(item => item.LogoFileName).HasMaxLength(260);
         builder.Property(item => item.FaviconContentType).HasMaxLength(100);
         builder.Property(item => item.FaviconFileName).HasMaxLength(260);
         builder.Property(item => item.RowVersion).IsRowVersion();
-        builder.HasData(new { Id = 1, Name = "مرداس گلد", EnglishName = "Merdas Gold", Tagline = "", ShortDescription = "", BusinessCategory = "طلا و جواهر", IsActive = true });
+        builder.HasData(new
+        {
+            Id = 1,
+            Name = "مرداس گلد",
+            EnglishName = "Merdas Gold",
+            Tagline = "",
+            ShortDescription = "طلای مرداس با هدف خلق تجربه‌ای متفاوت، مطمئن و شایسته در خرید طلای نو شکل گرفته است. تلاش ما بر این است که زیبایی، کیفیت و ارزش واقعی طلا را در کنار شفافیت در قیمت و اطلاعات محصول، به تجربه‌ای دلنشین و قابل اعتماد برای مشتریان تبدیل کنیم.\nمجموعه محصولات طلای مرداس با دقت انتخاب و عرضه می‌شوند تا پاسخگوی سلیقه‌های متفاوت باشند. شما می‌توانید محصولات را به‌صورت آنلاین از طریق وب‌سایت merdasgold.ir مشاهده و سفارش دهید یا برای خرید حضوری به فروشگاه طلای مرداس در بازار طلا و جواهر خورشید اصفهان مراجعه کنید.\nدر طلای مرداس، اعتماد شما ارزشمندترین سرمایه ماست. از انتخاب محصول تا خرید، پرداخت و دریافت سفارش، تلاش می‌کنیم تجربه‌ای شفاف، مطمئن و درخور یک انتخاب ماندگار برای شما فراهم کنیم.",
+            BusinessCategory = "طلا و جواهر",
+            PhoneNumber = "۰۹۱۳۳۳۸۸۸۱۹",
+            Email = "info@merdasgold.ir",
+            IsActive = true
+        });
     }
 }
 
@@ -85,6 +98,35 @@ public sealed class StoreLocationConfiguration : IEntityTypeConfiguration<StoreL
         builder.Property(item => item.Latitude).HasPrecision(9, 6);
         builder.Property(item => item.Longitude).HasPrecision(9, 6);
         builder.Property(item => item.RowVersion).IsRowVersion();
-        builder.HasData(new { Id = 1, Address = "", Latitude = 35.689200m, Longitude = 51.389000m, ZoomLevel = 13 });
+        builder.HasData(new { Id = 1, Address = "اصفهان، میدان امام علی، بازار طلا و جواهر خورشید، طبقه همکف، واحد ۱۲۰", Latitude = 32.667300m, Longitude = 51.688100m, ZoomLevel = 17 });
     }
+}
+
+public sealed class StoreSocialNetworkConfiguration : IEntityTypeConfiguration<StoreSocialNetwork>
+{
+    public void Configure(EntityTypeBuilder<StoreSocialNetwork> builder)
+    {
+        builder.ToTable("StoreSocialNetwork");
+        builder.HasKey(item => item.Id);
+        builder.Property(item => item.Id).ValueGeneratedNever();
+        builder.Property(item => item.Key).HasMaxLength(30).IsRequired();
+        builder.Property(item => item.DisplayName).HasMaxLength(50).IsRequired();
+        builder.Property(item => item.Username).HasMaxLength(100).IsRequired();
+        builder.Property(item => item.BaseUrl).HasMaxLength(300).IsRequired();
+        builder.Property(item => item.RowVersion).IsRowVersion();
+        builder.HasIndex(item => item.Key).IsUnique();
+        builder.HasIndex(item => item.DisplayOrder).IsUnique();
+        builder.HasData(
+            Social(1, "instagram", "اینستاگرام", "merdasgold", "https://www.instagram.com/", 1),
+            Social(2, "telegram", "تلگرام", "merdasgold2", "https://t.me/", 2),
+            Social(3, "bale", "بله", "merdasgold", "https://ble.ir/", 3),
+            Social(4, "eitaa", "ایتا", "merdasgoldd", "https://eitaa.com/", 4),
+            Social(5, "rubika", "روبیکا", "merdasgold", "https://rubika.ir/", 5));
+    }
+
+    private static object Social(int id, string key, string name, string username, string baseUrl, int order) => new
+    {
+        Id = id, Key = key, DisplayName = name, Username = username, BaseUrl = baseUrl,
+        DisplayOrder = order, IsActive = true
+    };
 }

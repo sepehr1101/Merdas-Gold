@@ -3,6 +3,8 @@
 @implements IAsyncDisposable
 @inject StorefrontUiState UiState
 @inject IJSRuntime JsRuntime
+@inject MerdasGold.Features.StoreInformation.Services.StoreInformationService StoreInformationService
+@inject MerdasGold.Features.Content.Services.ContentManagementService ContentService
 
 <PageTitle>ارتباط با ما | مرداس گلد</PageTitle>
 
@@ -15,42 +17,46 @@
                 <section class="contact-info">
                     <h1>ارتباط با ما</h1>
                     <p>برای دریافت راهنمایی درباره محصولات و خدمات مرداس با ما در تماس باشید.</p>
+                    @if (_contact is not null)
+                    {
                     <div class="contact-line">
                         <b>آدرس:</b>
-                        <span>مشهد، بلوار کوثر، میدان پژوهش، کارخانه نوآوری</span>
+                        <span>@_contact.Address</span>
                     </div>
                     <div class="contact-line">
                         <b>شماره تماس:</b>
-                        <a href="tel:+985138554460" dir="ltr">۰۵۱۳۸۵۵۴۴۶۰</a>
+                        <a href="tel:@_contact.PhoneHref" dir="ltr">@_contact.PhoneNumber</a>
                     </div>
                     <div class="contact-line">
                         <b>ایمیل:</b>
-                        <a href="mailto:info@yourdomain.com" dir="ltr">info@yourdomain.com</a>
+                        <a href="mailto:@_contact.Email" dir="ltr">@_contact.Email</a>
                     </div>
+                    }
                 </section>
 
                 <section class="location-card" aria-labelledby="location-title">
                     <div class="location-heading">
                         <div>
                             <h2 id="location-title">مسیر فروشگاه</h2>
-                            <p>موقعیت فعلی نمایشی است.</p>
+                            <p>برای مشاهده جزئیات، نقشه را جابه‌جا یا بزرگ‌نمایی کنید.</p>
                         </div>
                         <span class="location-pin" aria-hidden="true">⌖</span>
                     </div>
                     <div id="contact-location-map" class="contact-map" aria-label="موقعیت فروشگاه روی نقشه">
-                        <span class="map-loading">در حال بارگذاری نقشه…</span>
+                        <span class="map-loading">@(_mapError ?? "در حال بارگذاری نقشه…")</span>
                     </div>
                     <nav class="route-actions" aria-label="انتخاب مسیریاب">
-                        <a href="https://balad.ir/location?latitude=36.2995&amp;longitude=59.5274" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/balad.ico" alt="" aria-hidden="true" />بلد</a>
-                        <a href="https://neshan.org/maps/places/36.2995,59.5274" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/neshan.ico" alt="" aria-hidden="true" />نشان</a>
-                        <a href="https://www.google.com/maps/dir/?api=1&amp;destination=36.2995%2C59.5274" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/google-maps.png" alt="" aria-hidden="true" />گوگل مپ</a>
+                        <a href="@BaladUrl" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/balad.ico" alt="" aria-hidden="true" />بلد</a>
+                        <a href="@NeshanUrl" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/neshan.ico" alt="" aria-hidden="true" />نشان</a>
+                        <a href="@GoogleMapsUrl" target="_blank" rel="noopener noreferrer"><img src="/assets/storefront/icons/google-maps.png" alt="" aria-hidden="true" />گوگل مپ</a>
                     </nav>
                 </section>
             </div>
 
-            <form class="contact-form" @onsubmit="SubmitContactForm" @onsubmit:preventDefault>
-                <h2>فرم ارتباط با ما</h2>
-                <div class="form-grid">
+            <div class="contact-main">
+                <form class="contact-form" @onsubmit="SubmitContactForm" @onsubmit:preventDefault>
+                    <h2>فرم ارتباط با ما</h2>
+                    <div class="form-grid">
                     <label class="field">
                         <span>نام</span>
                         <input name="name" autocomplete="name" required />
@@ -70,41 +76,85 @@
                     <div class="field full">
                         <button class="storefront-action" type="submit">ارسال پیام</button>
                     </div>
-                </div>
-            </form>
+                    </div>
+                </form>
+                @if (_socialLinks.Count > 0)
+                {
+                    <section class="contact-socials" aria-labelledby="socials-title">
+                        <div><h2 id="socials-title">مرداس در شبکه‌های اجتماعی</h2><p>تازه‌ترین محصولات و خبرهای فروشگاه را دنبال کنید.</p></div>
+                        <nav aria-label="شبکه‌های اجتماعی فروشگاه">
+                            @foreach (var network in _socialLinks)
+                            {
+                                <a href="@network.Url" target="_blank" rel="noopener noreferrer" aria-label="@network.DisplayName مرداس گلد">
+                                    <img class="social-@network.Key" src="@SocialIcon(network.Key)" alt="" aria-hidden="true" />
+                                    <span>@network.DisplayName</span>
+                                </a>
+                            }
+                        </nav>
+                    </section>
+                }
+            </div>
         </div>
 
         <section class="faq" id="faq">
             <h2>سؤالات متداول</h2>
-            <details open>
-                <summary>پرسش شما در این قسمت قرار می‌گیرد؟</summary>
-                <p>متن پاسخ شما در این قسمت قرار می‌گیرد. برای راهنمایی بیشتر می‌توانید با فروشگاه تماس بگیرید.</p>
-            </details>
-            <details>
-                <summary>زمان ارسال محصولات چقدر است؟</summary>
-                <p>زمان ارسال برای تهران و شهرستان‌ها بین ۵ تا ۷ روز کاری است.</p>
-            </details>
-            <details>
-                <summary>آیا امکان بازگشت کالا وجود دارد؟</summary>
-                <p>شرایط بازگشت کالا در صفحه قوانین فروشگاه توضیح داده شده است.</p>
-            </details>
+            @for (var index = 0; index < _faqs.Count; index++)
+            {
+                var faq = _faqs[index];
+                <details open="@(index == 0)">
+                    <summary>@faq.Question</summary>
+                    @foreach (var paragraph in Paragraphs(faq.Answer)) { <p>@paragraph</p> }
+                </details>
+            }
         </section>
     </div>
 </section>
 
 @code {
     private IJSObjectReference? _mapModule;
+    private bool _mapInitializationAttempted;
+    private string? _mapError;
+    private IReadOnlyList<MerdasGold.Features.StoreInformation.Models.StorefrontSocialLinkModel> _socialLinks = [];
+    private IReadOnlyList<MerdasGold.Features.Content.Models.StorefrontFaqModel> _faqs = [];
+    private MerdasGold.Features.StoreInformation.Models.StorefrontContactModel? _contact;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var socialLinksTask = StoreInformationService.GetActiveSocialLinksAsync();
+        var contactTask = StoreInformationService.GetStorefrontContactAsync();
+        var faqsTask = ContentService.GetActiveFaqsAsync();
+        await Task.WhenAll(socialLinksTask, contactTask, faqsTask);
+        _socialLinks = await socialLinksTask;
+        _contact = await contactTask;
+        _faqs = await faqsTask;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
-        _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./scripts/store-map.js");
-        await _mapModule.InvokeVoidAsync("initializeDisplayMap", "contact-location-map", 36.2995, 59.5274, 15, "فروشگاه مرداس گلد");
+        if (_mapInitializationAttempted || _contact is null) return;
+        _mapInitializationAttempted = true;
+        try
+        {
+            _mapModule = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./scripts/store-map.js");
+            await _mapModule.InvokeVoidAsync("initializeDisplayMap", "contact-location-map", _contact.Latitude, _contact.Longitude, _contact.ZoomLevel, _contact.StoreName);
+        }
+        catch (JSException)
+        {
+            _mapError = "بارگذاری نقشه انجام نشد؛ اتصال اینترنت را بررسی کنید.";
+            StateHasChanged();
+        }
     }
 
     private void SubmitContactForm() =>
         UiState.Notify("فرم تماس در این مرحله نمایشی است و اطلاعاتی ارسال نشد");
 
+    private static string SocialIcon(string key) => $"/assets/storefront/icons/social/{key}.{(key is "instagram" or "telegram" ? "svg" : key == "rubika" ? "png" : "ico")}";
+    private static IEnumerable<string> Paragraphs(string answer) =>
+        answer.Replace("\r", string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    private string Coordinates => _contact is null ? string.Empty : FormattableString.Invariant($"{_contact.Latitude},{_contact.Longitude}");
+    private string BaladUrl => $"https://balad.ir/location?latitude={_contact?.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&longitude={_contact?.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+    private string NeshanUrl => $"https://neshan.org/maps/places/{Coordinates}";
+    private string GoogleMapsUrl => $"https://www.google.com/maps/dir/?api=1&destination={Uri.EscapeDataString(Coordinates)}";
     public async ValueTask DisposeAsync()
     {
         if (_mapModule is null) return;

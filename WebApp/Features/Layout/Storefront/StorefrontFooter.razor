@@ -1,3 +1,5 @@
+@inject MerdasGold.Features.StoreInformation.Services.StoreInformationService StoreInformationService
+
 <footer class="site-footer">
     <div class="footer-top storefront-container">
         <div class="footer-brand">
@@ -16,15 +18,18 @@
         <nav aria-label="خدمات مشتریان">
             <h2>خدمات مشتریان</h2>
             <a href="/rules">قوانین فروشگاه</a>
-            <a href="/rules#shipping">ارسال و تحویل</a>
-            <a href="/rules">تعویض و مرجوعی</a>
+            <a href="/buying-guide">راهنمای خرید</a>
+            <a href="/shipment-tracking">پیگیری ارسال</a>
             <a href="/contact#faq">سؤالات متداول</a>
         </nav>
 
         <div class="contact">
             <h2>با ما در تماس باشید</h2>
-            <a href="tel:+982188887777" dir="ltr">۰۲۱ ۸۸۸۸ ۷۷۷۷</a>
-            <p>تهران، خیابان ولیعصر، گالری مرداس</p>
+            @if (_contact is not null)
+            {
+                <a href="tel:@_contact.PhoneHref" dir="ltr">@_contact.PhoneNumber</a>
+                <p>@_contact.Address</p>
+            }
             <small>شنبه تا پنجشنبه، ۱۰ تا ۲۰</small>
         </div>
     </div>
@@ -34,3 +39,10 @@
         <p lang="en" dir="ltr">Designed for enduring beauty.</p>
     </div>
 </footer>
+
+@code {
+    private MerdasGold.Features.StoreInformation.Models.StorefrontContactModel? _contact;
+
+    protected override async Task OnInitializedAsync() =>
+        _contact = await StoreInformationService.GetStorefrontContactAsync();
+}

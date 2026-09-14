@@ -30,6 +30,7 @@ public sealed class MerdasGoldDbContext(DbContextOptions<MerdasGoldDbContext> op
     public DbSet<StoreBankAccount> StoreBankAccounts => Set<StoreBankAccount>();
     public DbSet<StoreWorkingHour> StoreWorkingHours => Set<StoreWorkingHour>();
     public DbSet<StoreLocation> StoreLocations => Set<StoreLocation>();
+    public DbSet<StoreSocialNetwork> StoreSocialNetworks => Set<StoreSocialNetwork>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

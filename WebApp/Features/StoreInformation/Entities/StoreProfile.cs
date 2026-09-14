@@ -9,6 +9,8 @@ public sealed class StoreProfile
     public string Tagline { get; set; } = string.Empty;
     public string ShortDescription { get; set; } = string.Empty;
     public string BusinessCategory { get; set; } = "طلا و جواهر";
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateOnly? ActivityStartDate { get; set; }
     public byte[]? LogoData { get; set; }

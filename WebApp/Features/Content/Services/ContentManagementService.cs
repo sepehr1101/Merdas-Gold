@@ -53,6 +53,26 @@ public sealed class ContentManagementService(IDbContextFactory<MerdasGoldDbConte
             .ToListAsync(ct);
     }
 
+    public async Task<StorefrontPolicyModel?> GetPublishedPolicyAsync(string key, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        return await db.Set<StorePolicy>().AsNoTracking()
+            .Where(x => x.Key == key && x.IsPublished)
+            .Select(x => new StorefrontPolicyModel(x.Title, x.Summary, x.Content))
+            .SingleOrDefaultAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<StorefrontFaqModel>> GetActiveFaqsAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        return await db.Set<FaqItem>().AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Id)
+            .Select(x => new StorefrontFaqModel(x.Id, x.Question, x.Answer))
+            .ToListAsync(ct);
+    }
+
     public async Task<ContentSaveResult> SaveFaqAsync(FaqEditModel model, ContentActor actor, CancellationToken ct)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);

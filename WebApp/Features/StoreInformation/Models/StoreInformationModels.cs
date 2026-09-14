@@ -8,6 +8,7 @@ public sealed class StoreInformationPageModel
     public IReadOnlyList<BankAccountEditModel> BankAccounts { get; init; } = [];
     public IReadOnlyList<WorkingHourEditModel> WorkingHours { get; init; } = [];
     public StoreLocationEditModel Location { get; init; } = new();
+    public IReadOnlyList<SocialNetworkEditModel> SocialNetworks { get; init; } = [];
 }
 
 public class StoreProfileEditModel
@@ -17,6 +18,8 @@ public class StoreProfileEditModel
     public string Tagline { get; set; } = string.Empty;
     public string ShortDescription { get; set; } = string.Empty;
     public string BusinessCategory { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public DateOnly? ActivityStartDate { get; set; }
     public string RowVersion { get; set; } = string.Empty;
@@ -65,6 +68,31 @@ public sealed class StoreLocationEditModel
     public decimal Longitude { get; set; }
     public int ZoomLevel { get; set; }
     public string RowVersion { get; set; } = string.Empty;
+}
+
+public sealed class SocialNetworksFormModel
+{
+    public List<SocialNetworkEditModel> Items { get; set; } = [];
+}
+
+public sealed class SocialNetworkEditModel
+{
+    public int Id { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public string RowVersion { get; set; } = string.Empty;
+}
+
+public sealed record StorefrontSocialLinkModel(string Key, string DisplayName, string Username, string Url);
+public sealed record StorefrontAboutModel(string StoreName, string EnglishName, string Description);
+public sealed record StorefrontContactModel(string StoreName, string Address, string PhoneNumber, string Email, decimal Latitude, decimal Longitude, int ZoomLevel)
+{
+    public string PhoneHref => PhoneNumber
+        .Replace('۰', '0').Replace('۱', '1').Replace('۲', '2').Replace('۳', '3').Replace('۴', '4')
+        .Replace('۵', '5').Replace('۶', '6').Replace('۷', '7').Replace('۸', '8').Replace('۹', '9')
+        .Replace(" ", string.Empty).Replace("-", string.Empty);
 }
 
 public sealed record OperationActor(string UserId, string UserName, string IpAddress);

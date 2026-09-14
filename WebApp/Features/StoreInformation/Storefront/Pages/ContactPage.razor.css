@@ -20,6 +20,20 @@
     gap: 18px;
 }
 
+.contact-main {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 18px;
+}
+
+@media (min-width: 901px) {
+    .location-card,
+    .contact-socials {
+        margin-top: auto;
+    }
+}
+
 .contact-info,
 .contact-form {
     border-radius: var(--storefront-radius-lg);
@@ -128,6 +142,80 @@
 
 .location-card :deep(.leaflet-control-attribution) {
     font-size: 9px;
+}
+
+.contact-socials {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 20px;
+    border: 1px solid var(--storefront-border);
+    border-radius: var(--storefront-radius-lg);
+    background: var(--storefront-surface);
+    box-shadow: var(--storefront-shadow-sm);
+}
+
+.contact-socials h2 {
+    margin: 0;
+    color: var(--storefront-aubergine);
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+.contact-socials p {
+    margin: 2px 0 0;
+    color: var(--storefront-muted);
+    font-size: 12px;
+}
+
+.contact-socials nav {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 7px;
+}
+
+.contact-socials a {
+    display: flex;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--storefront-border);
+    border-radius: 12px;
+    background: white;
+    transition: transform var(--storefront-duration), border-color var(--storefront-duration), box-shadow var(--storefront-duration);
+}
+
+.contact-socials a:hover,
+.contact-socials a:focus-visible {
+    border-color: var(--storefront-primary);
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--storefront-aubergine) 12%, transparent);
+    transform: translateY(-2px);
+}
+
+.contact-socials a img {
+    width: 23px;
+    height: 23px;
+    object-fit: contain;
+}
+
+.contact-socials .social-instagram {
+    filter: invert(35%) sepia(91%) saturate(2860%) hue-rotate(326deg) brightness(91%) contrast(96%);
+}
+
+.contact-socials .social-telegram {
+    filter: invert(51%) sepia(97%) saturate(1766%) hue-rotate(165deg) brightness(94%) contrast(89%);
+}
+
+.contact-socials a span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
 }
 
 .contact-info h1,
@@ -289,5 +377,21 @@
     .route-actions a {
         gap: 5px;
         font-size: 12px;
+    }
+
+    .contact-socials {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .contact-socials nav {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .contact-socials a {
+        width: 44px;
+        height: 44px;
     }
 }
