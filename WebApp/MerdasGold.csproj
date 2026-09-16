@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <UserSecretsId>merdasgold-webapp-local-secrets</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

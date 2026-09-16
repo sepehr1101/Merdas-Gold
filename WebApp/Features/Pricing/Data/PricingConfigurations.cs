@@ -12,7 +12,7 @@ public sealed class RateSettingsConfiguration : IEntityTypeConfiguration<RateSet
         b.Property(x => x.Provider).HasMaxLength(40); b.Property(x => x.ProtectedApiKey).HasMaxLength(2048);
         b.Property(x => x.SourceUnit).HasMaxLength(10); b.Property(x => x.ManualPrice).HasPrecision(20, 4);
         b.Property(x => x.RowVersion).IsRowVersion();
-        b.HasData(new { Id = 1, Enabled = false, Provider = "Navasan", ProtectedApiKey = "", SourceUnit = "toman", IntervalMinutes = 5, MaxAgeMinutes = 10 });
+        b.HasData(new { Id = 1, Enabled = true, Provider = GoldProviderNames.TabanGohar, ProtectedApiKey = "", SourceUnit = "toman", IntervalMinutes = 1, MaxAgeMinutes = 5, RetentionDays = 90 });
     }
 }
 public sealed class GoldRateConfiguration : IEntityTypeConfiguration<GoldRate>

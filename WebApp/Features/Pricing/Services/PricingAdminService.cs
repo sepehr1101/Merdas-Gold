@@ -31,20 +31,23 @@ public sealed class PricingAdminService(IDbContextFactory<MerdasGoldDbContext> f
     public async Task SaveSettingsAsync(RateSettings input, string? key)
     {
         var user = await AuthorizeAsync();
-        if (input.IntervalMinutes is not (1 or 5 or 15) || input.MaxAgeMinutes < input.IntervalMinutes || input.MaxAgeMinutes > 1440
-            || input.SourceUnit is not ("rial" or "toman") || key?.Length > 500) throw new ArgumentException("فاصله دریافت، اعتبار نرخ یا کلید معتبر نیست.");
+        if (!GoldProviderNames.IsSupported(input.Provider) || input.IntervalMinutes is not (1 or 5 or 15)
+            || input.MaxAgeMinutes < input.IntervalMinutes || input.MaxAgeMinutes > 1440
+            || input.RetentionDays is < 7 or > 365 || input.SourceUnit is not ("rial" or "toman") || key?.Length > 500)
+            throw new ArgumentException("تأمین‌کننده، فاصله دریافت، اعتبار نرخ یا دوره نگهداری معتبر نیست.");
         await using var db = await factory.CreateDbContextAsync();
         var row = await db.Set<RateSettings>().SingleAsync(); SetVersion(db, row, input.RowVersion);
-        row.Enabled = input.Enabled; row.IntervalMinutes = input.IntervalMinutes; row.MaxAgeMinutes = input.MaxAgeMinutes;
+        row.Enabled = input.Enabled; row.Provider = input.Provider; row.IntervalMinutes = input.IntervalMinutes;
+        row.MaxAgeMinutes = input.MaxAgeMinutes; row.RetentionDays = input.RetentionDays;
         // Changing units invalidates old provider observations so they cannot be reused with a different interpretation.
-        if (row.SourceUnit != input.SourceUnit && await db.Set<GoldRate>().AnyAsync(x => x.Provider == "Navasan" && x.IsValid))
+        if (row.SourceUnit != input.SourceUnit && await db.Set<GoldRate>().AnyAsync(x => x.Provider == row.Provider && x.IsValid))
         {
             throw new ArgumentException("برای جلوگیری از تغییر ناخواسته قیمت، واحد منبع پس از راه‌اندازی ثابت است. پیش از فعال‌سازی با تأمین‌کننده بررسی شود.");
         }
         row.SourceUnit = input.SourceUnit;
         if (!string.IsNullOrWhiteSpace(key)) row.ProtectedApiKey = rates.ProtectKey(key.Trim());
-        if (row.Enabled && string.IsNullOrEmpty(row.ProtectedApiKey)) throw new ArgumentException("برای دریافت خودکار ابتدا کلید API را وارد کنید.");
-        Log(db, user, $"تنظیم دریافت نرخ طلا: خودکار={row.Enabled}، فاصله={row.IntervalMinutes} دقیقه، اعتبار={row.MaxAgeMinutes} دقیقه؛ کلید در سابقه ثبت نمی‌شود.");
+        if (row.Enabled && !rates.HasCredentials(row)) throw new ArgumentException("اعتبارنامه تأمین‌کننده انتخابی در تنظیمات امن برنامه موجود نیست.");
+        Log(db, user, $"تنظیم دریافت نرخ طلا: تأمین‌کننده={row.Provider}، خودکار={row.Enabled}، فاصله={row.IntervalMinutes} دقیقه، اعتبار={row.MaxAgeMinutes} دقیقه، نگهداری={row.RetentionDays} روز؛ اعتبارنامه در سابقه ثبت نمی‌شود.");
         await db.SaveChangesAsync();
     }
 

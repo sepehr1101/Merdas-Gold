@@ -58,6 +58,20 @@ public sealed class PricingTests
         Assert.Equal(1234500, result.Price); Assert.Equal(Now, result.SourceUtc);
     }
     [Fact]
+    public void TabanGoharProvider_UsesDocumentedGoldFieldAndTehranTimestamp()
+    {
+        using var json = JsonDocument.Parse("""{"YekGram18":1442800,"TimeRead":"2026/09/10 11:30:00"}""");
+        var result = GoldRateService.ParseTabanGohar(json.RootElement, "toman", Now);
+        Assert.Equal(1442800, result.Price);
+        Assert.Equal(new DateTime(2026, 9, 10, 8, 0, 0, DateTimeKind.Utc), result.SourceUtc);
+    }
+    [Fact]
+    public void TabanGoharProvider_RejectsUnauthorizedAndIncompletePayloads()
+    {
+        using var unauthorized = JsonDocument.Parse("""{"Error":"Unauthorized"}""");
+        Assert.Throws<FormatException>(() => GoldRateService.ParseTabanGohar(unauthorized.RootElement, "toman", Now));
+    }
+    [Fact]
     public void NewlyReceivedOldRate_IsNotFresh()
     {
         var rate = new GoldRate { PriceToman = 100, IsValid = true, ReceivedUtc = Now, SourceUtc = Now.AddMinutes(-11) };

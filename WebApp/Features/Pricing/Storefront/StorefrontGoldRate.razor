@@ -1,0 +1,60 @@
+@implements IDisposable
+@inject IDbContextFactory<MerdasGoldDbContext> Factory
+@inject GoldRateService Rates
+
+<p class="storefront-rate" title="نرخ مبنای محاسبه قیمت محصولات">
+    @if (_rate?.PriceToman is { } price)
+    {
+        <span>هر گرم طلای ۱۸ عیار: <b>@price.ToString("N0") تومان</b></span>
+        <small>به‌روزرسانی @LocalTime(_rate.SourceUtc)</small>
+    }
+    else
+    {
+        <span>نرخ طلا در حال به‌روزرسانی است</span>
+    }
+</p>
+
+@code {
+    private readonly CancellationTokenSource _cancellation = new();
+    private GoldRate? _rate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync(_cancellation.Token);
+        _ = RefreshLoopAsync();
+    }
+
+    private async Task LoadAsync(CancellationToken ct)
+    {
+        await using var db = await Factory.CreateDbContextAsync(ct);
+        var settings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
+        _rate = await Rates.CurrentAsync(settings, ct);
+    }
+
+    private async Task RefreshLoopAsync()
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+            while (await timer.WaitForNextTickAsync(_cancellation.Token))
+            {
+                await LoadAsync(_cancellation.Token);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) when (_cancellation.IsCancellationRequested) { }
+    }
+
+    private static string LocalTime(DateTime? utc)
+    {
+        if (utc is null) return "نامشخص";
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran");
+        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc), zone).ToString("HH:mm");
+    }
+
+    public void Dispose()
+    {
+        _cancellation.Cancel();
+        _cancellation.Dispose();
+    }
+}

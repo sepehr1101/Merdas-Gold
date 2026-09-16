@@ -26,6 +26,7 @@ public partial class PricingPage : IDisposable
     private readonly CancellationTokenSource _refreshCancellation = new();
     private PricingRule? _rule, _savedRule;
     private GoldRate? _current;
+    private GoldRateScheduleStatus? _schedule;
     private List<PriceDiscount> _discounts = [];
     private List<PieceChoice> _pieces = [];
     private List<GoldRate> _history = [];
@@ -37,8 +38,13 @@ public partial class PricingPage : IDisposable
     private TimeOnly _fromTime = new(0, 0), _toTime = new(23, 59);
     private int _manualMinutes = 30, _ratePage, _rateCount, _pieceId;
     private decimal _manualPrice, _weight = 2, _sampleRate = 10_000_000;
+    private DateTime _clockUtc = DateTime.UtcNow;
     private int RoundingUnit { get => (int)(_rule?.RoundToToman ?? 1); set { if (_rule is not null) _rule.RoundToToman = value; } }
     private bool Fresh => _liveSettings is not null && GoldRateService.IsFresh(_current, _liveSettings.MaxAgeMinutes, DateTime.UtcNow);
+    private string NextRunText => _schedule is null ? "—" : !_schedule.Enabled ? "دریافت خودکار خاموش است"
+        : !_schedule.CredentialsConfigured ? "در انتظار اعتبارنامه"
+        : _schedule.NextRunUtc is not { } next || next <= _clockUtc ? "در حال اجرا"
+        : $"{Math.Max(0, (int)Math.Ceiling((next - _clockUtc).TotalSeconds))} ثانیه دیگر";
     private PriceBreakdown? Preview => Calculate(_rule, _weight, _useLive ? (Fresh ? _current!.PriceToman!.Value : 0) : _sampleRate);
     private PriceBreakdown? SavedPreview => Calculate(_savedRule, _weight, _useLive ? (Fresh ? _current!.PriceToman!.Value : 0) : _sampleRate);
     private PriceBreakdown? InvoicePreview => Calculate(_rule, 2, 10_000_000);
@@ -56,7 +62,8 @@ public partial class PricingPage : IDisposable
         (_settings, _rule, _discounts, _pieces) = await Service.LoadAsync();
         _savedRule = new PricingRule { FeeMode = _rule.FeeMode, FeeValue = _rule.FeeValue, ProfitPercent = _rule.ProfitPercent, TaxPercent = _rule.TaxPercent, RoundToToman = _rule.RoundToToman };
         _current = await Rates.CurrentAsync(_settings);
-        _liveSettings = new RateSettings { MaxAgeMinutes = _settings.MaxAgeMinutes };
+        _schedule = await Rates.ScheduleStatusAsync(_settings);
+        _liveSettings = new RateSettings { Provider = _settings.Provider, MaxAgeMinutes = _settings.MaxAgeMinutes };
         if (Active == "rates") await LoadHistory();
         if (Active == "invoice")
         {
@@ -76,14 +83,20 @@ public partial class PricingPage : IDisposable
         var ct = _refreshCancellation.Token;
         try
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            var ticks = 0;
             while (await timer.WaitForNextTickAsync(ct))
                 await InvokeAsync(async () =>
                 {
-                    await Service.AuthorizeAsync();
-                    await using var db = await Factory.CreateDbContextAsync(ct);
-                    _liveSettings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
-                    _current = await Rates.CurrentAsync(_liveSettings);
+                    _clockUtc = DateTime.UtcNow;
+                    if (++ticks % 5 == 0)
+                    {
+                        await Service.AuthorizeAsync();
+                        await using var db = await Factory.CreateDbContextAsync(ct);
+                        _liveSettings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
+                        _current = await Rates.CurrentAsync(_liveSettings, ct);
+                        _schedule = await Rates.ScheduleStatusAsync(_liveSettings, ct);
+                    }
                     StateHasChanged();
                 });
         }

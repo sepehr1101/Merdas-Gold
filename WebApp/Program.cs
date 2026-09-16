@@ -78,8 +78,15 @@ builder.Services.AddScoped<ContentSeeder>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
-builder.Services.AddHttpClient("gold-provider", client =>
+builder.Services.AddHttpClient("taban-gohar", client =>
 {
+    client.BaseAddress = new Uri("https://webservice.tgnsrv.ir/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.MaxResponseContentBufferSize = 65536;
+}).RemoveAllLoggers(); // Provider credentials are in the URL path; never log request URLs.
+builder.Services.AddHttpClient("navasan", client =>
+{
+    client.BaseAddress = new Uri("https://api.navasan.tech/");
     client.Timeout = TimeSpan.FromSeconds(15);
     client.MaxResponseContentBufferSize = 65536;
 }).RemoveAllLoggers(); // Provider credentials are in its query string; never log request URLs.

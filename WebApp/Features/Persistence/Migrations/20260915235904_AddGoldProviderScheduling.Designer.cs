@@ -4,6 +4,7 @@ using MerdasGold.Features.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MerdasGold.Features.Persistence.Migrations
 {
     [DbContext(typeof(MerdasGoldDbContext))]
-    partial class MerdasGoldDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260915235904_AddGoldProviderScheduling")]
+    partial class AddGoldProviderScheduling
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

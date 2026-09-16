@@ -8,31 +8,75 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace MerdasGold.Features.Pricing.Services;
 
-public sealed class GoldRateService(IDbContextFactory<MerdasGoldDbContext> factory, IHttpClientFactory clients, IDataProtectionProvider protection, IMemoryCache cache)
+public sealed record GoldRateScheduleStatus(
+    DateTime? LastAttemptUtc,
+    DateTime? LastSuccessUtc,
+    DateTime? NextRunUtc,
+    bool Enabled,
+    bool CredentialsConfigured);
+
+public sealed class GoldRateService(
+    IDbContextFactory<MerdasGoldDbContext> factory,
+    IHttpClientFactory clients,
+    IDataProtectionProvider protection,
+    IMemoryCache cache,
+    IConfiguration configuration)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private DateTime? _lastAttemptUtc;
+    private readonly Dictionary<string, DateTime> _lastAttempts = [];
+
     public string ProtectKey(string key) => protection.CreateProtector("MerdasGold.GoldProvider.v1").Protect(key);
 
-    public async Task<GoldRate?> CurrentAsync(RateSettings settings)
+    public bool HasCredentials(RateSettings settings) => settings.Provider switch
+    {
+        GoldProviderNames.TabanGohar =>
+            !string.IsNullOrWhiteSpace(configuration["GoldProviders:TabanGohar:Username"])
+            && !string.IsNullOrWhiteSpace(configuration["GoldProviders:TabanGohar:Password"]),
+        GoldProviderNames.Navasan => !string.IsNullOrWhiteSpace(settings.ProtectedApiKey),
+        _ => false
+    };
+
+    public async Task<GoldRate?> CurrentAsync(RateSettings settings, CancellationToken ct = default)
     {
         if (settings.ManualPrice.HasValue && settings.ManualExpiresUtc > DateTime.UtcNow)
         {
-            await using var manualDb = await factory.CreateDbContextAsync();
-            var manual = await manualDb.Set<GoldRate>().AsNoTracking().Where(x => x.Provider == "دستی" && x.IsValid).OrderByDescending(x => x.Id).FirstOrDefaultAsync();
-            if (manual is not null) { manual.ValidUntilUtc = settings.ManualExpiresUtc; return manual; }
+            await using var manualDb = await factory.CreateDbContextAsync(ct);
+            var manual = await manualDb.Set<GoldRate>().AsNoTracking()
+                .Where(x => x.Provider == "دستی" && x.IsValid)
+                .OrderByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+            if (manual is not null)
+            {
+                manual.ValidUntilUtc = settings.ManualExpiresUtc;
+                return manual;
+            }
         }
-        if (!cache.TryGetValue("gold:last-valid", out GoldRate? rate))
+
+        var cacheKey = $"gold:last-valid:{settings.Provider}";
+        if (!cache.TryGetValue(cacheKey, out GoldRate? rate))
         {
-            await using var db = await factory.CreateDbContextAsync();
-            rate = await db.Set<GoldRate>().AsNoTracking().Where(x => x.IsValid && x.Provider == "Navasan").OrderByDescending(x => x.Id).FirstOrDefaultAsync();
-            if (rate is not null) cache.Set("gold:last-valid", rate, TimeSpan.FromMinutes(5));
+            await using var db = await factory.CreateDbContextAsync(ct);
+            rate = await db.Set<GoldRate>().AsNoTracking()
+                .Where(x => x.IsValid && x.Provider == settings.Provider)
+                .OrderByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+            if (rate is not null) cache.Set(cacheKey, rate, TimeSpan.FromMinutes(1));
         }
         return rate;
     }
 
-    public static bool IsFresh(GoldRate? rate, int maxAge, DateTime now) => rate is { IsValid: true, PriceToman: > 0, SourceUtc: not null }
-        && rate.SourceUtc <= now.AddMinutes(1) && (rate.Provider == "دستی" ? rate.ValidUntilUtc > now : rate.SourceUtc >= now.AddMinutes(-maxAge));
+    public async Task<GoldRateScheduleStatus> ScheduleStatusAsync(RateSettings settings, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var providerRates = db.Set<GoldRate>().AsNoTracking().Where(x => x.Provider == settings.Provider);
+        var lastAttempt = await providerRates.MaxAsync(x => (DateTime?)x.ReceivedUtc, ct);
+        var lastSuccess = await providerRates.Where(x => x.IsValid).MaxAsync(x => (DateTime?)x.ReceivedUtc, ct);
+        DateTime? nextRun = settings.Enabled ? (lastAttempt?.AddMinutes(settings.IntervalMinutes) ?? DateTime.UtcNow) : null;
+        return new(lastAttempt, lastSuccess, nextRun, settings.Enabled, HasCredentials(settings));
+    }
+
+    public static bool IsFresh(GoldRate? rate, int maxAge, DateTime now) =>
+        rate is { IsValid: true, PriceToman: > 0, SourceUtc: not null }
+        && rate.SourceUtc <= now.AddMinutes(1)
+        && (rate.Provider == "دستی" ? rate.ValidUntilUtc > now : rate.SourceUtc >= now.AddMinutes(-maxAge));
 
     public async Task<string> FetchAsync(bool force, CancellationToken ct = default)
     {
@@ -42,32 +86,108 @@ public sealed class GoldRateService(IDbContextFactory<MerdasGoldDbContext> facto
             await using var db = await factory.CreateDbContextAsync(ct);
             var settings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
             if (!force && !settings.Enabled) return "";
-            if (string.IsNullOrEmpty(settings.ProtectedApiKey)) return "ابتدا کلید سرویس نرخ را ذخیره کنید.";
-            _lastAttemptUtc ??= await db.Set<GoldRate>().Where(x => x.Provider == "Navasan").MaxAsync(x => (DateTime?)x.ReceivedUtc, ct) ?? DateTime.MinValue;
-            if (!force && DateTime.UtcNow < _lastAttemptUtc.Value.AddMinutes(settings.IntervalMinutes)) return "";
-            if (force && DateTime.UtcNow < _lastAttemptUtc.Value.AddSeconds(30)) return "برای دریافت مجدد ۳۰ ثانیه صبر کنید.";
-            _lastAttemptUtc = DateTime.UtcNow;
-            var row = new GoldRate { ReceivedUtc = DateTime.UtcNow };
+            if (!GoldProviderNames.IsSupported(settings.Provider)) return "تأمین‌کننده نرخ معتبر نیست.";
+            if (!HasCredentials(settings)) return "اعتبارنامه تأمین‌کننده انتخابی در تنظیمات امن برنامه موجود نیست.";
+
+            if (!_lastAttempts.TryGetValue(settings.Provider, out var lastAttempt))
+            {
+                lastAttempt = await db.Set<GoldRate>()
+                    .Where(x => x.Provider == settings.Provider)
+                    .MaxAsync(x => (DateTime?)x.ReceivedUtc, ct) ?? DateTime.MinValue;
+                _lastAttempts[settings.Provider] = lastAttempt;
+            }
+            if (!force && DateTime.UtcNow < lastAttempt.AddMinutes(settings.IntervalMinutes)) return "";
+            if (force && DateTime.UtcNow < lastAttempt.AddSeconds(30)) return "برای دریافت مجدد ۳۰ ثانیه صبر کنید.";
+
+            var attemptedUtc = DateTime.UtcNow;
+            _lastAttempts[settings.Provider] = attemptedUtc;
+            var row = new GoldRate { ReceivedUtc = attemptedUtc, Provider = settings.Provider };
             try
             {
-                var key = protection.CreateProtector("MerdasGold.GoldProvider.v1").Unprotect(settings.ProtectedApiKey);
-                using var response = await clients.CreateClient("gold-provider").GetAsync("https://api.navasan.tech/latest/?item=18ayar&api_key=" + Uri.EscapeDataString(key), ct);
-                if (!response.IsSuccessStatusCode) row.Status = $"خطای سرویس: {(int)response.StatusCode}";
-                else
-                {
-                    using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
-                    var parsed = ParseNavasan(json.RootElement, settings.SourceUnit, DateTime.UtcNow);
-                    row.PriceToman = parsed.Price; row.SourceUtc = parsed.SourceUtc; row.IsValid = true; row.Status = "موفق";
-                }
+                var parsed = await FetchProviderAsync(settings, attemptedUtc, ct);
+                row.PriceToman = parsed.Price;
+                row.SourceUtc = parsed.SourceUtc;
+                row.IsValid = true;
+                row.Status = "موفق";
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
-            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException or System.Security.Cryptography.CryptographicException or OverflowException or FormatException)
-            { row.Status = "دریافت ناموفق؛ اتصال، کلید سرویس و قالب نرخ بررسی شود."; }
-            db.Add(row); await db.SaveChangesAsync(ct);
-            if (row.IsValid) cache.Set("gold:last-valid", row, TimeSpan.FromMinutes(5));
+            catch (UnauthorizedAccessException)
+            {
+                row.Status = "نام کاربری، رمز عبور یا دسترسی سرویس معتبر نیست.";
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException
+                or ArgumentException or InvalidOperationException or KeyNotFoundException
+                or System.Security.Cryptography.CryptographicException or OverflowException or FormatException)
+            {
+                row.Status = "دریافت ناموفق؛ اتصال، اعتبارنامه و قالب پاسخ بررسی شود.";
+            }
+
+            db.Add(row);
+            await db.SaveChangesAsync(ct);
+            if (row.IsValid)
+                cache.Set($"gold:last-valid:{settings.Provider}", row, TimeSpan.FromMinutes(1));
             return row.Status;
         }
-        finally { _gate.Release(); }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    public async Task<int> CleanupAsync(CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var settings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
+        var cutoff = DateTime.UtcNow.AddDays(-settings.RetentionDays);
+        return await db.Set<GoldRate>().Where(x => x.ReceivedUtc < cutoff).ExecuteDeleteAsync(ct);
+    }
+
+    private async Task<(decimal Price, DateTime SourceUtc)> FetchProviderAsync(RateSettings settings, DateTime now, CancellationToken ct)
+    {
+        using var response = settings.Provider switch
+        {
+            GoldProviderNames.TabanGohar => await FetchTabanGoharAsync(ct),
+            GoldProviderNames.Navasan => await FetchNavasanAsync(settings, ct),
+            _ => throw new InvalidOperationException()
+        };
+        if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            throw new UnauthorizedAccessException();
+        if (!response.IsSuccessStatusCode) throw new HttpRequestException($"Provider returned {(int)response.StatusCode}");
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+        if (json.RootElement.TryGetProperty("Error", out _)) throw new UnauthorizedAccessException();
+        return settings.Provider == GoldProviderNames.TabanGohar
+            ? ParseTabanGohar(json.RootElement, settings.SourceUnit, now)
+            : ParseNavasan(json.RootElement, settings.SourceUnit, now);
+    }
+
+    private Task<HttpResponseMessage> FetchTabanGoharAsync(CancellationToken ct)
+    {
+        var username = configuration["GoldProviders:TabanGohar:Username"]!;
+        var password = configuration["GoldProviders:TabanGohar:Password"]!;
+        var path = $"Pr/Get/{Uri.EscapeDataString(username)}/{Uri.EscapeDataString(password)}";
+        return clients.CreateClient("taban-gohar").GetAsync(path, ct);
+    }
+
+    private Task<HttpResponseMessage> FetchNavasanAsync(RateSettings settings, CancellationToken ct)
+    {
+        var key = protection.CreateProtector("MerdasGold.GoldProvider.v1").Unprotect(settings.ProtectedApiKey);
+        return clients.CreateClient("navasan").GetAsync("latest/?item=18ayar&api_key=" + Uri.EscapeDataString(key), ct);
+    }
+
+    public static (decimal Price, DateTime SourceUtc) ParseTabanGohar(JsonElement root, string unit, DateTime now)
+    {
+        if (unit is not ("toman" or "rial") || !root.TryGetProperty("YekGram18", out var priceElement)
+            || !root.TryGetProperty("TimeRead", out var timeElement)) throw new FormatException();
+        var price = priceElement.GetDecimal();
+        var sourceText = timeElement.GetString();
+        if (string.IsNullOrWhiteSpace(sourceText)) throw new FormatException();
+        var sourceLocal = DateTime.ParseExact(sourceText, "yyyy/MM/dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None);
+        var source = TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(sourceLocal, DateTimeKind.Unspecified),
+            TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran"));
+        if (unit == "rial") price /= 10;
+        ValidatePrice(price, source, now);
+        return (price, source);
     }
 
     public static (decimal Price, DateTime SourceUtc) ParseNavasan(JsonElement root, string unit, DateTime now)
@@ -76,8 +196,13 @@ public sealed class GoldRateService(IDbContextFactory<MerdasGoldDbContext> facto
         var price = decimal.Parse(item.GetProperty("value").ToString(), NumberStyles.Number, CultureInfo.InvariantCulture);
         var source = DateTimeOffset.FromUnixTimeSeconds(long.Parse(item.GetProperty("timestamp").ToString(), CultureInfo.InvariantCulture)).UtcDateTime;
         if (unit == "rial") price /= 10;
-        if (price is <= 0 or > 1_000_000_000_000m || source > now.AddMinutes(1)) throw new FormatException();
+        ValidatePrice(price, source, now);
         return (price, source);
+    }
+
+    private static void ValidatePrice(decimal price, DateTime source, DateTime now)
+    {
+        if (price is <= 0 or > 1_000_000_000_000m || source > now.AddMinutes(1)) throw new FormatException();
     }
 }
 
@@ -85,10 +210,20 @@ public sealed class GoldRateWorker(IServiceProvider services, ILogger<GoldRateWo
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        var lastCleanupUtc = DateTime.MinValue;
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            try { await services.GetRequiredService<GoldRateService>().FetchAsync(false, stoppingToken); }
+            try
+            {
+                var rates = services.GetRequiredService<GoldRateService>();
+                await rates.FetchAsync(false, stoppingToken);
+                if (DateTime.UtcNow >= lastCleanupUtc.AddHours(6))
+                {
+                    await rates.CleanupAsync(stoppingToken);
+                    lastCleanupUtc = DateTime.UtcNow;
+                }
+            }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception ex) { logger.LogError(ex, "Gold rate background update failed"); }
         }

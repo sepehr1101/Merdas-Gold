@@ -2,3 +2,181 @@
 @media(max-width:850px){.two-columns{grid-template-columns:1fr}.pricing-hero{padding:22px}.pricing-hero h1{font-size:23px}.hero-gem{width:60px;height:60px}.rate-banner{flex-wrap:wrap}.pricing-tabs a{padding:10px 12px}.invoice-paper{padding:18px}.rate-banner strong{font-size:27px}}
 @media(max-width:450px){.field-grid{grid-template-columns:1fr;gap:0}.hero-gem{display:none}.card{padding:18px}.invoice-title{align-items:start;flex-direction:column}}
 .pricing-hero h1:focus{outline:none}
+.schedule-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;align-items:center;gap:18px;margin:-8px 0 20px;padding:15px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}.schedule-strip div{min-width:0}.schedule-strip div span{display:block;margin-bottom:5px;color:var(--muted);font-size:11px}.schedule-strip strong{display:block;font-size:12px;font-weight:650;font-variant-numeric:tabular-nums}
+@media(max-width:850px){.schedule-strip{grid-template-columns:1fr 1fr}.schedule-strip>.badge{justify-self:start}}
+@media(max-width:450px){.schedule-strip{grid-template-columns:1fr}}
+
+/* Align pricing with the shared Persian admin design system. */
+.pricing-page,
+.pricing-page ::deep input,
+.pricing-page ::deep select,
+.pricing-page ::deep textarea,
+.pricing-page ::deep button,
+.pricing-page ::deep .mud-typography,
+.pricing-page ::deep .mud-input,
+.pricing-page ::deep .mud-input-slot {
+    font-family: var(--font) !important;
+}
+
+.pricing-page {
+    color: var(--ink);
+    font-size: var(--text-body);
+}
+
+.pricing-hero {
+    padding: var(--admin-card-padding);
+    border-color: var(--border);
+    border-radius: var(--admin-card-radius);
+    background: var(--surface);
+    box-shadow: var(--admin-shadow);
+}
+
+.pricing-hero h1 {
+    margin: 5px 0 0;
+    font-size: 1.45rem;
+    line-height: 1.45;
+    letter-spacing: -.35px;
+}
+
+.eyebrow {
+    color: var(--muted);
+    font-size: var(--text-caption);
+    font-weight: 650;
+}
+
+.hero-gem {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    transform: none;
+}
+
+.hero-gem ::deep svg { font-size: 25px; }
+
+.pricing-tabs {
+    gap: var(--admin-space-2);
+    margin: var(--admin-space-5) 0;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.pricing-tabs a {
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 7px;
+    font-size: var(--text-label);
+}
+
+.pricing-tabs .selected {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.card,
+.rate-banner,
+.schedule-strip {
+    border-radius: var(--admin-card-radius);
+    box-shadow: var(--admin-shadow);
+}
+
+.card {
+    padding: var(--admin-card-padding);
+    margin-bottom: var(--admin-space-5);
+}
+
+.card h2 { font-size: 15px; }
+.two-columns { gap: var(--admin-space-5); }
+
+.pricing-page p,
+.pricing-page ::deep label,
+.pricing-page ::deep input:not([type=checkbox]),
+.pricing-page ::deep select,
+.pricing-page ::deep textarea,
+.primary,
+.secondary,
+table {
+    font-size: var(--text-body);
+}
+
+.pricing-page ::deep label {
+    gap: 6px;
+    margin: var(--admin-space-4) 0;
+    font-weight: 600;
+}
+
+.pricing-page ::deep input:not([type=checkbox]),
+.pricing-page ::deep select,
+.pricing-page ::deep textarea {
+    min-height: var(--admin-control-height);
+    padding: 7px 10px;
+    border-radius: var(--admin-control-radius);
+    background: var(--surface);
+}
+
+.pricing-page ::deep input:focus,
+.pricing-page ::deep select:focus,
+.pricing-page ::deep textarea:focus {
+    outline: 0;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+
+.primary,
+.secondary {
+    min-height: var(--admin-control-height);
+    padding: 0 13px;
+    border-radius: var(--admin-control-radius);
+    font-weight: 650;
+}
+
+.primary:hover:not(:disabled) { background: var(--primary-hover); }
+.secondary:hover:not(:disabled) { border-color: var(--primary-border); color: var(--primary); }
+
+.rate-banner {
+    padding: var(--admin-card-padding);
+    border-color: var(--primary-border);
+    background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+
+.rate-banner strong { font-size: 27px; }
+.rate-banner span,
+.rate-banner small { font-size: var(--text-label); }
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: var(--text-caption);
+    font-weight: 650;
+}
+
+.schedule-strip {
+    gap: var(--admin-space-4);
+    padding: 12px var(--admin-card-padding);
+}
+
+.schedule-strip div span,
+.hint,
+.pricing-page ::deep small { font-size: var(--text-caption); }
+.schedule-strip strong { font-size: var(--text-label); }
+
+.calculator { background: var(--surface); }
+.invoice-paper { color: var(--ink); box-shadow: var(--admin-shadow); }
+
+th,
+td { padding: 10px; }
+th { color: var(--muted); font-size: var(--text-caption); font-weight: 650; }
+td { color: var(--ink); font-size: var(--text-label); }
+
+@media(max-width:850px) {
+    .pricing-hero { padding: var(--admin-space-4); }
+    .pricing-hero h1 { font-size: 1.3rem; }
+    .pricing-tabs { margin-block: var(--admin-space-4); }
+}
+
+@media(max-width:450px) {
+    .card { padding: var(--admin-space-4); }
+    .rate-banner { padding: var(--admin-space-4); }
+}

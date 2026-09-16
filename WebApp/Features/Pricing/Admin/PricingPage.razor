@@ -15,14 +15,22 @@
     @if (_settings is null || _rule is null) { <MudProgressLinear Indeterminate="true" /> }
     else if (Active == "rates")
     {
-        <div class="rate-banner"><div><span>هر گرم طلای ۱۸ عیار</span><strong>@(_current?.PriceToman?.ToString("N0") ?? "—") <small>تومان</small></strong><p>زمان نرخ: @LocalTime(_current?.SourceUtc) · منبع: @(_current?.Provider ?? "تنظیم نشده")</p></div><span class="badge @(Fresh ? "good" : "warning")">@(Fresh ? (_current?.Provider == "دستی" ? "نرخ دستی فعال" : "نرخ معتبر") : "نرخ معتبر در دسترس نیست")</span><button class="primary" disabled="@_busy" @onclick="Fetch">دریافت نرخ جدید</button></div>
+        <div class="rate-banner"><div><span>هر گرم طلای ۱۸ عیار</span><strong>@(_current?.PriceToman?.ToString("N0") ?? "—") <small>تومان</small></strong><p>زمان نرخ: @LocalTime(_current?.SourceUtc) · منبع: @GoldProviderNames.DisplayName(_current?.Provider ?? _settings.Provider)</p></div><span class="badge @(Fresh ? "good" : "warning")">@(Fresh ? (_current?.Provider == "دستی" ? "نرخ دستی فعال" : "نرخ معتبر") : "نرخ معتبر در دسترس نیست")</span><button class="primary" disabled="@_busy" @onclick="Fetch">دریافت نرخ جدید</button></div>
+        <div class="schedule-strip" aria-live="polite">
+            <div><span>آخرین تلاش</span><strong>@LocalTime(_schedule?.LastAttemptUtc)</strong></div>
+            <div><span>آخرین دریافت موفق</span><strong>@LocalTime(_schedule?.LastSuccessUtc)</strong></div>
+            <div><span>اجرای بعدی</span><strong>@NextRunText</strong></div>
+            <span class="badge @(_schedule?.CredentialsConfigured == true ? "good" : "warning")">@(_schedule?.CredentialsConfigured == true ? "اعتبارنامه آماده" : "اعتبارنامه تنظیم نشده")</span>
+        </div>
         @if (!Fresh) { <p class="hint">محاسبه با نرخ زنده تا دریافت نرخ معتبر متوقف است. پیش‌نمایش فرضی همچنان قابل استفاده است.</p> }
         <div class="two-columns">
             <article class="card"><h2>دریافت خودکار نرخ</h2>
                 <EditForm Model="_settings" OnValidSubmit="SaveSettings" FormName="rate-settings">
-                    <ValidationSummary /><fieldset disabled="@_busy"><label>تأمین‌کننده<input value="نوسان · Navasan" disabled /></label><label>کلید API<input type="password" autocomplete="new-password" @bind="_apiKey" maxlength="500" placeholder="@(_settings.ProtectedApiKey.Length > 0 ? "کلید ذخیره شده است" : "کلید سرویس را وارد کنید")" /></label>
+                    <ValidationSummary /><fieldset disabled="@_busy"><label>تأمین‌کننده<select @bind="_settings.Provider"><option value="@GoldProviderNames.TabanGohar">تابان گوهر نفیس</option><option value="@GoldProviderNames.Navasan">نوسان</option></select></label>
+                    @if (_settings.Provider == GoldProviderNames.Navasan) { <label>کلید API<input type="password" autocomplete="new-password" @bind="_apiKey" maxlength="500" placeholder="@(_settings.ProtectedApiKey.Length > 0 ? "کلید ذخیره شده است" : "کلید سرویس را وارد کنید")" /></label> }
+                    else { <p class="hint">نام کاربری و رمز تابان گوهر از تنظیمات امن محیط اجرا خوانده می‌شود و در دیتابیس یا سابقه عملیات نمایش داده نمی‌شود.</p> }
                     <div class="field-grid"><label>فاصله دریافت<select @bind="_settings.IntervalMinutes"><option value="1">هر ۱ دقیقه</option><option value="5">هر ۵ دقیقه</option><option value="15">هر ۱۵ دقیقه</option></select></label><label>اعتبار نرخ (دقیقه)<InputNumber @bind-Value="_settings.MaxAgeMinutes" min="1" max="1440" /></label></div>
-                    <label>واحد پاسخ تأمین‌کننده<select @bind="_settings.SourceUnit"><option value="toman">تومان</option><option value="rial">ریال؛ تبدیل خودکار به تومان</option></select></label>
+                    <div class="field-grid"><label>واحد پاسخ تأمین‌کننده<select @bind="_settings.SourceUnit"><option value="toman">تومان</option><option value="rial">ریال؛ تبدیل خودکار به تومان</option></select></label><label>نگهداری تاریخچه (روز)<InputNumber @bind-Value="_settings.RetentionDays" min="7" max="365" /></label></div>
                     <label class="check"><InputCheckbox @bind-Value="_settings.Enabled" /> دریافت خودکار فعال باشد</label><button class="primary" type="submit">ذخیره تنظیمات</button></fieldset>
                 </EditForm>
             </article>
@@ -33,7 +41,8 @@
         </div>
         <article class="card"><div class="section-heading"><div><h2>سابقه دریافت نرخ</h2></div><span class="badge">@_rateCount ردیف</span></div>
             <div class="filters"><label>روز شمسی<input @bind="_rateDay" placeholder="۱۴۰۵/۰۶/۱۹" /></label><label>از ساعت<input type="time" @bind="_fromTime" /></label><label>تا ساعت<input type="time" @bind="_toTime" /></label><button class="secondary" disabled="@_busy" @onclick="SearchRates">نمایش</button></div>
-            <div class="table-scroll"><table><thead><tr><th>دریافت · تهران</th><th>زمان نرخ · تهران</th><th>قیمت / تومان</th><th>منبع</th><th>وضعیت</th></tr></thead><tbody>@foreach (var rate in _history) { <tr><td>@LocalTime(rate.ReceivedUtc)</td><td>@LocalTime(rate.SourceUtc)</td><td>@rate.PriceToman?.ToString("N0")</td><td>@rate.Provider</td><td>@rate.Status</td></tr> }</tbody></table></div>
+            <p class="hint">رکوردهای قدیمی‌تر از @_settings.RetentionDays روز به‌صورت خودکار حذف می‌شوند.</p>
+            <div class="table-scroll"><table><thead><tr><th>دریافت · تهران</th><th>زمان نرخ · تهران</th><th>قیمت / تومان</th><th>منبع</th><th>وضعیت</th></tr></thead><tbody>@foreach (var rate in _history) { <tr><td>@LocalTime(rate.ReceivedUtc)</td><td>@LocalTime(rate.SourceUtc)</td><td>@rate.PriceToman?.ToString("N0")</td><td>@GoldProviderNames.DisplayName(rate.Provider)</td><td>@rate.Status</td></tr> }</tbody></table></div>
             @if (_history.Count == 0) { <div class="empty">در این بازه دریافتی ثبت نشده است.</div> }
             <div class="pagination"><button class="secondary" disabled="@(_ratePage == 0 || _busy)" @onclick="PreviousRates">قبلی</button><span>صفحه @(_ratePage + 1)</span><button class="secondary" disabled="@((_ratePage + 1) * 30 >= _rateCount || _busy)" @onclick="NextRates">بعدی</button></div>
         </article>
