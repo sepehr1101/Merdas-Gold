@@ -7,12 +7,28 @@
 
 <PageTitle>فروش و قیمت‌گذاری | مرداس</PageTitle>
 <section class="pricing-page">
-    <header class="pricing-hero"><div><span class="eyebrow">مرکز قیمت‌گذاری · طلای ۱۸ عیار</span><h1>قیمت دقیق، مدیریت ساده</h1></div><div class="hero-gem" aria-hidden="true"><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></div></header>
-    <nav class="pricing-tabs" aria-label="فروش و قیمت‌گذاری">
-        @foreach (var tab in Tabs) { <a class="@(Active == tab.Key ? "selected" : "")" href="/admin/pricing/@tab.Key" aria-current="@(Active == tab.Key ? "page" : null)"><MudIcon Icon="@tab.Icon" Size="Size.Small" />@tab.Title</a> }
-    </nav>
+    @if (Active == "overview")
+    {
+        <header class="admin-hub-hero">
+            <div class="admin-hub-hero-copy">
+                <span class="admin-hub-eyebrow"><MudIcon Icon="@Icons.Material.Outlined.CurrencyExchange" Size="Size.Small" /> مدیریت فروشگاه</span>
+                <h1 class="admin-hub-title">فروش و قیمت‌گذاری</h1>
+            </div>
+            <div class="admin-hub-emblem" aria-hidden="true"><span></span><MudIcon Icon="@Icons.Material.Outlined.PriceChange" /></div>
+        </header>
+        <div class="admin-hub-grid">
+            <a class="admin-hub-card accent-blue" href="/admin/pricing/rates"><span class="admin-hub-icon"><MudIcon Icon="@Icons.Material.Outlined.CurrencyExchange" /></span><div class="admin-hub-copy"><h2>نرخ طلا</h2><p>دریافت خودکار، نرخ دستی و سابقه نرخ‌ها</p></div><span class="admin-hub-footer">مدیریت نرخ <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></span></a>
+            <a class="admin-hub-card accent-green" href="/admin/pricing/discounts"><span class="admin-hub-icon"><MudIcon Icon="@Icons.Material.Outlined.LocalOffer" /></span><div class="admin-hub-copy"><h2>تخفیف‌ها</h2><p>تعریف و مدیریت تخفیف اجرت کالاها</p></div><span class="admin-hub-footer">مدیریت تخفیف <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></span></a>
+            <a class="admin-hub-card accent-gold" href="/admin/pricing/rules"><span class="admin-hub-icon"><MudIcon Icon="@Icons.Material.Outlined.Calculate" /></span><div class="admin-hub-copy"><h2>قواعد قیمت‌گذاری</h2><p>مالیات، گرد کردن و محاسبه آزمایشی قیمت</p></div><span class="admin-hub-footer">مدیریت قواعد <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></span></a>
+        </div>
+    }
+    else
+    {
+        <header class="pricing-section-header"><a href="/admin/pricing"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> فروش و قیمت‌گذاری</a><h1>@Tabs.First(tab => tab.Key == Active).Title</h1></header>
+    }
     @if (_message is not null) { <div class="notice @(_failed ? "failure" : "")" role="status">@_message</div> }
-    @if (_settings is null || _rule is null) { <MudProgressLinear Indeterminate="true" /> }
+    @if (Active == "overview") { }
+    else if (_settings is null || _rule is null) { <MudProgressLinear Indeterminate="true" /> }
     else if (Active == "rates")
     {
         <div class="rate-banner"><div><span>هر گرم طلای ۱۸ عیار</span><strong>@(_current?.PriceToman?.ToString("N0") ?? "—") <small>تومان</small></strong><p>زمان نرخ: @LocalTime(_current?.SourceUtc) · منبع: @GoldProviderNames.DisplayName(_current?.Provider ?? _settings.Provider)</p></div><span class="badge @(Fresh ? "good" : "warning")">@(Fresh ? (_current?.Provider == "دستی" ? "نرخ دستی فعال" : "نرخ معتبر") : "نرخ معتبر در دسترس نیست")</span><button class="primary" disabled="@_busy" @onclick="Fetch">دریافت نرخ جدید</button></div>
@@ -49,19 +65,61 @@
     }
     else if (Active == "rules")
     {
-        <div class="two-columns"><article class="card"><h2>قاعده عمومی فروشگاه</h2>
-            <EditForm Model="_rule" OnValidSubmit="SaveRule" FormName="pricing-rule"><ValidationSummary /><fieldset disabled="@_busy">
-                <label>روش اجرت<select @bind="_rule.FeeMode"><option value="percent">درصد از ارزش طلا</option><option value="gram">تومان به‌ازای هر گرم</option><option value="fixed">تومان برای کل قطعه</option></select></label>
-                <label>مقدار اجرت<InputNumber @bind-Value="_rule.FeeValue" min="0" /></label><label>سود فروشنده؛ درصد از طلا + اجرت<InputNumber @bind-Value="_rule.ProfitPercent" min="0" max="100" /></label><label>مالیات؛ درصد از اجرت پس از تخفیف + سود<InputNumber @bind-Value="_rule.TaxPercent" min="0" max="100" /></label>
-                <label>گرد کردن مبلغ نهایی<select @bind="RoundingUnit"><option value="1">نزدیک‌ترین تومان</option><option value="100">نزدیک‌ترین ۱۰۰ تومان</option><option value="1000">نزدیک‌ترین ۱٬۰۰۰ تومان</option><option value="10000">نزدیک‌ترین ۱۰٬۰۰۰ تومان</option></select></label><button class="primary" type="submit">ذخیره قاعده قیمت‌گذاری</button>
-            </fieldset></EditForm>
-        </article><article class="card calculator"><h2>قبل از ذخیره، نتیجه را ببینید</h2>
-            <label>قطعه کاتالوگ<select value="@_pieceId" @onchange="SelectPiece"><option value="0">وزن دلخواه برای آزمایش</option>@foreach (var piece in _pieces) { <option value="@piece.Id">@piece.Title · @piece.Weight گرم</option> }</select></label><label>وزن طلای ۱۸ عیار (گرم)<input type="number" step="0.001" min="0.001" @bind="_weight" /></label>
-            <label class="check"><input type="checkbox" @bind="_useLive" /> استفاده از نرخ معتبر فعلی</label>
-            @if (!_useLive) { <label>نرخ فرضی هر گرم (تومان)<input type="number" min="1" @bind="_sampleRate" /></label><p class="hint">این نرخ فقط برای آزمایش است و ذخیره نمی‌شود.</p> }
-            @if (Preview is { } calculation) { <dl class="breakdown"><dt>ارزش طلا</dt><dd>@Money(calculation.Gold)</dd><dt>اجرت</dt><dd>@Money(calculation.Fee)</dd><dt>سود</dt><dd>@Money(calculation.Profit)</dd><dt>تخفیف اجرت</dt><dd>@Money(calculation.Discount)</dd><dt>مالیات</dt><dd>@Money(calculation.Tax)</dd><dt>تعدیل گرد کردن</dt><dd>@Money(calculation.Rounding)</dd><dt class="total">مبلغ نهایی</dt><dd class="total">@Money(calculation.Total) تومان</dd></dl><p class="hint">با قاعده ذخیره‌شده: @Money(SavedPreview?.Total ?? 0) تومان</p> }
-            else { <div class="notice failure">وزن، مقادیر فرم یا اعتبار نرخ را بررسی کنید.</div> }
-        </article></div>
+        <article class="card general-rule">
+                <h2>قاعده عمومی فروشگاه</h2>
+                <EditForm Model="_rule" OnValidSubmit="SaveRule" FormName="pricing-rule">
+                    <ValidationSummary />
+                    <fieldset disabled="@_busy">
+                        <div class="rule-fields">
+                            <label>درصد پیش‌فرض مالیات بر ارزش افزوده<InputNumber @bind-Value="_rule.TaxPercent" min="0" max="100" step="0.01" /><small>بر اجرت پس از تخفیف محاسبه می‌شود.</small></label>
+                            <label>گرد کردن مبلغ نهایی<select @bind="RoundingUnit"><option value="1">نزدیک‌ترین تومان</option><option value="100">نزدیک‌ترین ۱۰۰ تومان</option><option value="1000">نزدیک‌ترین ۱٬۰۰۰ تومان</option><option value="10000">نزدیک‌ترین ۱۰٬۰۰۰ تومان</option></select></label>
+                            <button class="admin-form-submit" type="submit">ذخیره قاعده قیمت‌گذاری</button>
+                        </div>
+                    </fieldset>
+                </EditForm>
+            </article>
+        <article class="card invoice-footer-card no-print">
+            <h2>قالب صورتحساب</h2>
+            <EditForm Model="_rule" OnValidSubmit="SaveRule" FormName="invoice-settings">
+                <ValidationSummary />
+                <fieldset disabled="@_busy">
+                    <div class="invoice-footer-row">
+                        <label>متن پایین صورتحساب<textarea rows="2" maxlength="500" @bind="_rule.InvoiceFooter"></textarea></label>
+                        <button class="admin-form-submit" type="submit">ذخیره متن</button>
+                    </div>
+                </fieldset>
+            </EditForm>
+            <a href="/admin/settings/store">ویرایش لوگو و نشانی فروشگاه</a>
+        </article>
+        <div class="invoice-workspace">
+            <article class="card invoice-controls no-print">
+                <h2>داده آزمایشی و قالب صورتحساب</h2>
+                <div class="field-grid">
+                    <label>قطعه کاتالوگ<select value="@_pieceId" @onchange="SelectPiece"><option value="0">وزن دلخواه برای آزمایش</option>@foreach (var piece in _pieces) { <option value="@piece.Id">@piece.Title · @piece.Weight گرم</option> }</select></label>
+                    <label>وزن طلای ۱۸ عیار (گرم)<input type="number" step="0.001" min="0.001" @bind="_weight" /></label>
+                    <label>اجرت این کالا (درصد)<input type="number" step="0.0001" min="0" max="100" @bind="_previewFeePercent" /></label>
+                    <label>سود فروشنده این کالا (درصد)<input type="number" step="0.0001" min="0" max="100" @bind="_previewProfitPercent" /></label>
+                </div>
+                <label class="check"><input type="checkbox" @bind="_useLive" /> استفاده از نرخ معتبر فعلی</label>
+                @if (!_useLive) { <label>نرخ فرضی هر گرم (تومان)<input type="number" min="1" @bind="_sampleRate" /></label><p class="hint">این نرخ فقط برای آزمایش است و ذخیره نمی‌شود.</p> }
+                <button class="primary" type="button" @onclick="ShowInvoice">نمایش صورتحساب</button>
+            </article>
+            <div class="invoice-result">
+                @if (_invoicePreview is { } invoice)
+                {
+                    <div class="invoice-actions no-print"><button class="secondary" type="button" @onclick="Print">چاپ / ذخیره PDF</button></div>
+                    <article class="invoice-paper" id="invoice-preview">
+                        <div class="invoice-top">@if (_hasLogo) { <img src="/store-assets/logo" alt="لوگوی فروشگاه" /> } else { <span class="invoice-monogram">م</span> }<div><h2>@_storeName</h2><p>@_storeAddress</p></div><span class="sample-stamp">نمونه</span></div>
+                        <div class="invoice-title"><h2>صورتحساب فروش طلا</h2><span>شماره: پیش‌نمایش<br />تاریخ: @LocalTime(_invoiceDateUtc)</span></div>
+                        <p>خریدار: مشتری نمونه · عیار: ۱۸ · واحد پول: تومان</p>
+                        <div class="table-scroll"><table><thead><tr><th>شرح</th><th>وزن</th><th>نرخ هر گرم</th><th>قیمت اصلی محصول</th></tr></thead><tbody><tr><td>@_invoicePieceTitle</td><td>@_invoiceWeight.ToString("N3") گرم</td><td>@Money(_invoiceRate)</td><td>@Money(invoice.ProductPrice)</td></tr></tbody></table></div>
+                        <dl class="breakdown"><dt>اجرت</dt><dd>@Money(invoice.Fee)</dd><dt>تخفیف اجرت</dt><dd>@Money(invoice.Discount)</dd><dt>مالیات</dt><dd>@Money(invoice.Tax)</dd><dt>تعدیل گرد کردن</dt><dd>@Money(invoice.Rounding)</dd><dt class="total">جمع قابل پرداخت</dt><dd class="total">@Money(invoice.Total) تومان</dd></dl>
+                        <footer><p>@_invoiceFooter</p><small>اطلاعات آزمایشی برای نمایش قالب؛ فاقد اعتبار مالی و مالیاتی.</small></footer>
+                    </article>
+                }
+                else { <div class="invoice-placeholder">داده آزمایشی را وارد کنید و «نمایش صورتحساب» را بزنید.</div> }
+            </div>
+        </div>
     }
     else if (Active == "discounts")
     {
@@ -71,14 +129,4 @@
             @foreach (var discount in _discounts) { <div class="discount-item"><div><strong>@discount.Title</strong><p>@Money(discount.Value) @(discount.Kind == "percent" ? "درصد" : "تومان") از اجرت</p><small>@DiscountStatus(discount) · پایان @LocalTime(discount.EndsUtc.AddSeconds(-1))</small></div><button class="secondary" @onclick="() => EditDiscount(discount)">ویرایش</button></div> }
         </article></div>
     }
-    else if (Active == "invoice")
-    {
-        <div class="two-columns invoice-layout"><article class="card no-print"><h2>قالب صورتحساب</h2><EditForm Model="_rule" OnValidSubmit="SaveRule" FormName="invoice-settings"><ValidationSummary /><fieldset disabled="@_busy"><label>متن پایین صورتحساب<textarea rows="4" maxlength="500" @bind="_rule.InvoiceFooter"></textarea></label><button class="primary" type="submit">ذخیره متن</button></fieldset></EditForm><div class="actions"><button class="secondary" @onclick="Print">چاپ / ذخیره PDF</button><a href="/admin/settings/store">ویرایش لوگو و نشانی</a></div></article>
-        <article class="invoice-paper" id="invoice-preview"><div class="invoice-top">@if (_hasLogo) { <img src="/store-assets/logo" alt="لوگوی فروشگاه" /> } else { <span class="invoice-monogram">م</span> }<div><h2>@_storeName</h2><p>@_storeAddress</p></div><span class="sample-stamp">نمونه</span></div><div class="invoice-title"><h2>صورتحساب فروش طلا</h2><span>شماره: پیش‌نمایش<br />تاریخ: @LocalTime(DateTime.UtcNow)</span></div><p>خریدار: مشتری نمونه · عیار: ۱۸ · واحد پول: تومان</p><table><thead><tr><th>شرح</th><th>وزن</th><th>نرخ فرضی هر گرم</th><th>ارزش طلا</th></tr></thead><tbody><tr><td>انگشتر نمونه</td><td>۲ گرم</td><td>۱۰٬۰۰۰٬۰۰۰</td><td>۲۰٬۰۰۰٬۰۰۰</td></tr></tbody></table>
-            @if (InvoicePreview is { } invoice) { <dl class="breakdown"><dt>اجرت</dt><dd>@Money(invoice.Fee)</dd><dt>سود</dt><dd>@Money(invoice.Profit)</dd><dt>تخفیف اجرت</dt><dd>@Money(invoice.Discount)</dd><dt>مالیات</dt><dd>@Money(invoice.Tax)</dd><dt>گرد کردن</dt><dd>@Money(invoice.Rounding)</dd><dt class="total">جمع قابل پرداخت</dt><dd class="total">@Money(invoice.Total) تومان</dd></dl> }
-            <footer><p>@_rule.InvoiceFooter</p><small>اطلاعات فرضی برای نمایش قالب؛ فاقد اعتبار مالی و مالیاتی.</small></footer>
-        </article></div>
-    }
 </section>
-
-

@@ -1,0 +1,209 @@
+/*
+ * Shared admin menu layout for Settings, Pricing, Catalog, and Content.
+ * Use admin-hub-hero with hero-copy, eyebrow, title, and emblem for the top bar.
+ * Use admin-hub-grid > admin-hub-card with icon, copy, and footer for menu cards.
+ * Add an accent-* class for icon color; admin-hub-number is optional.
+ * Keep page-specific data and special sections in each page's isolated CSS.
+ */
+.admin-shell .admin-hub-hero {
+    min-height: 164px;
+    margin-bottom: var(--admin-space-5);
+    padding: var(--admin-space-6);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--admin-space-5);
+    border-radius: 14px;
+    background: linear-gradient(125deg, #181522 0%, #2d2455 58%, color-mix(in srgb, var(--primary) 80%, #111) 100%);
+    color: #fff;
+    box-shadow: 0 5px 18px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.admin-shell .admin-hub-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 17% 12%, #ffffff16 0 2px, transparent 3px),
+        radial-gradient(circle at 74% 65%, #ffffff10 0 1px, transparent 2px);
+    background-size: 54px 54px, 37px 37px;
+    opacity: .7;
+    pointer-events: none;
+}
+
+.admin-shell .admin-hub-hero-copy {
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.admin-shell .admin-hub-eyebrow {
+    width: fit-content;
+    margin-bottom: 10px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid #ffffff24;
+    border-radius: 99px;
+    background: #ffffff0d;
+    color: #e6ddc9;
+    font-size: var(--text-caption);
+}
+
+.admin-shell .admin-hub-title,
+.admin-shell .admin-hub-hero .mud-typography.admin-hub-title {
+    margin: 0;
+    color: #fff;
+    font-family: var(--font);
+    font-size: 1.65rem;
+    font-weight: 850;
+    line-height: 1.45;
+    letter-spacing: -.6px;
+}
+
+.admin-shell .admin-hub-emblem {
+    width: 88px;
+    height: 88px;
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: 1px solid #ffffff1f;
+    border-radius: 50%;
+    color: #e7cfa0;
+}
+
+.admin-shell .admin-hub-emblem::before,
+.admin-shell .admin-hub-emblem::after {
+    content: "";
+    position: absolute;
+    border: 1px solid #ffffff12;
+    border-radius: 50%;
+}
+.admin-shell .admin-hub-emblem::before { inset: 10px; }
+.admin-shell .admin-hub-emblem::after { inset: 23px; }
+.admin-shell .admin-hub-emblem span {
+    width: 8px;
+    height: 8px;
+    position: absolute;
+    top: 8px;
+    right: 16px;
+    border-radius: 50%;
+    background: var(--metal);
+    box-shadow: 0 0 12px var(--metal);
+}
+.admin-shell .admin-hub-emblem .mud-icon-root { font-size: 30px; }
+
+@media (max-width: 650px) {
+    .admin-shell .admin-hub-hero {
+        min-height: 150px;
+        padding: var(--admin-space-5);
+        border-radius: 12px;
+    }
+    .admin-shell .admin-hub-title,
+    .admin-shell .admin-hub-hero .mud-typography.admin-hub-title { font-size: 1.45rem; }
+    .admin-shell .admin-hub-emblem { display: none; }
+}
+
+/* Shared admin menu cards: settings, pricing, catalog, and content. */
+.admin-shell .admin-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--admin-space-3);
+}
+
+.admin-shell .admin-hub-card {
+    min-width: 0;
+    min-height: 190px;
+    padding: var(--admin-card-padding);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--admin-card-radius);
+    background: var(--surface);
+    color: var(--ink);
+    text-decoration: none;
+    box-shadow: var(--admin-shadow);
+    transition: transform var(--duration), border-color var(--duration), box-shadow var(--duration);
+}
+
+.admin-shell .admin-hub-card:hover,
+.admin-shell .admin-hub-card:focus-visible {
+    transform: translateY(-2px);
+    border-color: var(--primary-border);
+    box-shadow: var(--admin-shadow-hover);
+}
+
+.admin-shell .admin-hub-card::after {
+    content: "";
+    width: 90px;
+    height: 90px;
+    position: absolute;
+    top: -50px;
+    left: -35px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+    pointer-events: none;
+}
+
+.admin-shell .admin-hub-number {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    color: color-mix(in srgb, var(--muted) 45%, transparent);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.admin-shell .admin-hub-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 20px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.admin-shell .accent-gold .admin-hub-icon { background: #fff7e8; color: #a96805; }
+.admin-shell .accent-green .admin-hub-icon { background: #eff8f5; color: #14735a; }
+.admin-shell .accent-blue .admin-hub-icon { background: #eef6ff; color: #2467a8; }
+.admin-shell .accent-rose .admin-hub-icon { background: #fff0f3; color: #a33d56; }
+.admin-shell .accent-orange .admin-hub-icon { background: #fff4e9; color: #b25b16; }
+
+.admin-shell .admin-hub-copy { position: relative; z-index: 1; }
+.admin-shell .admin-hub-copy h2 { margin: 0 0 5px; font-size: 15px; }
+.admin-shell .admin-hub-copy p { margin: 0; color: var(--muted); font-size: var(--text-label); line-height: 1.75; }
+
+.admin-shell .admin-hub-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--admin-space-2);
+    border-top: 1px solid var(--border);
+    color: var(--ink);
+    font-size: var(--text-caption);
+}
+.admin-shell .admin-hub-card:hover .admin-hub-footer,
+.admin-shell .admin-hub-card:focus-visible .admin-hub-footer { color: var(--primary); }
+
+@media (max-width: 960px) {
+    .admin-shell .admin-hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 650px) {
+    .admin-shell .admin-hub-grid { grid-template-columns: 1fr; }
+    .admin-shell .admin-hub-card { min-height: 170px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-shell .admin-hub-card { transition: none; }
+}

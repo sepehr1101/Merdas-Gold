@@ -3,6 +3,8 @@ namespace MerdasGold.Features.Catalog.Models;
 public sealed record CatalogActor(string UserId, string UserName, string IpAddress);
 public sealed record CatalogOverviewModel(int ProductCount, int ActiveProductCount, int AvailablePieceCount, int CategoryCount, int TypeCount, int AttributeCount);
 public sealed record CatalogLookup(int Id, string Name, bool IsActive = true);
+public sealed record HomeCategoryItem(string Name, string Slug, string? ImageUrl);
+public sealed record StorefrontCategoryItem(string Name, string Slug, string Description, string? ImageUrl);
 
 public sealed class CategoryListItem
 {
@@ -14,6 +16,8 @@ public sealed class CategoryListItem
     public string? ParentName { get; init; }
     public int DisplayOrder { get; init; }
     public bool IsActive { get; init; }
+    public bool ShowOnHome { get; init; }
+    public string? ImageUrl { get; init; }
     public int ProductCount { get; init; }
     public string RowVersion { get; init; } = string.Empty;
 }
@@ -82,6 +86,8 @@ public sealed record ProductTypeAttributeInput(
     bool IsComparable,
     int DisplayOrder);
 
+public sealed record ProductPageResult(IReadOnlyList<ProductListItem> Items, int TotalCount, int Page, int PageSize);
+
 public sealed class ProductListItem
 {
     public int Id { get; init; }
@@ -105,6 +111,8 @@ public sealed class ProductEditModel
     public string Code { get; set; } = string.Empty;
     public string ShortDescription { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public decimal? MakingFeePercent { get; set; }
+    public decimal? SellerProfitPercent { get; set; }
     public int ProductTypeId { get; set; }
     public int? PrimaryCategoryId { get; set; }
     public string Status { get; set; } = "draft";
@@ -132,6 +140,7 @@ public sealed class ProductPieceModel
     public int Id { get; init; }
     public string TrackingCode { get; init; } = string.Empty;
     public decimal ExactGoldWeightGrams { get; init; }
+    public int Quantity { get; init; } = 1;
     public decimal? StoneWeightCarats { get; init; }
     public string Status { get; init; } = string.Empty;
     public bool IsActive { get; init; }
@@ -159,4 +168,4 @@ public sealed class ProductEditorData
     public IReadOnlyList<ProductImageModel> Images { get; init; } = [];
 }
 
-public enum CatalogSaveResult { Saved, Conflict, Invalid, NotFound, InUse, Protected }
+public enum CatalogSaveResult { Saved, Conflict, Invalid, NotFound, InUse, Protected, HomeLimit, ImageLimit }

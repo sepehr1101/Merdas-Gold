@@ -1,0 +1,57 @@
+@page "/products/category/{Slug}"
+@layout StorefrontLayout
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontCatalogService Catalog
+@inject NavigationManager Navigation
+
+@if (_category is not null)
+{
+    <PageTitle>@_category.Name | محصولات مرداس</PageTitle>
+    <div class="category-products-page">
+        <section class="category-hero" aria-labelledby="category-title">
+            <div class="storefront-container category-hero-inner">
+                <div class="category-hero-copy">
+                    <nav aria-label="مسیر صفحه" class="category-breadcrumb">
+                        <a href="/">خانه</a><span aria-hidden="true">/</span>
+                        <a href="/#categories">دسته‌بندی محصولات</a><span aria-hidden="true">/</span>
+                        <span aria-current="page">@_category.Name</span>
+                    </nav>
+                    <h1 id="category-title">@_category.Name</h1>
+                    <p>@(string.IsNullOrWhiteSpace(_category.Description) ? "محصولات این دسته از کاتالوگ فروشگاه" : _category.Description)</p>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_category.ImageUrl))
+                {
+                    <img class="category-hero-image" src="@_category.ImageUrl" alt="" width="280" height="230" />
+                }
+            </div>
+        </section>
+        <section class="inner-content category-content" aria-labelledby="category-products-title">
+            <div class="storefront-container">
+                <div class="category-content-heading">
+                    <div>
+                        <span class="category-kicker">MERDAS COLLECTION</span>
+                        <h2 id="category-products-title">محصولات @_category.Name</h2>
+                        <p>رنگ، وزن، ویژگی و قیمت هر محصول از کاتالوگ فروشگاه خوانده می‌شود.</p>
+                    </div>
+                    <span class="category-count">@ToPersian(_category.Products.Count) محصول</span>
+                </div>
+                <div class="category-product-grid">
+                    @foreach (var product in _category.Products)
+                    {
+                        <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" />
+                    }
+                </div>
+            </div>
+        </section>
+    </div>
+}
+@code {
+    [Parameter] public string Slug { get; set; } = string.Empty;
+    private StorefrontCategory? _category;
+    protected override async Task OnParametersSetAsync()
+    {
+        _category = await Catalog.CategoryAsync(Slug);
+        if (_category is null) Navigation.NotFound();
+    }
+    private static string ToPersian(int value) => string.Concat(value.ToString().Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+}

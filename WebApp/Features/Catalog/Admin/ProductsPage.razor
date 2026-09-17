@@ -6,27 +6,89 @@
 
 <section class="list-page">
     <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به کالاها</a>
-    <header class="page-header"><div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">محصولات</MudText></div><a class="primary-action" href="/admin/catalog/products/new"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> محصول جدید</a></header>
+    <header class="page-header">
+        <div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">محصولات</MudText><p>برای دیدن محصولات، دسته را انتخاب کنید یا در همهٔ کالاها جست‌وجو کنید.</p></div>
+        <a class="primary-action" href="/admin/catalog/products/new"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> محصول جدید</a>
+    </header>
     @if (Message is not null) { <div class="notice error">@Message</div> }
     @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" /> }
     else
     {
-        <div class="toolbar"><label><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" /><input placeholder="جست‌وجوی نام یا کد محصول" @bind="_search" @bind:event="oninput" /></label><div class="segments"><button class="@(_status is null ? "active" : "")" @onclick="ShowAll">همه</button><button class="@(_status == "active" ? "active" : "")" @onclick="ShowActive">فعال</button><button class="@(_status == "draft" ? "active" : "")" @onclick="ShowDraft">پیش‌نویس</button></div><span>@Filtered.Count محصول</span></div>
-        @if (Filtered.Count == 0)
+        <div class="toolbar">
+            <label class="search-field"><MudIcon Icon="@Icons.Material.Outlined.Search" Size="Size.Small" /><span class="visually-hidden">جست‌وجوی همهٔ محصولات</span><input value="@_search" @oninput="SearchChangedAsync" placeholder="جست‌وجو در همهٔ دسته‌ها: نام، کد کالا یا کد تنوع" autocomplete="off" /></label>
+            @if (_showProducts)
+            {
+                <div class="segments" aria-label="فیلتر وضعیت">
+                    <button type="button" class="@(_status is null ? "active" : "")" @onclick="ShowEveryStatusAsync">همه</button>
+                    <button type="button" class="@(_status == "active" ? "active" : "")" @onclick="ShowActiveAsync">فعال</button>
+                    <button type="button" class="@(_status == "draft" ? "active" : "")" @onclick="ShowDraftAsync">پیش‌نویس</button>
+                    <button type="button" class="@(_status == "archived" ? "active" : "")" @onclick="ShowArchivedAsync">بایگانی</button>
+                </div>
+            }
+        </div>
+        @if (!_showProducts)
         {
-            <div class="empty"><span><MudIcon Icon="@Icons.Material.Outlined.Inventory2" /></span><h2>محصولی پیدا نشد</h2><a class="primary-action" href="/admin/catalog/products/new">ساخت اولین محصول</a></div>
+            <div class="browse-heading"><div><h2>دسته‌بندی‌ها</h2><p>تعداد کالاهای هر دسته در کنار نام آن آمده است.</p></div><button type="button" class="text-action" @onclick="ShowAllProductsAsync">نمایش همهٔ محصولات</button></div>
+            <div class="category-grid">
+                @foreach (var category in _categories)
+                {
+                    <button type="button" class="category-tile" @onclick="() => SelectCategoryAsync(category.Id)">
+                        <span class="category-icon"><MudIcon Icon="@(category.ParentId.HasValue ? Icons.Material.Outlined.SubdirectoryArrowLeft : Icons.Material.Outlined.FolderOpen)" /></span>
+                        <span class="category-copy"><strong>@category.Name</strong><small>@(category.ParentName is null ? "دستهٔ اصلی" : $"زیرمجموعهٔ {category.ParentName}")</small></span>
+                        <span class="category-count">@category.ProductCount محصول</span>
+                        <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" />
+                    </button>
+                }
+                @if (_uncategorizedCount > 0)
+                {
+                    <button type="button" class="category-tile" @onclick="() => SelectCategoryAsync(0)">
+                        <span class="category-icon"><MudIcon Icon="@Icons.Material.Outlined.Inventory2" /></span>
+                        <span class="category-copy"><strong>بدون دسته</strong><small>کالاهایی که هنوز دسته ندارند</small></span>
+                        <span class="category-count">@_uncategorizedCount محصول</span>
+                        <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" />
+                    </button>
+                }
+            </div>
         }
         else
         {
-            <div class="product-grid">
-                @foreach (var item in Filtered)
-                {
-                    <a class="product-card" href="/admin/catalog/products/edit/@item.Id">
-                        <div class="image">@if (item.PrimaryImageId.HasValue) { <img src="/catalog-assets/images/@item.PrimaryImageId" alt="@item.Title" /> } else { <MudIcon Icon="@Icons.Material.Outlined.Diamond" /> }<span class="status @item.Status">@StatusLabel(item.Status)</span>@if (item.IsFeatured) { <span class="featured"><MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" /></span> }</div>
-                        <div class="copy"><span class="code">@item.Code</span><h2>@item.Title</h2><p>@item.TypeName · @(item.CategoryName ?? "بدون دسته")</p><span class="updated"><MudIcon Icon="@Icons.Material.Outlined.History" Size="Size.Small" /> به‌روزرسانی @PersianDate(item.UpdatedAtUtc)</span><footer><span>@item.VariantCount تنوع</span><i></i><span>@item.AvailablePieceCount قطعه آماده</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer></div>
-                    </a>
-                }
+            <div class="browse-heading result-heading">
+                <div>
+                    <button type="button" class="text-action" @onclick="ShowCategories">دسته‌بندی‌ها</button>
+                    <span aria-hidden="true"> / </span>
+                    <h2>@(HasSearch ? "نتایج جست‌وجوی سراسری" : _selectedCategoryId.HasValue ? SelectedCategoryName : "همهٔ محصولات")</h2>
+                    @if (HasSearch) { <p>جست‌وجو در همهٔ دسته‌ها انجام شده است؛ دستهٔ فعلی هر کالا در کارت آن دیده می‌شود.</p> }
+                </div>
+                <span class="result-count">@_result.TotalCount محصول</span>
             </div>
+            @if (_listLoading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+            }
+            else if (_result.TotalCount == 0)
+            {
+                <div class="empty"><span><MudIcon Icon="@Icons.Material.Outlined.SearchOff" /></span><h2>محصولی پیدا نشد</h2><p>عبارت جست‌وجو، دسته یا فیلتر وضعیت را تغییر دهید.</p></div>
+            }
+            else
+            {
+                <div class="product-grid">
+                    @foreach (var item in _result.Items)
+                    {
+                        <a class="product-card" href="/admin/catalog/products/edit/@item.Id">
+                            <div class="image">@if (item.PrimaryImageId.HasValue) { <img src="/catalog-assets/images/@item.PrimaryImageId" alt="@item.Title" loading="lazy" /> } else { <MudIcon Icon="@Icons.Material.Outlined.Diamond" /> }<span class="status @item.Status">@StatusLabel(item.Status)</span>@if (item.IsFeatured) { <span class="featured"><MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" /></span> }</div>
+                            <div class="copy"><span class="code" dir="ltr">@item.Code</span><h2>@item.Title</h2><p>@item.TypeName · @(item.CategoryName ?? "بدون دسته")</p><span class="updated"><MudIcon Icon="@Icons.Material.Outlined.History" Size="Size.Small" /> به‌روزرسانی @PersianDate(item.UpdatedAtUtc)</span><footer><span>@item.VariantCount تنوع</span><i></i><span>@item.AvailablePieceCount عدد آمادهٔ فروش</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer></div>
+                        </a>
+                    }
+                </div>
+                @if (PageCount > 1)
+                {
+                    <nav class="pagination" aria-label="صفحه‌بندی محصولات">
+                        <button type="button" disabled="@(_result.Page <= 1)" @onclick="() => ChangePageAsync(_result.Page - 1)">صفحهٔ قبل</button>
+                        <span>صفحهٔ @_result.Page از @PageCount</span>
+                        <button type="button" disabled="@(_result.Page >= PageCount)" @onclick="() => ChangePageAsync(_result.Page + 1)">صفحهٔ بعد</button>
+                    </nav>
+                }
+            }
         }
     }
 </section>

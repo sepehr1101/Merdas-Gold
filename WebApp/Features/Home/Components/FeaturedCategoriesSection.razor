@@ -2,9 +2,9 @@
     <StorefrontSectionTitle Kicker="categories" Title="دسته‌بندی محصولات" />
 
     <div class="categories storefront-container">
-        @foreach (var category in Categories)
+        @foreach (var category in _categories)
         {
-            <CategoryCard Title="@category.Title" ImageUrl="@category.ImageUrl" />
+            <CategoryCard Title="@category.Name" ImageUrl="@category.ImageUrl" Href="@($"/products/category/{category.Slug}")" />
         }
     </div>
 
@@ -20,15 +20,9 @@
 </section>
 
 @code {
-    private static readonly CategoryItem[] Categories =
-    [
-        new("پابند", "/assets/storefront/images/Untitl555ed-4-min.png"),
-        new("دستبند", "/assets/storefront/images/Untitled72-4-min.png"),
-        new("گردنبند", "/assets/storefront/images/Untitled-44-min.png"),
-        new("آویز", "/assets/storefront/images/Untitled-q4-min.png"),
-        new("حلقه", "/assets/storefront/images/Untitled-4-min.png"),
-        new("گوشواره", "/assets/storefront/images/421-min.png")
-    ];
+    [Inject] private MerdasGold.Features.Catalog.Services.CatalogService Catalog { get; set; } = default!;
+    private IReadOnlyList<MerdasGold.Features.Catalog.Models.HomeCategoryItem> _categories = [];
+    protected override async Task OnInitializedAsync() => _categories = await Catalog.GetHomeCategoriesAsync();
 
     private static readonly BenefitItem[] Benefits =
     [
@@ -37,6 +31,5 @@
         new("تنوع محصولات", "محصولاتی برای هر سلیقه‌ای", "/assets/storefront/images/ad-1.png")
     ];
 
-    private sealed record CategoryItem(string Title, string ImageUrl);
     private sealed record BenefitItem(string Title, string Description, string ImageUrl);
 }

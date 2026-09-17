@@ -1,0 +1,108 @@
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontCatalogService Catalog
+@inject StorefrontUiState UiState
+
+@if (Product is not null)
+{
+    <div class="demo-product-page">
+        <div class="product-page-top">
+            <nav class="storefront-container product-breadcrumb" aria-label="مسیر صفحه">
+                <a href="/">خانه</a><span aria-hidden="true">/</span>
+                <a href="/products/category/@Product.CategorySlug">@Product.CategoryName</a><span aria-hidden="true">/</span>
+                <span aria-current="page">@Product.Title</span>
+            </nav>
+        </div>
+        <section class="inner-content" aria-labelledby="product-title">
+            <div class="storefront-container">
+                <div class="product-detail">
+                    <div class="product-visual">
+                        <ProductGallery Title="@Product.Title" Images="@Product.Images" />
+                        <div class="product-description">
+                            <h2>دربارهٔ محصول</h2>
+                            <p>@Product.Description</p>
+                            <p class="image-note">تصویر این کالای نمونه ممکن است با نوع کالا متفاوت باشد.</p>
+                        </div>
+                    </div>
+                    <div class="product-summary">
+                        <h1 id="product-title">@Product.Title <span class="product-code" dir="ltr">(@Product.Code)</span></h1>
+                        <p class="product-price">@(_price is null ? "قیمت پس از دریافت نرخ معتبر" : $"{_price:N0} تومان")</p>
+                        @if (Product.Tags.Length > 0)
+                        {
+                            <p class="product-tags">برچسب‌ها: @string.Join("، ", Product.Tags)</p>
+                        }
+                        <div class="variant-picker" aria-label="انتخاب تنوع محصول">
+                            <h2>انتخاب رنگ و مدل</h2>
+                            <p>هر تنوع، وزن و موجودی خودش را دارد.</p>
+                            <div class="variant-options">
+                                @foreach (var variant in Product.Variants)
+                                {
+                                    <button type="button" class="variant-option @(variant.Id == _selected?.Id ? "selected" : null)"
+                                            disabled="@(!variant.Available)"
+                                            aria-pressed="@(variant.Id == _selected?.Id ? "true" : "false")"
+                                            @onclick="() => SelectVariantAsync(variant)">
+                                        <span class="color-swatch" style="background-color:@variant.ColorHex" aria-hidden="true"></span>
+                                        <span><strong>@variant.Color</strong><small>@variant.Title</small></span>
+                                        @if (!variant.Available) { <em>ناموجود</em> }
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                        @if (_selected is not null)
+                        {
+                            <div class="selected-variant" aria-live="polite">
+                                <span>رنگ: <strong>@_selected.Color</strong></span>
+                                @if (!string.IsNullOrWhiteSpace(_selected.Size))
+                                {
+                                    <span>سایز یا طول: <strong>@_selected.Size</strong></span>
+                                }
+                                <span>وزن دقیق قطعه: <strong>@_selected.Weight.ToString("0.000") گرم</strong></span>
+                            </div>
+                        }
+                        <button class="storefront-action product-add" type="button" disabled="@(Preview || _selected is null || _price is null)" @onclick="UiState.AddToCart">افزودن به سبد خرید</button>
+                        <p class="demo-note">سبد خرید فعلاً نمایشی است و سفارش ثبت نمی‌کند.</p>
+                    </div>
+                </div>
+                <details class="product-information">
+                    <summary><span>مشخصات محصول</span><span class="accordion-chevron" aria-hidden="true">⌄</span></summary>
+                    <div class="specs-content">
+                        <dl class="product-specs">
+                            <div><dt>نوع کالا</dt><dd>@Product.ProductType</dd></div>
+                            @foreach (var item in Product.Attributes)
+                            {
+                                <div><dt>@item.Key</dt><dd>@DisplayValue(item.Key, item.Value)</dd></div>
+                            }
+                            <div><dt>کد محصول</dt><dd dir="ltr">@Product.Code</dd></div>
+                        </dl>
+                    </div>
+                </details>
+                <section class="related-products" aria-labelledby="related-title">
+                    <div class="related-heading"><h2 id="related-title">محصولات همین دسته</h2><a href="/products/category/@Product.CategorySlug">دیدن همه</a></div>
+                    <div class="related-grid">
+                        @foreach (var related in Product.Related)
+                        {
+                            <ProductCard Title="@related.Title" Price="@related.Price" ImageUrl="@related.ImageUrl" Href="@related.Href" />
+                        }
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+}
+@code {
+    [Parameter, EditorRequired] public StorefrontProduct? Product { get; set; }
+    [Parameter] public bool Preview { get; set; }
+    private StorefrontVariant? _selected;
+    private decimal? _price;
+    protected override async Task OnParametersSetAsync()
+    {
+        _selected = Product?.Variants.FirstOrDefault(x => x.Available);
+        _price = _selected?.PieceId is int pieceId ? (await (Preview ? Catalog.PreviewQuoteAsync(pieceId) : Catalog.QuoteAsync(pieceId)))?.Breakdown.Total : null;
+    }
+    private async Task SelectVariantAsync(StorefrontVariant variant)
+    {
+        if (!variant.Available) return;
+        _selected = variant;
+        _price = variant.PieceId is int pieceId ? (await (Preview ? Catalog.PreviewQuoteAsync(pieceId) : Catalog.QuoteAsync(pieceId)))?.Breakdown.Total : null;
+    }
+    private static string DisplayValue(string name, string value) => name == "عیار" && value == "18" ? "۱۸ عیار" : value;
+}

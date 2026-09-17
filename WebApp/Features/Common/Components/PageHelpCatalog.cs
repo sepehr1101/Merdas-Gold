@@ -7,7 +7,8 @@ internal static class PageHelpCatalog
     private static readonly PageHelpContent[] Pages =
     [
         new("/admin/catalog", "کالاها", [
-                "طرح‌ها، ویژگی‌ها، تنوع‌ها و قطعات وزن‌دار را ساده و منظم مدیریت کنید."]),
+                "طرح‌ها، ویژگی‌ها، تنوع‌ها و قطعات وزن‌دار را ساده و منظم مدیریت کنید.",
+                "قیمت هر قطعه در ماژول «فروش و قیمت‌گذاری» و بر اساس وزن، سنگ و اجرت محاسبه خواهد شد."]),
         new("/admin/catalog/categories", "دسته‌بندی محصولات", [
                 "مسیر ساده‌ای بسازید تا مشتری زودتر به محصول موردنظرش برسد.",
                 "نام، آدرس و جایگاه دسته را مشخص کنید.",
@@ -92,8 +93,9 @@ internal static class PageHelpCatalog
                 "برای مواقع قطع سرویس؛ پس از انقضا، نرخ خودکار دوباره بررسی می‌شود.",
                 "زمان دریافت و زمان اعلام قیمت در منبع، جدا ثبت می‌شوند.",
                 "این قاعده برای تمام قطعات طلای ۱۸ عیار استفاده می‌شود.",
-                "مالیات: پیش‌فرض صفر است؛ نرخ و مبنا را با الزامات محل فعالیت تطبیق دهید.",
+                "مالیات بر ارزش افزوده: مقدار پیش‌فرض ۱۰ درصد است و بر اجرت پس از تخفیف محاسبه می‌شود؛ نرخ را از قاعده عمومی فروشگاه تغییر دهید.",
                 "قیمت بر اساس مقادیر همین فرم محاسبه می‌شود.",
+                "اجرت و درصد سود فروشنده برای هر کالا در فرم همان کالا ثبت می‌شوند.",
                 "فقط روی اجرت تمام محصولات؛ بیشترین تخفیف معتبر اعمال می‌شود و تخفیف‌ها جمع نمی‌شوند.",
                 "برای شروع، عنوان و درصد تخفیف اجرت را وارد کنید.",
                 "لوگو و نشانی از اطلاعات فروشگاه دریافت می‌شوند. این سند نمونه است و فاکتور فروش صادر نمی‌کند.",
@@ -123,11 +125,9 @@ internal static class PageHelpCatalog
         if (path.Equals("/admin/pricing/rates", StringComparison.OrdinalIgnoreCase))
             return pricing with { Title = "دریافت نرخ و سابقه قیمت", Paragraphs = pricing.Paragraphs[1..5] };
         if (path.Equals("/admin/pricing/rules", StringComparison.OrdinalIgnoreCase))
-            return pricing with { Title = "قاعده قیمت‌گذاری", Paragraphs = pricing.Paragraphs[5..8] };
+            return pricing with { Title = "قاعده قیمت‌گذاری", Paragraphs = pricing.Paragraphs[5..9].Concat(pricing.Paragraphs[11..]).ToArray() };
         if (path.Equals("/admin/pricing/discounts", StringComparison.OrdinalIgnoreCase))
-            return pricing with { Title = "تخفیف‌ها", Paragraphs = pricing.Paragraphs[8..10] };
-        if (path.Equals("/admin/pricing/invoice", StringComparison.OrdinalIgnoreCase))
-            return pricing with { Title = "قالب صورتحساب", Paragraphs = pricing.Paragraphs[10..] };
+            return pricing with { Title = "تخفیف‌ها", Paragraphs = pricing.Paragraphs[9..11] };
         return Pages.FirstOrDefault(page => path.Equals(page.Route, StringComparison.OrdinalIgnoreCase)
             || (page.Route == "/admin/catalog/products/edit"
                 && path.StartsWith(page.Route + "/", StringComparison.OrdinalIgnoreCase)));

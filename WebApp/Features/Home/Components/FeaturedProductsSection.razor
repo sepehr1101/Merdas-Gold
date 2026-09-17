@@ -1,25 +1,15 @@
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontCatalogService Catalog
 <section class="products-section storefront-section" id="products">
     <StorefrontSectionTitle Kicker="MERDAS" Title="جدیدترین محصولات" />
     <div class="product-grid storefront-container">
-        @foreach (var product in Products)
+        @foreach (var product in _products)
         {
-            <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" />
+            <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" />
         }
     </div>
 </section>
-
 @code {
-    private static readonly ProductItem[] Products =
-    [
-        new("گوشواره کد e91", "۱,۲۵۰,۰۰۰ تومان", "/assets/storefront/images/2-300x300.jpg"),
-        new("گوشواره کد b62", "۱۲۶,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-1-700x700-1-300x300.jpg"),
-        new("گوشواره کد c68", "۱,۲۳۶,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-7-700x700-1-300x300.jpg"),
-        new("دستبند کد e67", "۱۲۰,۵۰۰ تومان", "/assets/storefront/images/product-jew-img-4-700x700-1-300x300.jpg"),
-        new("دستبند e45", "۱۲۵,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-15-700x700-1-300x300.jpg"),
-        new("دستبند v45", "۴۱۵,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-9-700x700-1-300x300.jpg"),
-        new("انگشتر e48", "۴۵۸,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-8-700x700-1-300x300.jpg"),
-        new("دستبند e45", "۲,۴۰۰,۰۰۰ تومان", "/assets/storefront/images/product-jew-img-10-700x700-1-300x300.jpg")
-    ];
-
-    private sealed record ProductItem(string Title, string Price, string ImageUrl);
+    private IReadOnlyList<StorefrontProductCard> _products = [];
+    protected override async Task OnInitializedAsync() => _products = await Catalog.FeaturedAsync();
 }

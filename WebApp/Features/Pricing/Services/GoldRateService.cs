@@ -63,6 +63,21 @@ public sealed class GoldRateService(
         return rate;
     }
 
+    // Checkout must fail closed: a manual rate or an earlier success cannot hide a failed latest poll.
+    public async Task<GoldRate?> SaleRateAsync(RateSettings settings, DateTime nowUtc, CancellationToken ct = default)
+    {
+        if (!settings.Enabled) return null;
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var latest = await db.Set<GoldRate>().AsNoTracking()
+            .Where(x => x.Provider == settings.Provider)
+            .OrderByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+        return CanUseForSale(settings, latest, nowUtc) ? latest : null;
+    }
+
+    public static bool CanUseForSale(RateSettings settings, GoldRate? latestAttempt, DateTime nowUtc) =>
+        settings.Enabled && latestAttempt?.Provider == settings.Provider
+        && IsFresh(latestAttempt, settings.MaxAgeMinutes, nowUtc);
+
     public async Task<GoldRateScheduleStatus> ScheduleStatusAsync(RateSettings settings, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);

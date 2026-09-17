@@ -5,35 +5,35 @@
 <PageTitle>تنظیمات | مرداس گلد</PageTitle>
 
 <section class="settings-page">
-    <header class="settings-hero">
-        <div class="hero-copy">
-            <span class="eyebrow">
+    <header class="admin-hub-hero">
+        <div class="admin-hub-hero-copy">
+            <span class="admin-hub-eyebrow">
                 <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
                 مرکز کنترل مرداس
             </span>
-            <MudText Typo="Typo.h3" HtmlTag="h1" Class="page-title">همه‌چیز، دقیق و تحت کنترل</MudText>
+            <MudText Typo="Typo.h3" HtmlTag="h1" Class="admin-hub-title">همه‌چیز، دقیق و تحت کنترل</MudText>
             
         </div>
-        <div class="hero-orbit" aria-hidden="true">
+        <div class="admin-hub-emblem" aria-hidden="true">
             <span></span>
             <MudIcon Icon="@Icons.Material.Outlined.SettingsSuggest" />
         </div>
     </header>
 
-    <div class="settings-grid">
+    <div class="settings-grid admin-hub-grid">
         @for (var index = 0; index < SettingsItems.Length; index++)
         {
             var item = SettingsItems[index];
-            <a class="settings-card @item.Accent" href="@item.Route">
-                <span class="card-number">@((index + 1).ToString("00"))</span>
-                <span class="settings-icon" aria-hidden="true">
+            <a class="admin-hub-card @item.Accent" href="@item.Route">
+                <span class="admin-hub-number">@((index + 1).ToString("00"))</span>
+                <span class="admin-hub-icon" aria-hidden="true">
                     <MudIcon Icon="@item.Icon" Size="Size.Medium" />
                 </span>
-                <div class="settings-copy">
+                <div class="admin-hub-copy">
                     <h2>@item.Title</h2>
                     <p>@item.Description</p>
                 </div>
-                <footer>
+                <footer class="admin-hub-footer">
                     <span>@item.Footer</span>
                     <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" />
                 </footer>

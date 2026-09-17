@@ -1,0 +1,18 @@
+@page "/admin/catalog/products/preview/{Id:int}"
+@layout StorefrontLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using MerdasGold.Features.Catalog.Services
+@using MerdasGold.Features.Catalog.Storefront.Pages
+@inject StorefrontCatalogService Catalog
+
+@if (_product is not null)
+{
+    <PageTitle>پیش‌نمایش @_product.Title | مرداس</PageTitle>
+    <div class="admin-preview-notice">پیش‌نمایش مدیر · نمای کالا در ویترین؛ امکان ثبت سفارش در این پیش‌نمایش غیرفعال است.</div>
+    <ProductDetailView Product="_product" Preview="true" />
+}
+@code {
+    [Parameter] public int Id { get; set; }
+    private StorefrontProduct? _product;
+    protected override async Task OnParametersSetAsync() => _product = await Catalog.PreviewProductAsync(Id);
+}

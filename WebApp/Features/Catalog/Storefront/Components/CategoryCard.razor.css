@@ -21,12 +21,22 @@
     object-fit: contain;
 }
 
+.category-fallback {
+    display: block;
+    height: 190px;
+    margin: 12px 12px 0;
+    border-radius: 10px;
+    background: var(--storefront-canvas);
+}
+
 .category-card b { font-size: 19px; }
 
 @media (max-width: 1100px) {
     .category-card img { height: 155px; }
+    .category-fallback { height: 155px; }
 }
 
 @media (max-width: 820px) {
     .category-card img { height: 150px; }
+    .category-fallback { height: 150px; }
 }

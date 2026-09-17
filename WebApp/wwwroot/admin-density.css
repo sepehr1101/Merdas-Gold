@@ -105,6 +105,19 @@
 .admin-shell .save-row,
 .admin-shell .publish-row { margin-top: var(--admin-space-4); padding-top: var(--admin-space-4); }
 
+.admin-shell .admin-form-submit {
+    min-height: var(--admin-control-height);
+    padding: 0 13px;
+    border: 1px solid var(--primary);
+    border-radius: var(--admin-control-radius);
+    background: var(--primary);
+    color: var(--on-primary);
+    font: 650 var(--text-label) var(--font);
+    cursor: pointer;
+}
+.admin-shell .admin-form-submit:hover:not(:disabled) { background: var(--primary-hover); }
+.admin-shell .admin-form-submit:disabled { opacity: .45; cursor: default; }
+
 /* Shared surface language */
 .admin-shell .editor-card,
 .admin-shell .edit-card,
@@ -164,52 +177,7 @@
 .admin-shell .section-placeholder { min-height: 240px; }
 .admin-shell .section-icon { width: 48px; height: 48px; margin-bottom: 4px; border-radius: 12px; }
 
-/* Hub pages: retain identity without landing-page scale */
-.admin-shell .hub-hero,
-.admin-shell .settings-hero {
-    min-height: 164px;
-    margin-bottom: var(--admin-space-5);
-    padding: var(--admin-space-6);
-    border-radius: 14px;
-    box-shadow: 0 5px 18px color-mix(in srgb, var(--primary) 10%, transparent);
-}
-.admin-shell .hub-hero .eyebrow,
-.admin-shell .settings-hero .eyebrow { margin-bottom: 10px; padding: 5px 8px; font-size: var(--text-caption); }
-.admin-shell .hero-copy .page-title { margin-bottom: 6px; font-size: 1.65rem; letter-spacing: -.6px; }
-.admin-shell .hero-copy p { font-size: 12px; line-height: 1.8; }
-.admin-shell .hero-orbit { width: 88px; height: 88px; }
-.admin-shell .hero-orbit::before { inset: 10px; }
-.admin-shell .hero-orbit::after { inset: 23px; }
-.admin-shell .hero-orbit span { width: 8px; height: 8px; top: 8px; right: 16px; box-shadow: 0 0 12px var(--metal); }
-.admin-shell .hero-orbit svg { font-size: 30px; }
-.admin-shell .stats { margin-bottom: var(--admin-space-4); gap: var(--admin-space-2); }
-.admin-shell .stats > div { padding: 10px 14px; border-radius: 9px; font-size: var(--text-label); }
-.admin-shell .stats strong { font-size: 16px; }
-.admin-shell .content-grid,
-.admin-shell .settings-grid,
-.admin-shell .feature-grid { gap: var(--admin-space-3); }
-.admin-shell .catalog-hub .feature-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.admin-shell .feature-card,
-.admin-shell .settings-card {
-    min-height: 190px;
-    padding: var(--admin-card-padding);
-    border-radius: var(--admin-card-radius);
-    box-shadow: var(--admin-shadow);
-}
-.admin-shell .feature-card:hover,
-.admin-shell .settings-card:hover { transform: translateY(-2px); box-shadow: var(--admin-shadow-hover); }
-.admin-shell .feature-card::after,
-.admin-shell .settings-card::after { width: 90px; height: 90px; top: -50px; left: -35px; }
-.admin-shell .card-number { top: 16px; left: 16px; font-size: var(--text-caption); }
-.admin-shell .feature-icon,
-.admin-shell .settings-icon { width: 40px; height: 40px; margin-bottom: 20px; border-radius: 10px; }
-.admin-shell .feature-card h2,
-.admin-shell .settings-copy h2 { margin-bottom: 5px; font-size: 15px; }
-.admin-shell .feature-card p,
-.admin-shell .settings-copy p { font-size: var(--text-label); line-height: 1.75; }
-.admin-shell .feature-card footer,
-.admin-shell .settings-card footer { padding-top: 12px; font-size: var(--text-caption); }
-.admin-shell .phase-note,
+/* Page-specific note beneath the shared menu cards. */
 .admin-shell .settings-note { margin-top: var(--admin-space-4); padding: 10px 12px; border-radius: 9px; font-size: var(--text-label); }
 
 /* Catalog and content collections */
@@ -409,13 +377,11 @@
 .admin-shell .mud-dialog-actions { padding: 10px 18px 16px; gap: 8px; }
 
 @media (max-width: 1180px) {
-    .admin-shell .catalog-hub .feature-grid,
     .admin-shell .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
     .admin-shell .admin-container { padding: var(--admin-space-4) !important; }
-    .admin-shell .catalog-hub .feature-grid,
     .admin-shell .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .admin-shell .attribute-matrix,
     .admin-shell .options-builder { overflow-x: auto; }
@@ -428,13 +394,7 @@
 @media (max-width: 650px) {
     .admin-shell .page-title,
     .admin-shell .mud-typography-h4 { font-size: 1.3rem; }
-    .admin-shell .hub-hero,
-    .admin-shell .settings-hero { min-height: 150px; padding: var(--admin-space-5); border-radius: 12px; }
-    .admin-shell .hero-copy .page-title { font-size: 1.45rem; }
-    .admin-shell .catalog-hub .feature-grid,
     .admin-shell .product-grid { grid-template-columns: 1fr; }
-    .admin-shell .feature-card,
-    .admin-shell .settings-card { min-height: 170px; }
     .admin-shell .store-card,
     .admin-shell .security-card,
     .admin-shell .profile-card,

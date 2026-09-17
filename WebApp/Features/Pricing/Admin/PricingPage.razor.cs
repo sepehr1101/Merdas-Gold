@@ -19,12 +19,12 @@ public partial class PricingPage : IDisposable
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
     [Inject] private MerdasGold.Features.Diagnostics.Services.ErrorJournal Journal { get; set; } = default!;
-    private static readonly (string Key, string Title, string Icon)[] Tabs = [("rates", "نرخ طلا", MudBlazor.Icons.Material.Outlined.CurrencyExchange), ("rules", "قواعد قیمت‌گذاری", MudBlazor.Icons.Material.Outlined.Calculate), ("discounts", "تخفیف‌ها", MudBlazor.Icons.Material.Outlined.LocalOffer), ("invoice", "قالب صورتحساب", MudBlazor.Icons.Material.Outlined.ReceiptLong)];
-    private string Active => Section ?? "rates";
+    private static readonly (string Key, string Title, string Icon)[] Tabs = [("rates", "نرخ طلا", MudBlazor.Icons.Material.Outlined.CurrencyExchange), ("rules", "قواعد قیمت‌گذاری", MudBlazor.Icons.Material.Outlined.Calculate), ("discounts", "تخفیف‌ها", MudBlazor.Icons.Material.Outlined.LocalOffer)];
+    private string Active => Section ?? "overview";
     private RateSettings? _settings;
     private RateSettings? _liveSettings;
     private readonly CancellationTokenSource _refreshCancellation = new();
-    private PricingRule? _rule, _savedRule;
+    private PricingRule? _rule;
     private GoldRate? _current;
     private GoldRateScheduleStatus? _schedule;
     private List<PriceDiscount> _discounts = [];
@@ -38,6 +38,11 @@ public partial class PricingPage : IDisposable
     private TimeOnly _fromTime = new(0, 0), _toTime = new(23, 59);
     private int _manualMinutes = 30, _ratePage, _rateCount, _pieceId;
     private decimal _manualPrice, _weight = 2, _sampleRate = 10_000_000;
+    private decimal _previewFeePercent, _previewProfitPercent;
+    private PriceBreakdown? _invoicePreview;
+    private decimal _invoiceWeight, _invoiceRate;
+    private string _invoicePieceTitle = "", _invoiceFooter = "";
+    private DateTime _invoiceDateUtc;
     private DateTime _clockUtc = DateTime.UtcNow;
     private int RoundingUnit { get => (int)(_rule?.RoundToToman ?? 1); set { if (_rule is not null) _rule.RoundToToman = value; } }
     private bool Fresh => _liveSettings is not null && GoldRateService.IsFresh(_current, _liveSettings.MaxAgeMinutes, DateTime.UtcNow);
@@ -45,27 +50,25 @@ public partial class PricingPage : IDisposable
         : !_schedule.CredentialsConfigured ? "در انتظار اعتبارنامه"
         : _schedule.NextRunUtc is not { } next || next <= _clockUtc ? "در حال اجرا"
         : $"{Math.Max(0, (int)Math.Ceiling((next - _clockUtc).TotalSeconds))} ثانیه دیگر";
-    private PriceBreakdown? Preview => Calculate(_rule, _weight, _useLive ? (Fresh ? _current!.PriceToman!.Value : 0) : _sampleRate);
-    private PriceBreakdown? SavedPreview => Calculate(_savedRule, _weight, _useLive ? (Fresh ? _current!.PriceToman!.Value : 0) : _sampleRate);
-    private PriceBreakdown? InvoicePreview => Calculate(_rule, 2, 10_000_000);
     private PriceBreakdown? Calculate(PricingRule? rule, decimal weight, decimal rate)
-    { try { return rule is null ? null : PriceCalculator.Calculate(weight, rate, rule, _discounts, DateTime.UtcNow); } catch (ArgumentException) { return null; } }
+    { try { return rule is null ? null : PriceCalculator.Calculate(weight, rate, rule, _discounts, DateTime.UtcNow, _previewFeePercent, _previewProfitPercent); } catch (ArgumentException) { return null; } }
     protected override async Task OnParametersSetAsync()
     {
-        if (!Tabs.Any(x => x.Key == Active)) { Navigation.NotFound(); return; }
+        if (Active == "invoice") { Navigation.NavigateTo("/admin/pricing/rules", replace: true); return; }
+        if (Active != "overview" && !Tabs.Any(x => x.Key == Active)) { Navigation.NotFound(); return; }
+        if (Active == "overview") return;
         await Load();
         if (RequestedPiece is { } id && _pieces.FirstOrDefault(x => x.Id == id) is { } piece)
-        { _pieceId = id; _weight = piece.Weight; _useLive = true; }
+        { _pieceId = id; _weight = piece.Weight; _previewFeePercent = piece.MakingFeePercent ?? 0; _previewProfitPercent = piece.SellerProfitPercent ?? 0; _useLive = true; }
     }
     private async Task Load()
     {
         (_settings, _rule, _discounts, _pieces) = await Service.LoadAsync();
-        _savedRule = new PricingRule { FeeMode = _rule.FeeMode, FeeValue = _rule.FeeValue, ProfitPercent = _rule.ProfitPercent, TaxPercent = _rule.TaxPercent, RoundToToman = _rule.RoundToToman };
         _current = await Rates.CurrentAsync(_settings);
         _schedule = await Rates.ScheduleStatusAsync(_settings);
         _liveSettings = new RateSettings { Provider = _settings.Provider, MaxAgeMinutes = _settings.MaxAgeMinutes };
         if (Active == "rates") await LoadHistory();
-        if (Active == "invoice")
+        if (Active == "rules")
         {
             await using var db = await Factory.CreateDbContextAsync();
             var store = await db.Set<StoreProfile>().AsNoTracking().Select(x => new { x.Name, HasLogo = x.LogoData != null }).FirstOrDefaultAsync();
@@ -135,7 +138,26 @@ public partial class PricingPage : IDisposable
         _discount = new PriceDiscount { Id = d.Id, Title = d.Title, Kind = d.Kind, Value = d.Value, Enabled = d.Enabled, RowVersion = d.RowVersion };
         _discountStart = OperationLogDate.FormatDate(OperationLogDate.FromUtc(d.StartsUtc)); _discountEnd = OperationLogDate.FormatDate(OperationLogDate.FromUtc(d.EndsUtc.AddSeconds(-1)));
     }
-    private void SelectPiece(ChangeEventArgs e) { if (int.TryParse(e.Value?.ToString(), out _pieceId) && _pieces.FirstOrDefault(x => x.Id == _pieceId) is { } piece) _weight = piece.Weight; }
+    private void SelectPiece(ChangeEventArgs e) { if (int.TryParse(e.Value?.ToString(), out _pieceId) && _pieces.FirstOrDefault(x => x.Id == _pieceId) is { } piece) { _weight = piece.Weight; _previewFeePercent = piece.MakingFeePercent ?? 0; _previewProfitPercent = piece.SellerProfitPercent ?? 0; } }
+    private void ShowInvoice()
+    {
+        var rate = _useLive ? (Fresh ? _current?.PriceToman ?? 0 : 0) : _sampleRate;
+        _invoicePreview = Calculate(_rule, _weight, rate);
+        if (_invoicePreview is null)
+        {
+            _message = "وزن، درصدها و نرخ طلا را بررسی کنید. برای نرخ زنده، ابتدا نرخ معتبر دریافت کنید.";
+            _failed = true;
+            return;
+        }
+
+        _message = null!;
+        _failed = false;
+        _invoiceWeight = _weight;
+        _invoiceRate = rate;
+        _invoicePieceTitle = _pieces.FirstOrDefault(x => x.Id == _pieceId)?.Title ?? "قطعه آزمایشی";
+        _invoiceFooter = _rule?.InvoiceFooter ?? "";
+        _invoiceDateUtc = DateTime.UtcNow;
+    }
     private async Task LoadHistory()
     {
         if (!OperationLogDate.TryParse(_rateDay, out var day) || day is null || _toTime < _fromTime)

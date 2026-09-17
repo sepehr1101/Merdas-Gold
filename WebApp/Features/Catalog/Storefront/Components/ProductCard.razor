@@ -2,14 +2,14 @@
 
 <article class="product-card">
     <div class="product-image">
-        <img src="@ImageUrl" alt="@Title" width="300" height="300" loading="lazy" />
+        <a class="product-link-image" href="@Href" aria-label="مشاهده @Title"><img src="@ImageUrl" alt="" width="300" height="300" loading="lazy" /></a>
         <button class="heart @(Favorite ? "heart--active" : null)"
                 type="button"
                 aria-label="@(Favorite ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی")"
                 aria-pressed="@Favorite.ToString().ToLowerInvariant()"
                 @onclick="ToggleFavorite">@(Favorite ? "♥" : "♡")</button>
     </div>
-    <h3>@Title</h3>
+    <h3><a href="@Href">@Title</a></h3>
     <p class="price">@Price</p>
     <button class="add-cart" type="button" @onclick="UiState.AddToCart">افزودن به سبد خرید</button>
 </article>
@@ -23,6 +23,9 @@
 
     [Parameter, EditorRequired]
     public string ImageUrl { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Href { get; set; } = string.Empty;
 
     private bool Favorite { get; set; }
 

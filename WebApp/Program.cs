@@ -7,6 +7,7 @@ using MerdasGold.Features.Content.Data;
 using MerdasGold.Features.Content.Services;
 using MerdasGold.Features.Catalog;
 using MerdasGold.Features.Catalog.Services;
+using MerdasGold.Features.Catalog.Data;
 using MerdasGold.Features.Common.Localization;
 using MerdasGold.Features.Persistence;
 using MerdasGold.Features.Settings.Services;
@@ -76,6 +77,8 @@ builder.Services.AddScoped<StoreInformationSeeder>();
 builder.Services.AddScoped<ContentManagementService>();
 builder.Services.AddScoped<ContentSeeder>();
 builder.Services.AddScoped<CatalogService>();
+builder.Services.AddScoped<StorefrontCatalogService>();
+builder.Services.AddScoped<CatalogDemoSeeder>();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("taban-gohar", client =>
@@ -91,6 +94,7 @@ builder.Services.AddHttpClient("navasan", client =>
     client.MaxResponseContentBufferSize = 65536;
 }).RemoveAllLoggers(); // Provider credentials are in its query string; never log request URLs.
 builder.Services.AddSingleton<GoldRateService>();
+builder.Services.AddScoped<ProductQuoteService>();
 builder.Services.AddScoped<PricingAdminService>();
 builder.Services.AddHostedService<GoldRateWorker>();
 builder.Services.AddSingleton<ErrorJournal>();
@@ -108,6 +112,17 @@ try
     await scope.ServiceProvider.GetRequiredService<ContentSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<SecuritySettingsService>().ApplyCurrentSettingsAsync();
     await scope.ServiceProvider.GetRequiredService<AdminAccountSeeder>().SeedAsync();
+    if (args.Contains("--seed-demo-catalog", StringComparer.OrdinalIgnoreCase))
+    {
+        var count = await scope.ServiceProvider.GetRequiredService<CatalogDemoSeeder>().SeedAsync();
+        var demoDb = scope.ServiceProvider.GetRequiredService<MerdasGoldDbContext>();
+        var demoProducts = demoDb.Set<MerdasGold.Features.Catalog.Entities.Product>()
+            .Where(x => x.Code.StartsWith("DEMO-"));
+        var byCategory = await demoProducts.GroupBy(x => x.PrimaryCategory!.Name)
+            .Select(x => new { Category = x.Key, Count = x.Count() }).ToListAsync();
+        Console.WriteLine($"Seeded {count} new demo products; {byCategory.Sum(x => x.Count)} total.");
+        foreach (var item in byCategory) Console.WriteLine($"{item.Category}: {item.Count}");
+    }
 }
 catch (Exception exception)
 {
@@ -138,4 +153,4 @@ app.MapCatalogEndpoints();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.Run();
+if (!args.Contains("--seed-demo-catalog", StringComparer.OrdinalIgnoreCase)) app.Run();

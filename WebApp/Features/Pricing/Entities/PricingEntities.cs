@@ -50,7 +50,7 @@ public sealed class PricingRule
     public string FeeMode { get; set; } = "percent";
     public decimal FeeValue { get; set; }
     public decimal ProfitPercent { get; set; }
-    public decimal TaxPercent { get; set; }
+    public decimal TaxPercent { get; set; } = 10m;
     public decimal RoundToToman { get; set; } = 1;
     public string InvoiceFooter { get; set; } = "از اعتماد شما سپاسگزاریم.";
     public byte[] RowVersion { get; set; } = [];

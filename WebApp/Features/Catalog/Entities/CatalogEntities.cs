@@ -10,6 +10,10 @@ public sealed class ProductCategory
     public ProductCategory? Parent { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool ShowOnHome { get; set; }
+    public string? ImageUrl { get; set; }
+    public byte[]? ImageData { get; set; }
+    public string? ImageContentType { get; set; }
     public byte[] RowVersion { get; set; } = [];
 }
 
@@ -76,6 +80,8 @@ public sealed class Product
     public string Code { get; set; } = string.Empty;
     public string ShortDescription { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public decimal? MakingFeePercent { get; set; }
+    public decimal? SellerProfitPercent { get; set; }
     public int ProductTypeId { get; set; }
     public ProductType ProductType { get; set; } = default!;
     public int? PrimaryCategoryId { get; set; }
@@ -139,6 +145,7 @@ public sealed class ProductPiece
     public ProductVariant ProductVariant { get; set; } = default!;
     public string TrackingCode { get; set; } = string.Empty;
     public decimal ExactGoldWeightGrams { get; set; }
+    public int Quantity { get; set; } = 1;
     public decimal? StoneWeightCarats { get; set; }
     public string Status { get; set; } = "available";
     public bool IsActive { get; set; } = true;

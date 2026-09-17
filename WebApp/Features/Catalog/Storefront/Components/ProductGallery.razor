@@ -1,0 +1,94 @@
+@inject IJSRuntime Js
+@implements IAsyncDisposable
+
+<div class="product-gallery" aria-label="تصاویر @Title">
+    @if (Images.Count > 0)
+    {
+        <div class="gallery-stage">
+            <button class="main-image" type="button" aria-label="نمایش بزرگ و بررسی تصویر @Title" @onclick="() => OpenViewer(_selectedIndex)">
+                <img src="@Images[_selectedIndex]" alt="@Title، تصویر @(_selectedIndex + 1) از @Images.Count" width="600" height="600" />
+            </button>
+            @if (Images.Count > 1)
+            {
+                <button class="gallery-arrow gallery-previous" type="button" aria-label="تصویر قبلی" @onclick="Previous">‹</button>
+                <button class="gallery-arrow gallery-next" type="button" aria-label="تصویر بعدی" @onclick="Next">›</button>
+                <span class="gallery-count" aria-live="polite">@(_selectedIndex + 1) / @Images.Count</span>
+            }
+        </div>
+        @if (Images.Count > 1)
+        {
+            <div class="gallery-thumbnails" aria-label="انتخاب تصویر محصول">
+                @for (var index = 0; index < Images.Count; index++)
+                {
+                    var selectedIndex = index;
+                    <button type="button" class="thumbnail @(index == _selectedIndex ? "selected" : null)"
+                            aria-label="نمایش تصویر @(index + 1) از @Images.Count"
+                            aria-pressed="@(index == _selectedIndex ? "true" : "false")"
+                            @onclick="() => Select(selectedIndex)">
+                        <img src="@Images[index]" alt="" width="80" height="80" loading="lazy" />
+                    </button>
+                }
+            </div>
+        }
+    }
+</div>
+<dialog class="image-viewer" @ref="_viewer" aria-label="نمایش تصاویر @Title">
+    <div class="viewer-shell">
+        <div class="viewer-toolbar">
+            <span class="viewer-title">@Title</span>
+            <span class="viewer-counter" data-viewer-count aria-live="polite"></span>
+            <button type="button" class="viewer-control viewer-close" data-viewer-close aria-label="بستن نمایشگر تصاویر">×</button>
+        </div>
+        <div class="viewer-stage" data-viewer-stage aria-label="تصویر بزرگ محصول">
+            <img data-viewer-image alt="" draggable="false" />
+            <button type="button" class="viewer-control viewer-prev" data-viewer-prev aria-label="تصویر قبلی">‹</button>
+            <button type="button" class="viewer-control viewer-next" data-viewer-next aria-label="تصویر بعدی">›</button>
+        </div>
+        <div class="viewer-tools" aria-label="ابزارهای تصویر">
+            <button type="button" data-viewer-zoom-out aria-label="کوچک‌نمایی">−</button>
+            <span data-viewer-zoom aria-live="polite">۱۰۰٪</span>
+            <button type="button" data-viewer-zoom-in aria-label="بزرگ‌نمایی">+</button>
+            <button type="button" data-viewer-rotate aria-label="چرخاندن تصویر ۹۰ درجه">چرخش ↻</button>
+            <button type="button" data-viewer-reset aria-label="بازگرداندن اندازه و چرخش">بازنشانی</button>
+        </div>
+        <p class="viewer-hint">برای زوم از دکمه‌ها، چرخ ماوس یا دو انگشت استفاده کنید؛ تصویر بزرگ‌شده را بکشید.</p>
+    </div>
+</dialog>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public IReadOnlyList<string> Images { get; set; } = [];
+    private IReadOnlyList<string>? _boundImages;
+    private int _selectedIndex;
+    private ElementReference _viewer;
+    private IJSObjectReference? _viewerModule;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_boundImages, Images)) { _selectedIndex = 0; _boundImages = Images; }
+    }
+
+    private void Select(int index)
+    {
+        if (index >= 0 && index < Images.Count) _selectedIndex = index;
+    }
+    private void Previous() => _selectedIndex = (_selectedIndex - 1 + Images.Count) % Images.Count;
+    private void Next() => _selectedIndex = (_selectedIndex + 1) % Images.Count;
+
+    private async Task OpenViewer(int index)
+    {
+        _viewerModule ??= await Js.InvokeAsync<IJSObjectReference>("import", "./scripts/product-image-viewer.js");
+        await _viewerModule.InvokeVoidAsync("openViewer", _viewer, Images, index, Title);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_viewerModule is null) return;
+        try
+        {
+            await _viewerModule.InvokeVoidAsync("disposeViewer", _viewer);
+            await _viewerModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+    }
+}

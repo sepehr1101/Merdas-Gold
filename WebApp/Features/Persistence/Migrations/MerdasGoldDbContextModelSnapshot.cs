@@ -121,6 +121,10 @@ namespace MerdasGold.Features.Persistence.Migrations
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("MakingFeePercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
+
                     b.Property<int?>("PrimaryCategoryId")
                         .HasColumnType("int");
 
@@ -132,6 +136,10 @@ namespace MerdasGold.Features.Persistence.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<decimal?>("SellerProfitPercent")
+                        .HasPrecision(9, 4)
+                        .HasColumnType("decimal(9,4)");
 
                     b.Property<string>("ShortDescription")
                         .IsRequired()
@@ -170,6 +178,10 @@ namespace MerdasGold.Features.Persistence.Migrations
 
                     b.ToTable("Product", null, t =>
                         {
+                            t.HasCheckConstraint("CK_Product_MakingFeePercent", "[MakingFeePercent] IS NULL OR [MakingFeePercent] BETWEEN 0 AND 100");
+
+                            t.HasCheckConstraint("CK_Product_SellerProfitPercent", "[SellerProfitPercent] IS NULL OR [SellerProfitPercent] BETWEEN 0 AND 100");
+
                             t.HasCheckConstraint("CK_Product_Status", "[Status] IN (N'draft',N'active',N'archived')");
                         });
                 });
@@ -412,6 +424,17 @@ namespace MerdasGold.Features.Persistence.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
+                    b.Property<string>("ImageContentType")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte[]>("ImageData")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -428,6 +451,9 @@ namespace MerdasGold.Features.Persistence.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<bool>("ShowOnHome")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -451,66 +477,78 @@ namespace MerdasGold.Features.Persistence.Migrations
                             DisplayOrder = 1,
                             IsActive = true,
                             Name = "زیورآلات",
+                            ShowOnHome = false,
                             Slug = "jewelry"
                         },
                         new
                         {
                             Id = 2,
                             Description = "",
-                            DisplayOrder = 1,
+                            DisplayOrder = 5,
+                            ImageUrl = "/assets/storefront/images/Untitled-4-min.png",
                             IsActive = true,
-                            Name = "انگشتر",
+                            Name = "حلقه",
                             ParentId = 1,
+                            ShowOnHome = true,
                             Slug = "rings"
                         },
                         new
                         {
                             Id = 3,
                             Description = "",
-                            DisplayOrder = 2,
+                            DisplayOrder = 3,
+                            ImageUrl = "/assets/storefront/images/Untitled-44-min.png",
                             IsActive = true,
                             Name = "گردنبند",
                             ParentId = 1,
+                            ShowOnHome = true,
                             Slug = "necklaces"
                         },
                         new
                         {
                             Id = 4,
                             Description = "",
-                            DisplayOrder = 3,
+                            DisplayOrder = 2,
+                            ImageUrl = "/assets/storefront/images/Untitled72-4-min.png",
                             IsActive = true,
                             Name = "دستبند",
                             ParentId = 1,
+                            ShowOnHome = true,
                             Slug = "bracelets"
                         },
                         new
                         {
                             Id = 5,
                             Description = "",
-                            DisplayOrder = 4,
+                            DisplayOrder = 6,
+                            ImageUrl = "/assets/storefront/images/421-min.png",
                             IsActive = true,
                             Name = "گوشواره",
                             ParentId = 1,
+                            ShowOnHome = true,
                             Slug = "earrings"
                         },
                         new
                         {
                             Id = 6,
                             Description = "",
-                            DisplayOrder = 5,
+                            DisplayOrder = 4,
+                            ImageUrl = "/assets/storefront/images/Untitled-q4-min.png",
                             IsActive = true,
-                            Name = "پلاک و آویز",
+                            Name = "آویز",
                             ParentId = 1,
+                            ShowOnHome = true,
                             Slug = "pendants"
                         },
                         new
                         {
                             Id = 7,
                             Description = "",
-                            DisplayOrder = 6,
+                            DisplayOrder = 7,
                             IsActive = true,
                             Name = "سرویس و نیم‌ست",
                             ParentId = 1,
+                            ShowOnHome = false,
                             Slug = "sets"
                         },
                         new
@@ -520,7 +558,20 @@ namespace MerdasGold.Features.Persistence.Migrations
                             DisplayOrder = 2,
                             IsActive = true,
                             Name = "سکه و شمش",
+                            ShowOnHome = false,
                             Slug = "coins-bars"
+                        },
+                        new
+                        {
+                            Id = 1009,
+                            Description = "",
+                            DisplayOrder = 1,
+                            ImageUrl = "/assets/storefront/images/Untitl555ed-4-min.png",
+                            IsActive = true,
+                            Name = "پابند",
+                            ParentId = 1,
+                            ShowOnHome = true,
+                            Slug = "anklets"
                         });
                 });
 
@@ -587,6 +638,10 @@ namespace MerdasGold.Features.Persistence.Migrations
                     b.Property<int>("ProductVariantId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -616,6 +671,8 @@ namespace MerdasGold.Features.Persistence.Migrations
 
                     b.ToTable("ProductPiece", null, t =>
                         {
+                            t.HasCheckConstraint("CK_ProductPiece_Quantity", "[Quantity] >= 0");
+
                             t.HasCheckConstraint("CK_ProductPiece_Status", "[Status] IN (N'available',N'reserved',N'sold',N'damaged')");
 
                             t.HasCheckConstraint("CK_ProductPiece_Weight", "[ExactGoldWeightGrams] > 0");
@@ -1730,8 +1787,8 @@ namespace MerdasGold.Features.Persistence.Migrations
                             FeeValue = 0m,
                             InvoiceFooter = "از اعتماد شما سپاسگزاریم.",
                             ProfitPercent = 0m,
-                            RoundToToman = 1m,
-                            TaxPercent = 0m
+                            RoundToToman = 10000m,
+                            TaxPercent = 10m
                         });
                 });
 

@@ -33,7 +33,7 @@ public sealed class PricingRuleConfiguration : IEntityTypeConfiguration<PricingR
         b.Property(x => x.ProfitPercent).HasPrecision(9, 4); b.Property(x => x.TaxPercent).HasPrecision(9, 4);
         b.Property(x => x.RoundToToman).HasPrecision(20, 4); b.Property(x => x.InvoiceFooter).HasMaxLength(500);
         b.Property(x => x.RowVersion).IsRowVersion();
-        b.HasData(new { Id = 1, FeeMode = "percent", FeeValue = 0m, ProfitPercent = 0m, TaxPercent = 0m, RoundToToman = 1m, InvoiceFooter = "از اعتماد شما سپاسگزاریم." });
+        b.HasData(new { Id = 1, FeeMode = "percent", FeeValue = 0m, ProfitPercent = 0m, TaxPercent = 10m, RoundToToman = 10000m, InvoiceFooter = "از اعتماد شما سپاسگزاریم." });
     }
 }
 public sealed class PriceDiscountConfiguration : IEntityTypeConfiguration<PriceDiscount>

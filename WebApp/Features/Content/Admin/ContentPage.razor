@@ -5,13 +5,13 @@
 <PageTitle>مدیریت محتوا | مرداس گلد</PageTitle>
 
 <section class="content-hub">
-    <header class="hub-hero">
-        <div class="hero-copy">
-            <span class="eyebrow"><MudIcon Icon="@Icons.Material.Outlined.AutoAwesome" Size="Size.Small" /> ویترین محتوای فروشگاه</span>
-            <MudText Typo="Typo.h3" HtmlTag="h1" Class="page-title">محتوایی که اعتماد می‌سازد</MudText>
+    <header class="admin-hub-hero">
+        <div class="admin-hub-hero-copy">
+            <span class="admin-hub-eyebrow"><MudIcon Icon="@Icons.Material.Outlined.AutoAwesome" Size="Size.Small" /> ویترین محتوای فروشگاه</span>
+            <MudText Typo="Typo.h3" HtmlTag="h1" Class="admin-hub-title">محتوایی که اعتماد می‌سازد</MudText>
             
         </div>
-        <div class="hero-orbit" aria-hidden="true"><span></span><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></div>
+        <div class="admin-hub-emblem" aria-hidden="true"><span></span><MudIcon Icon="@Icons.Material.Outlined.Diamond" /></div>
     </header>
 
     @if (_loading)
@@ -20,24 +20,24 @@
     }
     else
     {
-        <div class="content-grid">
-            <a class="feature-card faq" href="/admin/content/faqs">
-                <span class="card-number">01</span>
-                <span class="feature-icon"><MudIcon Icon="@Icons.Material.Outlined.QuestionAnswer" /></span>
-                <div><h2>سؤالات پرتکرار</h2><p>پاسخ‌های روشن برای پرسش‌هایی که مشتریان بیشتر می‌پرسند.</p></div>
-                <footer><span>@(_overview?.ActiveFaqCount ?? 0) پاسخ فعال</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
+        <div class="content-grid admin-hub-grid">
+            <a class="admin-hub-card accent-primary" href="/admin/content/faqs">
+                <span class="admin-hub-number">01</span>
+                <span class="admin-hub-icon"><MudIcon Icon="@Icons.Material.Outlined.QuestionAnswer" /></span>
+                <div class="admin-hub-copy"><h2>سؤالات پرتکرار</h2><p>پاسخ‌های روشن برای پرسش‌هایی که مشتریان بیشتر می‌پرسند.</p></div>
+                <footer class="admin-hub-footer"><span>@(_overview?.ActiveFaqCount ?? 0) پاسخ فعال</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
             </a>
-            <a class="feature-card policies" href="/admin/content/policies">
-                <span class="card-number">02</span>
-                <span class="feature-icon"><MudIcon Icon="@Icons.Material.Outlined.Policy" /></span>
-                <div><h2>قوانین و راهنما</h2><p>ارسال، پرداخت، مرجوعی و تعهدات حقوقی فروشگاه.</p></div>
-                <footer><span>@(_overview?.PublishedPolicyCount ?? 0) از ۵ بخش منتشر شده</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
+            <a class="admin-hub-card accent-gold" href="/admin/content/policies">
+                <span class="admin-hub-number">02</span>
+                <span class="admin-hub-icon"><MudIcon Icon="@Icons.Material.Outlined.Policy" /></span>
+                <div class="admin-hub-copy"><h2>قوانین و راهنما</h2><p>ارسال، پرداخت، مرجوعی و تعهدات حقوقی فروشگاه.</p></div>
+                <footer class="admin-hub-footer"><span>@(_overview?.PublishedPolicyCount ?? 0) از ۵ بخش منتشر شده</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
             </a>
-            <a class="feature-card banners" href="/admin/content/banners">
-                <span class="card-number">03</span>
-                <span class="feature-icon"><MudIcon Icon="@Icons.Material.Outlined.ViewCarousel" /></span>
-                <div><h2>اسلایدر و بنر</h2><p>تصاویر و پیام‌های برجسته‌ای که نگاه کاربر را هدایت می‌کنند.</p></div>
-                <footer><span>@(_overview?.ActiveBannerCount ?? 0) بنر فعال</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
+            <a class="admin-hub-card accent-green" href="/admin/content/banners">
+                <span class="admin-hub-number">03</span>
+                <span class="admin-hub-icon"><MudIcon Icon="@Icons.Material.Outlined.ViewCarousel" /></span>
+                <div class="admin-hub-copy"><h2>اسلایدر و بنر</h2><p>تصاویر و پیام‌های برجسته‌ای که نگاه کاربر را هدایت می‌کنند.</p></div>
+                <footer class="admin-hub-footer"><span>@(_overview?.ActiveBannerCount ?? 0) بنر فعال</span><MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></footer>
             </a>
         </div>
     }

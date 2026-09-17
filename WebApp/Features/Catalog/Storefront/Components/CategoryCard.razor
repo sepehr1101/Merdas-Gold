@@ -1,5 +1,6 @@
 <a class="category-card" href="@Href">
-    <img src="@ImageUrl" alt="@Title" width="450" height="445" loading="lazy" />
+    @if (!string.IsNullOrWhiteSpace(ImageUrl)) { <img src="@ImageUrl" alt="" width="450" height="445" loading="lazy" /> }
+    else { <span class="category-fallback" aria-hidden="true"></span> }
     <b>@Title</b>
 </a>
 
@@ -8,7 +9,7 @@
     public string Title { get; set; } = string.Empty;
 
     [Parameter, EditorRequired]
-    public string ImageUrl { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
 
     [Parameter]
     public string Href { get; set; } = "#products";

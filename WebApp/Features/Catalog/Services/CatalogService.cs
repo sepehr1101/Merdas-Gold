@@ -8,31 +8,94 @@ namespace MerdasGold.Features.Catalog.Services;
 
 public sealed class CatalogService(IDbContextFactory<MerdasGoldDbContext> dbContextFactory)
 {
+    public const int HomeCategoryLimit = 6;
+    public const int MaxProductImages = 6;
+
+    public async Task<IReadOnlyList<HomeCategoryItem>> GetHomeCategoriesAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var categories = await db.Set<ProductCategory>().AsNoTracking()
+            .Where(x => x.IsActive && x.ShowOnHome)
+            .OrderBy(x => x.DisplayOrder).ThenBy(x => x.Id)
+            .Take(HomeCategoryLimit)
+            .Select(x => new { x.Id, x.Name, x.Slug, x.ImageUrl, HasUpload = x.ImageData != null }).ToListAsync(ct);
+        return categories.Select(x => new HomeCategoryItem(x.Name, x.Slug, x.HasUpload ? $"/catalog-assets/categories/{x.Id}" : x.ImageUrl)).ToList();
+    }
+    public async Task<StorefrontCategoryItem?> GetStorefrontCategoryAsync(string slug, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var category = await db.Set<ProductCategory>().AsNoTracking()
+            .Where(x => x.IsActive && x.Slug == slug)
+            .Select(x => new { x.Id, x.Name, x.Slug, x.Description, x.ImageUrl, HasUpload = x.ImageData != null })
+            .SingleOrDefaultAsync(ct);
+        return category is null ? null : new StorefrontCategoryItem(category.Name, category.Slug, category.Description,
+            category.HasUpload ? $"/catalog-assets/categories/{category.Id}" : category.ImageUrl);
+    }
+    public async Task<(byte[] Data, string ContentType)?> GetCategoryImageAsync(int id, CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        var image = await db.Set<ProductCategory>().AsNoTracking().Where(x => x.Id == id && x.ImageData != null)
+            .Select(x => new { x.ImageData, x.ImageContentType }).SingleOrDefaultAsync(ct);
+        return image?.ImageData is { } data && image.ImageContentType is { } type ? (data, type) : null;
+    }
     public async Task<CatalogOverviewModel> GetOverviewAsync(CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
         return new(
             await db.Set<Product>().CountAsync(ct), await db.Set<Product>().CountAsync(x => x.Status == "active", ct),
-            await db.Set<ProductPiece>().CountAsync(x => x.IsActive && x.Status == "available", ct),
+            await db.Set<ProductPiece>().Where(x => x.IsActive && x.Status == "available").SumAsync(x => x.Quantity, ct),
             await db.Set<ProductCategory>().CountAsync(x => x.IsActive, ct), await db.Set<ProductType>().CountAsync(x => x.IsActive, ct),
             await db.Set<ProductAttributeDefinition>().CountAsync(x => x.IsActive, ct));
     }
 
-    public async Task<IReadOnlyList<ProductListItem>> GetProductsAsync(CancellationToken ct = default)
+    public async Task<ProductPageResult> GetProductPageAsync(
+        int? categoryId, string? search, string? status, int page, int pageSize = 24,
+        CancellationToken ct = default)
     {
         await using var db = await dbContextFactory.CreateDbContextAsync(ct);
-        return await db.Set<Product>().AsNoTracking().OrderByDescending(x => x.UpdatedAtUtc).Select(x => new ProductListItem
-        {
-            Id=x.Id,Title=x.Title,Code=x.Code,TypeName=x.ProductType.Name,CategoryName=x.PrimaryCategory!=null?x.PrimaryCategory.Name:null,Status=x.Status,IsFeatured=x.IsFeatured,
-            VariantCount=x.Variants.Count,AvailablePieceCount=x.Variants.SelectMany(v=>v.Pieces).Count(p=>p.IsActive&&p.Status=="available"),PrimaryImageId=x.Images.Where(i=>i.IsPrimary).Select(i=>(int?)i.Id).FirstOrDefault(),UpdatedAtUtc=x.UpdatedAtUtc
-        }).ToListAsync(ct);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 48);
+        var query = db.Set<Product>().AsNoTracking().AsQueryable();
+        if (categoryId.HasValue)
+            query = categoryId.Value == 0
+                ? query.Where(x => x.PrimaryCategoryId == null)
+                : query.Where(x => x.PrimaryCategoryId == categoryId.Value);
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(x => x.Status == status);
+        var term = search?.Trim();
+        if (!string.IsNullOrWhiteSpace(term))
+            query = query.Where(x => x.Title.Contains(term) || x.Code.Contains(term)
+                || x.Variants.Any(v => v.Sku.Contains(term)));
+        var total = await query.CountAsync(ct);
+        var lastPage = Math.Max(1, (total + pageSize - 1) / pageSize);
+        page = Math.Min(page, lastPage);
+        var items = await query.OrderByDescending(x => x.UpdatedAtUtc).ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(x => new ProductListItem
+            {
+                Id = x.Id, Title = x.Title, Code = x.Code, TypeName = x.ProductType.Name,
+                CategoryName = x.PrimaryCategory != null ? x.PrimaryCategory.Name : null,
+                Status = x.Status, IsFeatured = x.IsFeatured,
+                VariantCount = x.Variants.Count,
+                AvailablePieceCount = x.Variants.SelectMany(v => v.Pieces)
+                    .Where(p => p.IsActive && p.Status == "available").Sum(p => p.Quantity),
+                PrimaryImageId = x.Images.Where(i => i.IsPrimary).Select(i => (int?)i.Id).FirstOrDefault(),
+                UpdatedAtUtc = x.UpdatedAtUtc
+            }).ToListAsync(ct);
+        return new ProductPageResult(items, total, page, pageSize);
+    }
+
+    public async Task<int> GetUncategorizedProductCountAsync(CancellationToken ct = default)
+    {
+        await using var db = await dbContextFactory.CreateDbContextAsync(ct);
+        return await db.Set<Product>().CountAsync(x => x.PrimaryCategoryId == null, ct);
     }
 
     public async Task<IReadOnlyList<CategoryListItem>> GetCategoriesAsync(CancellationToken ct = default)
     {
-        await using var db=await dbContextFactory.CreateDbContextAsync(ct); var items=await db.Set<ProductCategory>().AsNoTracking().Include(x=>x.Parent).OrderBy(x=>x.ParentId).ThenBy(x=>x.DisplayOrder).ThenBy(x=>x.Name).ToListAsync(ct);
+        await using var db=await dbContextFactory.CreateDbContextAsync(ct); var items=await db.Set<ProductCategory>().AsNoTracking().OrderBy(x=>x.ParentId).ThenBy(x=>x.DisplayOrder).ThenBy(x=>x.Name).Select(x=>new {x.Id,x.Name,x.Slug,x.Description,x.ParentId,ParentName=x.Parent!=null?x.Parent.Name:null,x.DisplayOrder,x.IsActive,x.ShowOnHome,x.ImageUrl,HasUpload=x.ImageData!=null,x.RowVersion}).ToListAsync(ct);
         var counts=await db.Set<Product>().Where(x=>x.PrimaryCategoryId.HasValue).GroupBy(x=>x.PrimaryCategoryId!.Value).Select(x=>new{x.Key,Count=x.Count()}).ToDictionaryAsync(x=>x.Key,x=>x.Count,ct);
-        return items.Select(x=>new CategoryListItem{Id=x.Id,Name=x.Name,Slug=x.Slug,Description=x.Description,ParentId=x.ParentId,ParentName=x.Parent?.Name,DisplayOrder=x.DisplayOrder,IsActive=x.IsActive,ProductCount=counts.GetValueOrDefault(x.Id),RowVersion=Convert.ToBase64String(x.RowVersion)}).ToList();
+        return items.Select(x=>new CategoryListItem{Id=x.Id,Name=x.Name,Slug=x.Slug,Description=x.Description,ParentId=x.ParentId,ParentName=x.ParentName,DisplayOrder=x.DisplayOrder,IsActive=x.IsActive,ShowOnHome=x.ShowOnHome,ImageUrl=x.HasUpload?$"/catalog-assets/categories/{x.Id}":x.ImageUrl,ProductCount=counts.GetValueOrDefault(x.Id),RowVersion=Convert.ToBase64String(x.RowVersion)}).ToList();
     }
 
     public async Task<IReadOnlyList<TagListItem>> GetTagsAsync(CancellationToken ct = default)
@@ -61,7 +124,7 @@ public sealed class CatalogService(IDbContextFactory<MerdasGoldDbContext> dbCont
         if(id.HasValue)
         {
             var entity=await db.Set<Product>().AsNoTracking().Include(x=>x.Tags).Include(x=>x.AttributeValues).SingleAsync(x=>x.Id==id,ct); typeId=entity.ProductTypeId;if(types.All(x=>x.Id!=typeId))types.Add(await db.Set<ProductType>().AsNoTracking().SingleAsync(x=>x.Id==typeId,ct));
-            product=new ProductEditModel{Id=entity.Id,Title=entity.Title,Slug=entity.Slug,Code=entity.Code,ShortDescription=entity.ShortDescription,Description=entity.Description,ProductTypeId=entity.ProductTypeId,PrimaryCategoryId=entity.PrimaryCategoryId,Status=entity.Status,IsFeatured=entity.IsFeatured,RowVersion=Convert.ToBase64String(entity.RowVersion),TagIds=entity.Tags.Select(x=>x.ProductTagId).ToHashSet(),AttributeValues=entity.AttributeValues.ToDictionary(x=>x.AttributeDefinitionId,x=>x.Value)};
+            product=new ProductEditModel{Id=entity.Id,Title=entity.Title,Slug=entity.Slug,Code=entity.Code,ShortDescription=entity.ShortDescription,Description=entity.Description,MakingFeePercent=entity.MakingFeePercent,SellerProfitPercent=entity.SellerProfitPercent,ProductTypeId=entity.ProductTypeId,PrimaryCategoryId=entity.PrimaryCategoryId,Status=entity.Status,IsFeatured=entity.IsFeatured,RowVersion=Convert.ToBase64String(entity.RowVersion),TagIds=entity.Tags.Select(x=>x.ProductTagId).ToHashSet(),AttributeValues=entity.AttributeValues.ToDictionary(x=>x.AttributeDefinitionId,x=>x.Value)};
         }
         else product=new ProductEditModel{ProductTypeId=typeId,Status="draft"};
         var links=await db.Set<ProductTypeAttribute>().AsNoTracking().Include(x=>x.AttributeDefinition).Where(x=>x.ProductTypeId==typeId&&x.AttributeDefinition.IsActive).OrderBy(x=>x.DisplayOrder).ToListAsync(ct); var options=await db.Set<ProductAttributeOption>().AsNoTracking().Where(x=>x.IsActive).OrderBy(x=>x.DisplayOrder).ToListAsync(ct);
@@ -71,8 +134,11 @@ public sealed class CatalogService(IDbContextFactory<MerdasGoldDbContext> dbCont
 
     public async Task<(CatalogSaveResult Result,int Id)> SaveProductAsync(ProductEditModel model,IReadOnlyDictionary<int,string> values,IReadOnlyCollection<int> tagIds,CatalogActor actor,CancellationToken ct)
     {
+        if (model.MakingFeePercent is < 0 or > 100 || model.SellerProfitPercent is < 0 or > 100
+            || (model.Status == "active" && (!model.MakingFeePercent.HasValue || !model.SellerProfitPercent.HasValue)))
+            return (CatalogSaveResult.Invalid, model.Id);
         await using var db=await dbContextFactory.CreateDbContextAsync(ct); var isNew=model.Id==0; var entity=isNew?new Product{CreatedAtUtc=DateTime.UtcNow}:await db.Set<Product>().Include(x=>x.Tags).Include(x=>x.AttributeValues).SingleOrDefaultAsync(x=>x.Id==model.Id,ct); if(entity is null)return(CatalogSaveResult.NotFound,model.Id); if(!isNew&&!SetVersion(db,entity,x=>x.RowVersion,model.RowVersion))return(CatalogSaveResult.Conflict,model.Id); if(isNew)db.Add(entity);
-        entity.Title=model.Title.Trim();entity.Slug=model.Slug.Trim().ToLowerInvariant();entity.Code=model.Code.Trim().ToUpperInvariant();entity.ShortDescription=model.ShortDescription.Trim();entity.Description=model.Description.Trim();entity.ProductTypeId=model.ProductTypeId;entity.PrimaryCategoryId=model.PrimaryCategoryId;entity.Status=model.Status;entity.IsFeatured=model.IsFeatured;entity.UpdatedAtUtc=DateTime.UtcNow;
+        entity.Title=model.Title.Trim();entity.Slug=model.Slug.Trim().ToLowerInvariant();entity.Code=model.Code.Trim().ToUpperInvariant();entity.ShortDescription=model.ShortDescription.Trim();entity.Description=model.Description.Trim();entity.MakingFeePercent=model.MakingFeePercent;entity.SellerProfitPercent=model.SellerProfitPercent;entity.ProductTypeId=model.ProductTypeId;entity.PrimaryCategoryId=model.PrimaryCategoryId;entity.Status=model.Status;entity.IsFeatured=model.IsFeatured;entity.UpdatedAtUtc=DateTime.UtcNow;
         entity.Tags.Clear();foreach(var tagId in tagIds.Distinct())entity.Tags.Add(new ProductTagLink{ProductTagId=tagId}); entity.AttributeValues.Clear();foreach(var pair in values.Where(x=>!string.IsNullOrWhiteSpace(x.Value)))entity.AttributeValues.Add(new ProductAttributeValue{AttributeDefinitionId=pair.Key,Value=pair.Value.Trim()});
         if(isNew)entity.Variants.Add(new ProductVariant{Title="مدل اصلی",DisplayOrder=1,IsActive=true}); AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} کالا «{entity.Title}»"); var result=await SaveAsync(db,ct);return(result,entity.Id);
     }
@@ -82,16 +148,24 @@ public sealed class CatalogService(IDbContextFactory<MerdasGoldDbContext> dbCont
         await using var db=await dbContextFactory.CreateDbContextAsync(ct);var isNew=id==0;var entity=isNew?new ProductVariant{ProductId=productId}:await db.Set<ProductVariant>().Include(x=>x.AttributeValues).SingleOrDefaultAsync(x=>x.Id==id&&x.ProductId==productId,ct);if(entity is null)return CatalogSaveResult.NotFound;if(!isNew&&!SetVersion(db,entity,x=>x.RowVersion,rowVersion))return CatalogSaveResult.Conflict;if(isNew)db.Add(entity);entity.Title=title.Trim();entity.Sku=sku.Trim().ToUpperInvariant();entity.Barcode=barcode.Trim();entity.DisplayOrder=order;entity.IsActive=active;entity.AttributeValues.Clear();foreach(var pair in values.Where(x=>!string.IsNullOrWhiteSpace(x.Value)))entity.AttributeValues.Add(new ProductVariantAttributeValue{AttributeDefinitionId=pair.Key,Value=pair.Value.Trim()});AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} تنوع «{entity.Title}»");return await SaveAsync(db,ct);
     }
 
-    public async Task<CatalogSaveResult> SavePieceAsync(int variantId,int id,string trackingCode,decimal weight,decimal? stoneWeight,string status,bool active,string rowVersion,CatalogActor actor,CancellationToken ct)
+    public async Task<CatalogSaveResult> SavePieceAsync(int variantId,int id,string trackingCode,decimal weight,int quantity,string status,bool active,string rowVersion,CatalogActor actor,CancellationToken ct)
     {
-        await using var db=await dbContextFactory.CreateDbContextAsync(ct);var isNew=id==0;var entity=isNew?new ProductPiece{ProductVariantId=variantId}:await db.Set<ProductPiece>().SingleOrDefaultAsync(x=>x.Id==id&&x.ProductVariantId==variantId,ct);if(entity is null)return CatalogSaveResult.NotFound;if(!isNew&&!SetVersion(db,entity,x=>x.RowVersion,rowVersion))return CatalogSaveResult.Conflict;if(isNew)db.Add(entity);entity.TrackingCode=trackingCode.Trim().ToUpperInvariant();entity.ExactGoldWeightGrams=weight;entity.StoneWeightCarats=stoneWeight;entity.Status=status;entity.IsActive=active;AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} قطعه «{entity.TrackingCode}» با وزن {weight:0.###} گرم");return await SaveAsync(db,ct);
+        if (quantity < 0) return CatalogSaveResult.Invalid;
+        await using var db=await dbContextFactory.CreateDbContextAsync(ct);var isNew=id==0;var entity=isNew?new ProductPiece{ProductVariantId=variantId}:await db.Set<ProductPiece>().SingleOrDefaultAsync(x=>x.Id==id&&x.ProductVariantId==variantId,ct);if(entity is null)return CatalogSaveResult.NotFound;if(!isNew&&!SetVersion(db,entity,x=>x.RowVersion,rowVersion))return CatalogSaveResult.Conflict;if(isNew)db.Add(entity);entity.TrackingCode=string.IsNullOrWhiteSpace(trackingCode) ? (isNew ? $"INV-{variantId}-{Guid.NewGuid():N}"[..22] : entity.TrackingCode) : trackingCode.Trim().ToUpperInvariant();entity.ExactGoldWeightGrams=weight;entity.Quantity=quantity;entity.Status=status;entity.IsActive=active;AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} قطعه «{entity.TrackingCode}» با وزن {weight:0.###} گرم و تعداد {quantity}");return await SaveAsync(db,ct);
     }
 
-    public async Task<CatalogSaveResult> SaveCategoryAsync(int id,string name,string slug,string description,int? parentId,int order,bool active,string rowVersion,CatalogActor actor,CancellationToken ct)
+    public async Task<CatalogSaveResult> SaveCategoryAsync(int id,string name,string slug,string description,int? parentId,int order,bool active,bool showOnHome,byte[]? imageData,string? imageContentType,bool removeImage,string rowVersion,CatalogActor actor,CancellationToken ct)
     {
-        await using var db=await dbContextFactory.CreateDbContextAsync(ct);var isNew=id==0;var entity=isNew?new ProductCategory():await db.Set<ProductCategory>().SingleOrDefaultAsync(x=>x.Id==id,ct);if(entity is null)return CatalogSaveResult.NotFound;if(!isNew&&!SetVersion(db,entity,x=>x.RowVersion,rowVersion))return CatalogSaveResult.Conflict;
+        if (imageData is not null && (imageData.Length is 0 or > 5 * 1024 * 1024 || imageContentType is not ("image/jpeg" or "image/png" or "image/webp"))) return CatalogSaveResult.Invalid;
+        await using var db=await dbContextFactory.CreateDbContextAsync(ct);
+        await using var tx=await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable,ct);
+        var isNew=id==0;var entity=isNew?new ProductCategory():await db.Set<ProductCategory>().SingleOrDefaultAsync(x=>x.Id==id,ct);if(entity is null)return CatalogSaveResult.NotFound;if(!isNew&&!SetVersion(db,entity,x=>x.RowVersion,rowVersion))return CatalogSaveResult.Conflict;
+        if(active&&showOnHome&&!entity.ShowOnHome&&await db.Set<ProductCategory>().CountAsync(x=>x.IsActive&&x.ShowOnHome,ct)>=HomeCategoryLimit)return CatalogSaveResult.HomeLimit;
         if(parentId.HasValue){if(parentId==id||!await db.Set<ProductCategory>().AnyAsync(x=>x.Id==parentId,ct))return CatalogSaveResult.Invalid;var cursor=parentId;while(cursor.HasValue){if(cursor==id)return CatalogSaveResult.Invalid;cursor=await db.Set<ProductCategory>().Where(x=>x.Id==cursor).Select(x=>x.ParentId).SingleOrDefaultAsync(ct);}}
-        if(isNew)db.Add(entity);entity.Name=name.Trim();entity.Slug=slug.Trim().ToLowerInvariant();entity.Description=description.Trim();entity.ParentId=parentId;entity.DisplayOrder=order;entity.IsActive=active;AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} دسته «{entity.Name}»");return await SaveAsync(db,ct);
+        if(isNew)db.Add(entity);entity.Name=name.Trim();entity.Slug=slug.Trim().ToLowerInvariant();entity.Description=description.Trim();entity.ParentId=parentId;entity.DisplayOrder=order;entity.IsActive=active;entity.ShowOnHome=active&&showOnHome;
+        if(imageData is not null){entity.ImageData=imageData;entity.ImageContentType=imageContentType;entity.ImageUrl=null;}
+        else if(removeImage){entity.ImageUrl=null;entity.ImageData=null;entity.ImageContentType=null;}
+        AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} دسته «{entity.Name}»");var result=await SaveAsync(db,ct);if(result==CatalogSaveResult.Saved)await tx.CommitAsync(ct);return result;
     }
     public async Task<CatalogSaveResult> SaveTagAsync(int id,string name,string slug,bool active,string rowVersion,CatalogActor actor,CancellationToken ct)=>await SaveSimpleAsync<ProductTag>(id,rowVersion,actor,ct,(db,e,isNew)=>{e.Name=name.Trim();e.Slug=slug.Trim().ToLowerInvariant();e.IsActive=active;AddLog(db,actor,$"{(isNew?"افزودن":"ویرایش")} برچسب «{e.Name}»");});
     public async Task<CatalogSaveResult> SaveTypeAsync(int id,string name,string description,bool active,string rowVersion,IReadOnlyCollection<ProductTypeAttributeInput> attributes,CatalogActor actor,CancellationToken ct)
@@ -111,6 +185,7 @@ public sealed class CatalogService(IDbContextFactory<MerdasGoldDbContext> dbCont
         var product = await LockImageProductAsync(db, productId, ct);
         if (product is null) return CatalogSaveResult.NotFound;
         var images = db.Set<ProductImage>().Where(x => x.ProductId == productId);
+        if (await images.CountAsync(ct) >= MaxProductImages) return CatalogSaveResult.ImageLimit;
         if (primary || !await images.AnyAsync(ct))
         {
             await images.Where(x => x.IsPrimary).ExecuteUpdateAsync(x => x.SetProperty(i => i.IsPrimary, false), ct);
@@ -191,7 +266,7 @@ public sealed class CatalogService(IDbContextFactory<MerdasGoldDbContext> dbCont
         await using var db=await dbContextFactory.CreateDbContextAsync(ct);var entity=await db.Set<ProductAttributeDefinition>().SingleOrDefaultAsync(x=>x.Id==id,ct);if(entity is null)return CatalogSaveResult.NotFound;if(!SetVersion(db,entity,x=>x.RowVersion,rowVersion))return CatalogSaveResult.Conflict;if(await db.Set<ProductTypeAttribute>().AnyAsync(x=>x.AttributeDefinitionId==id,ct)||await db.Set<ProductAttributeValue>().AnyAsync(x=>x.AttributeDefinitionId==id,ct)||await db.Set<ProductVariantAttributeValue>().AnyAsync(x=>x.AttributeDefinitionId==id,ct))return CatalogSaveResult.InUse;db.Remove(entity);AddLog(db,actor,$"حذف ویژگی «{entity.Name}»");return await SaveAsync(db,ct);
     }
 
-    private static async Task<IReadOnlyList<ProductVariantModel>> LoadVariantsAsync(DbContext db,int productId,CancellationToken ct){var items=await db.Set<ProductVariant>().AsNoTracking().Include(x=>x.AttributeValues).Include(x=>x.Pieces).Where(x=>x.ProductId==productId).OrderBy(x=>x.DisplayOrder).ToListAsync(ct);return items.Select(x=>new ProductVariantModel{Id=x.Id,Title=x.Title,Sku=x.Sku,Barcode=x.Barcode,DisplayOrder=x.DisplayOrder,IsActive=x.IsActive,RowVersion=Convert.ToBase64String(x.RowVersion),AttributeValues=x.AttributeValues.ToDictionary(v=>v.AttributeDefinitionId,v=>v.Value),Pieces=x.Pieces.OrderBy(p=>p.Id).Select(p=>new ProductPieceModel{Id=p.Id,TrackingCode=p.TrackingCode,ExactGoldWeightGrams=p.ExactGoldWeightGrams,StoneWeightCarats=p.StoneWeightCarats,Status=p.Status,IsActive=p.IsActive,RowVersion=Convert.ToBase64String(p.RowVersion)}).ToList()}).ToList();}
+    private static async Task<IReadOnlyList<ProductVariantModel>> LoadVariantsAsync(DbContext db,int productId,CancellationToken ct){var items=await db.Set<ProductVariant>().AsNoTracking().Include(x=>x.AttributeValues).Include(x=>x.Pieces).Where(x=>x.ProductId==productId).OrderBy(x=>x.DisplayOrder).ToListAsync(ct);return items.Select(x=>new ProductVariantModel{Id=x.Id,Title=x.Title,Sku=x.Sku,Barcode=x.Barcode,DisplayOrder=x.DisplayOrder,IsActive=x.IsActive,RowVersion=Convert.ToBase64String(x.RowVersion),AttributeValues=x.AttributeValues.ToDictionary(v=>v.AttributeDefinitionId,v=>v.Value),Pieces=x.Pieces.OrderBy(p=>p.Id).Select(p=>new ProductPieceModel{Id=p.Id,TrackingCode=p.TrackingCode,ExactGoldWeightGrams=p.ExactGoldWeightGrams,Quantity=p.Quantity,StoneWeightCarats=p.StoneWeightCarats,Status=p.Status,IsActive=p.IsActive,RowVersion=Convert.ToBase64String(p.RowVersion)}).ToList()}).ToList();}
     private static ProductTypeAttributeModel ToTypeAttribute(ProductTypeAttribute x,IReadOnlyList<ProductAttributeOption> options)=>new(){Id=x.AttributeDefinitionId,Name=x.AttributeDefinition.Name,DataType=x.AttributeDefinition.DataType,Unit=x.AttributeDefinition.Unit,Scope=x.Scope,IsRequired=x.IsRequired,IsFilterable=x.IsFilterable,IsComparable=x.IsComparable,DisplayOrder=x.DisplayOrder,Options=options.Where(o=>o.AttributeDefinitionId==x.AttributeDefinitionId).Select(ToOption).ToList()};
     private static AttributeOptionModel ToOption(ProductAttributeOption x)=>new(){Id=x.Id,Label=x.Label,Value=x.Value,ColorHex=x.ColorHex};
     private async Task<CatalogSaveResult> SaveSimpleAsync<TEntity>(int id,string version,CatalogActor actor,CancellationToken ct,Action<DbContext,TEntity,bool> apply) where TEntity:class,new(){await using var db=await dbContextFactory.CreateDbContextAsync(ct);var isNew=id==0;var entity=isNew?new TEntity():await db.Set<TEntity>().FindAsync([id],ct);if(entity is null)return CatalogSaveResult.NotFound;if(!isNew){var property=db.Entry(entity).Metadata.FindProperty("RowVersion");try{db.Entry(entity).Property(property!.Name).OriginalValue=Convert.FromBase64String(version);}catch(FormatException){return CatalogSaveResult.Conflict;}}else db.Add(entity);apply(db,entity,isNew);return await SaveAsync(db,ct);}

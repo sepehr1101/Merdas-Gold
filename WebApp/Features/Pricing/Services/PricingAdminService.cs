@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MerdasGold.Features.Pricing.Services;
 
-public sealed record PieceChoice(int Id, string Title, decimal Weight);
+public sealed record PieceChoice(int Id, string Title, decimal Weight, decimal? MakingFeePercent, decimal? SellerProfitPercent);
 
 public sealed class PricingAdminService(IDbContextFactory<MerdasGoldDbContext> factory, AuthenticationStateProvider authentication, GoldRateService rates)
 {
@@ -24,8 +24,8 @@ public sealed class PricingAdminService(IDbContextFactory<MerdasGoldDbContext> f
         await AuthorizeAsync(); await using var db = await factory.CreateDbContextAsync();
         return (await db.Set<RateSettings>().AsNoTracking().SingleAsync(), await db.Set<PricingRule>().AsNoTracking().SingleAsync(),
             await db.Set<PriceDiscount>().AsNoTracking().OrderByDescending(x => x.Id).ToListAsync(),
-            await db.Set<ProductPiece>().AsNoTracking().Where(x => x.IsActive && x.Status == "available" && x.ProductVariant.IsActive)
-                .OrderBy(x => x.TrackingCode).Select(x => new PieceChoice(x.Id, x.ProductVariant.Product.Title + " / " + x.TrackingCode, x.ExactGoldWeightGrams)).ToListAsync());
+            await db.Set<ProductPiece>().AsNoTracking().Where(x => x.IsActive && x.Status == "available" && x.Quantity > 0 && x.ProductVariant.IsActive)
+                .OrderBy(x => x.TrackingCode).Select(x => new PieceChoice(x.Id, x.ProductVariant.Product.Title + " / " + x.TrackingCode, x.ExactGoldWeightGrams, x.ProductVariant.Product.MakingFeePercent, x.ProductVariant.Product.SellerProfitPercent)).ToListAsync());
     }
 
     public async Task SaveSettingsAsync(RateSettings input, string? key)
@@ -67,8 +67,8 @@ public sealed class PricingAdminService(IDbContextFactory<MerdasGoldDbContext> f
     {
         var user = await AuthorizeAsync(); PriceCalculator.Validate(input);
         await using var db = await factory.CreateDbContextAsync(); var row = await db.Set<PricingRule>().SingleAsync(); SetVersion(db, row, input.RowVersion);
-        Log(db, user, $"قیمت‌گذاری: اجرت {row.FeeMode}/{row.FeeValue} به {input.FeeMode}/{input.FeeValue}؛ سود {row.ProfitPercent} به {input.ProfitPercent}؛ مالیات {row.TaxPercent} به {input.TaxPercent}؛ گردکردن {row.RoundToToman} به {input.RoundToToman}؛ ذخیره متن فاکتور.");
-        row.FeeMode = input.FeeMode; row.FeeValue = input.FeeValue; row.ProfitPercent = input.ProfitPercent;
+        Log(db, user, $"قیمت‌گذاری: اجرت {row.FeeMode}/{row.FeeValue} به {input.FeeMode}/{input.FeeValue}؛ مالیات {row.TaxPercent} به {input.TaxPercent}؛ گردکردن {row.RoundToToman} به {input.RoundToToman}؛ ذخیره متن فاکتور.");
+        row.FeeMode = input.FeeMode; row.FeeValue = input.FeeValue;
         row.TaxPercent = input.TaxPercent; row.RoundToToman = input.RoundToToman; row.InvoiceFooter = input.InvoiceFooter.Trim();
         await db.SaveChangesAsync();
     }
