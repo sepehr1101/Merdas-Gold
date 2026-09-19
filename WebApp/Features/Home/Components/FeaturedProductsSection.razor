@@ -5,7 +5,7 @@
     <div class="product-grid storefront-container">
         @foreach (var product in _products)
         {
-            <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" />
+            <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" />
         }
     </div>
 </section>

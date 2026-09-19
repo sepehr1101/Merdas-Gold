@@ -11,36 +11,35 @@
         <section class="category-hero" aria-labelledby="category-title">
             <div class="storefront-container category-hero-inner">
                 <div class="category-hero-copy">
-                    <nav aria-label="مسیر صفحه" class="category-breadcrumb">
-                        <a href="/">خانه</a><span aria-hidden="true">/</span>
-                        <a href="/#categories">دسته‌بندی محصولات</a><span aria-hidden="true">/</span>
-                        <span aria-current="page">@_category.Name</span>
-                    </nav>
+                    <nav aria-label="مسیر صفحه" class="category-breadcrumb"><a href="/">خانه</a><span aria-hidden="true">/</span><a href="/#categories">دسته‌بندی محصولات</a><span aria-hidden="true">/</span><span aria-current="page">@_category.Name</span></nav>
                     <h1 id="category-title">@_category.Name</h1>
                     <p>@(string.IsNullOrWhiteSpace(_category.Description) ? "محصولات این دسته از کاتالوگ فروشگاه" : _category.Description)</p>
                 </div>
-                @if (!string.IsNullOrWhiteSpace(_category.ImageUrl))
-                {
-                    <img class="category-hero-image" src="@_category.ImageUrl" alt="" width="280" height="230" />
-                }
+                @if (!string.IsNullOrWhiteSpace(_category.ImageUrl)) { <img class="category-hero-image" src="@_category.ImageUrl" alt="" width="280" height="230" /> }
             </div>
         </section>
         <section class="inner-content category-content" aria-labelledby="category-products-title">
             <div class="storefront-container">
-                <div class="category-content-heading">
-                    <div>
-                        <span class="category-kicker">MERDAS COLLECTION</span>
-                        <h2 id="category-products-title">محصولات @_category.Name</h2>
-                        <p>رنگ، وزن، ویژگی و قیمت هر محصول از کاتالوگ فروشگاه خوانده می‌شود.</p>
-                    </div>
-                    <span class="category-count">@ToPersian(_category.Products.Count) محصول</span>
-                </div>
-                <div class="category-product-grid">
-                    @foreach (var product in _category.Products)
-                    {
-                        <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" />
-                    }
-                </div>
+                <div class="category-content-heading"><div><span class="category-kicker">MERDAS COLLECTION</span><h2 id="category-products-title">محصولات @_category.Name</h2><p>رنگ، وزن، ویژگی و قیمت هر محصول از کاتالوگ فروشگاه خوانده می‌شود.</p></div><span class="category-count">@ToPersian(FilteredProducts.Count) از @ToPersian(_category.Products.Count) محصول</span></div>
+                <section class="product-filters" aria-label="فیلتر محصولات">
+                    <label><span>دسته‌بندی</span><select value="@Slug" @onchange="ChangeCategory"><option value="">انتخاب دسته</option>@foreach (var category in _categories) { <option value="@category.Slug">@category.Name</option> }</select></label>
+                    <label class="filter-search"><span>جست‌وجو</span><input @bind="_search" @bind:event="oninput" placeholder="نام، کد یا برچسب محصول" /></label>
+                    @if (Tags.Count > 0) { <label><span>برچسب</span><select @bind="_tag"><option value="">همه</option>@foreach (var value in Tags) { <option value="@value">@value</option> }</select></label> }
+                    @if (Colors.Count > 0) { <label><span>رنگ</span><select @bind="_color"><option value="">همه</option>@foreach (var value in Colors) { <option value="@value">@value</option> }</select></label> }
+                    @if (Sizes.Count > 0) { <label><span>سایز</span><select @bind="_size"><option value="">همه</option>@foreach (var value in Sizes) { <option value="@value">@value</option> }</select></label> }
+                    <label><span>وزن از (گرم)</span><input type="number" min="0" step="0.01" @bind="_minWeight" /></label>
+                    <label><span>وزن تا (گرم)</span><input type="number" min="0" step="0.01" @bind="_maxWeight" /></label>
+                    <label class="stock-filter"><input type="checkbox" @bind="_inStockOnly" /><span>فقط کالاهای موجود</span></label>
+                    @if (HasFilters) { <button type="button" class="clear-filters" @onclick="ClearFilters">پاک کردن فیلترها</button> }
+                </section>
+                @if (FilteredProducts.Count == 0)
+                {
+                    <div class="filter-empty"><strong>محصولی با این مشخصات پیدا نشد.</strong><button type="button" @onclick="ClearFilters">نمایش همه محصولات</button></div>
+                }
+                else
+                {
+                    <div class="category-product-grid">@foreach (var product in FilteredProducts) { <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" /> }</div>
+                }
             </div>
         </section>
     </div>
@@ -48,10 +47,18 @@
 @code {
     [Parameter] public string Slug { get; set; } = string.Empty;
     private StorefrontCategory? _category;
-    protected override async Task OnParametersSetAsync()
-    {
-        _category = await Catalog.CategoryAsync(Slug);
-        if (_category is null) Navigation.NotFound();
-    }
+    private IReadOnlyList<StorefrontCategoryChoice> _categories = [];
+    private string _search = "", _tag = "", _color = "", _size = "";
+    private decimal? _minWeight, _maxWeight;
+    private bool _inStockOnly = true;
+    private IReadOnlyList<StorefrontProductCard> FilteredProducts => _category is null ? [] : StorefrontProductFilter.Apply(_category.Products, new(_search, _tag, _color, _size, _minWeight, _maxWeight, _inStockOnly));
+    private IReadOnlyList<string> Tags => Facets(x => x.Tags);
+    private IReadOnlyList<string> Colors => Facets(x => x.Colors);
+    private IReadOnlyList<string> Sizes => Facets(x => x.Sizes);
+    private bool HasFilters => _search.Length > 0 || _tag.Length > 0 || _color.Length > 0 || _size.Length > 0 || _minWeight.HasValue || _maxWeight.HasValue || !_inStockOnly;
+    protected override async Task OnParametersSetAsync() { _categories = await Catalog.CategoriesAsync(); _category = await Catalog.CategoryAsync(Slug); if (_category is null) Navigation.NotFound(); ClearFilters(); }
+    private void ChangeCategory(ChangeEventArgs args) { var slug = args.Value?.ToString(); if (!string.IsNullOrWhiteSpace(slug) && slug != Slug) Navigation.NavigateTo($"/products/category/{slug}"); }
+    private IReadOnlyList<string> Facets(Func<StorefrontProductCard, IEnumerable<string>> selector) => _category?.Products.SelectMany(selector).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x).ToList() ?? [];
+    private void ClearFilters() { _search = _tag = _color = _size = ""; _minWeight = _maxWeight = null; _inStockOnly = true; }
     private static string ToPersian(int value) => string.Concat(value.ToString().Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
 }

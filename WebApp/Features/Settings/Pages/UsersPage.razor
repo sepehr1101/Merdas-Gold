@@ -7,20 +7,7 @@
 <PageTitle>کاربران | مرداس گلد</PageTitle>
 
 <section class="users-page">
-    <a class="back-link" href="/admin/settings">
-        <MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />
-        <span>بازگشت به تنظیمات</span>
-    </a>
-
-    <header class="users-header">
-        <div>
-            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">کاربران</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">حساب‌های کاربری، نقش‌ها و وضعیت دسترسی</MudText>
-        </div>
-        <span class="users-mark" aria-hidden="true">
-            <MudIcon Icon="@Icons.Material.Outlined.PeopleAlt" Size="Size.Large" />
-        </span>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/settings" ParentTitle="تنظیمات" Title="کاربران" Subtitle="حساب‌های کاربری، نقش‌ها و وضعیت دسترسی" />
 
     <DataGridToolbar SearchText="@_searchText"
                      SearchTextChanged="OnSearchChanged"

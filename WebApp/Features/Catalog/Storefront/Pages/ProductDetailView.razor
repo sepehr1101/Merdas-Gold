@@ -53,9 +53,9 @@
                                 <span>رنگ: <strong>@_selected.Color</strong></span>
                                 @if (!string.IsNullOrWhiteSpace(_selected.Size))
                                 {
-                                    <span>سایز یا طول: <strong>@_selected.Size</strong></span>
+                                    <span>@Product.SizeLabel: <strong>@_selected.Size @Product.SizeUnit</strong></span>
                                 }
-                                <span>وزن دقیق قطعه: <strong>@_selected.Weight.ToString("0.000") گرم</strong></span>
+                                <span>وزن دقیق: <strong>@_selected.Weight.ToString("0.000") گرم</strong></span><span>موجودی: <strong>@_selected.Quantity عدد</strong></span>
                             </div>
                         }
                         <button class="storefront-action product-add" type="button" disabled="@(Preview || _selected is null || _price is null)" @onclick="UiState.AddToCart">افزودن به سبد خرید</button>
@@ -80,7 +80,7 @@
                     <div class="related-grid">
                         @foreach (var related in Product.Related)
                         {
-                            <ProductCard Title="@related.Title" Price="@related.Price" ImageUrl="@related.ImageUrl" Href="@related.Href" />
+                            <ProductCard Title="@related.Title" Price="@related.Price" ImageUrl="@related.ImageUrl" Href="@related.Href" Available="@related.Available" />
                         }
                     </div>
                 </section>
@@ -96,13 +96,13 @@
     protected override async Task OnParametersSetAsync()
     {
         _selected = Product?.Variants.FirstOrDefault(x => x.Available);
-        _price = _selected?.PieceId is int pieceId ? (await (Preview ? Catalog.PreviewQuoteAsync(pieceId) : Catalog.QuoteAsync(pieceId)))?.Breakdown.Total : null;
+        _price = _selected is not null ? (await (Preview ? Catalog.PreviewQuoteAsync(_selected.Id) : Catalog.QuoteAsync(_selected.Id)))?.Breakdown.Total : null;
     }
     private async Task SelectVariantAsync(StorefrontVariant variant)
     {
         if (!variant.Available) return;
         _selected = variant;
-        _price = variant.PieceId is int pieceId ? (await (Preview ? Catalog.PreviewQuoteAsync(pieceId) : Catalog.QuoteAsync(pieceId)))?.Breakdown.Total : null;
+        _price = (await (Preview ? Catalog.PreviewQuoteAsync(variant.Id) : Catalog.QuoteAsync(variant.Id)))?.Breakdown.Total;
     }
     private static string DisplayValue(string name, string value) => name == "عیار" && value == "18" ? "۱۸ عیار" : value;
 }

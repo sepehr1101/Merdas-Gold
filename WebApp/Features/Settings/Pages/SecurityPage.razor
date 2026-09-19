@@ -5,20 +5,7 @@
 <PageTitle>امنیت | مرداس گلد</PageTitle>
 
 <section class="security-page">
-    <a class="back-link" href="/admin/settings">
-        <MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />
-        <span>بازگشت به تنظیمات</span>
-    </a>
-
-    <header class="security-header">
-        <div>
-            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">امنیت</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">مدیریت سیاست‌های ورود و رمز عبور سامانه</MudText>
-        </div>
-        <span class="security-mark" aria-hidden="true">
-            <MudIcon Icon="@Icons.Material.Outlined.Security" Size="Size.Large" />
-        </span>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/settings" ParentTitle="تنظیمات" Title="امنیت" Subtitle="مدیریت سیاست‌های ورود و رمز عبور سامانه" />
 
     @if (SuccessMessage is not null)
     {

@@ -12,6 +12,7 @@ public partial class CategoriesPage
     [SupplyParameterFromQuery(Name = "status")] public string? Status { get; set; }
     [SupplyParameterFromQuery(Name = "error")] public string? Error { get; set; }
     private IReadOnlyList<CategoryListItem> _items = [];
+    private IReadOnlyList<ProductTypeModel> _types = [];
     private int HomeSelectedCount => _items.Count(x => x.IsActive && x.ShowOnHome);
     private CategoryListItem? _editor;
     private bool _loading = true;
@@ -30,12 +31,13 @@ public partial class CategoriesPage
         try
         {
             _items = await Service.GetCategoriesAsync();
+            _types = await Service.GetProductTypesAsync();
             _editor = Edit.HasValue ? Edit == 0 ? NewItem() : _items.SingleOrDefault(x => x.Id == Edit) : null;
         }
         finally { _loading = false; }
     }
 
-    private static CategoryListItem NewItem() => new() { IsActive = true };
+    private static CategoryListItem NewItem() => new() { IsActive = true, IsSelectableForProducts = true, SizeMode = "none", SizeLabel = "اندازه" };
     private async Task PreviewImage(InputFileChangeEventArgs e)
     {
         _pendingImagePreview = null; _imageError = null;

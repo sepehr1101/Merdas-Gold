@@ -12,7 +12,7 @@ namespace MerdasGold.Features.Pricing.Admin;
 public partial class PricingPage : IDisposable
 {
     [Parameter] public string? Section { get; set; }
-    [SupplyParameterFromQuery(Name = "piece")] public int? RequestedPiece { get; set; }
+    [SupplyParameterFromQuery(Name = "variant")] public int? RequestedVariant { get; set; }
     [Inject] private PricingAdminService Service { get; set; } = default!;
     [Inject] private GoldRateService Rates { get; set; } = default!;
     [Inject] private IDbContextFactory<MerdasGoldDbContext> Factory { get; set; } = default!;
@@ -28,7 +28,7 @@ public partial class PricingPage : IDisposable
     private GoldRate? _current;
     private GoldRateScheduleStatus? _schedule;
     private List<PriceDiscount> _discounts = [];
-    private List<PieceChoice> _pieces = [];
+    private List<VariantChoice> _variants = [];
     private List<GoldRate> _history = [];
     private PriceDiscount _discount = new();
     private string _apiKey = "", _manualReason = "", _message = null!, _rateDay = OperationLogDate.FormatDate(OperationLogDate.Today);
@@ -36,7 +36,7 @@ public partial class PricingPage : IDisposable
     private string _storeName = "مرداس", _storeAddress = "";
     private bool _busy, _failed, _useLive, _hasLogo;
     private TimeOnly _fromTime = new(0, 0), _toTime = new(23, 59);
-    private int _manualMinutes = 30, _ratePage, _rateCount, _pieceId;
+    private int _manualMinutes = 30, _ratePage, _rateCount, _variantId;
     private decimal _manualPrice, _weight = 2, _sampleRate = 10_000_000;
     private decimal _previewFeePercent, _previewProfitPercent;
     private PriceBreakdown? _invoicePreview;
@@ -58,12 +58,12 @@ public partial class PricingPage : IDisposable
         if (Active != "overview" && !Tabs.Any(x => x.Key == Active)) { Navigation.NotFound(); return; }
         if (Active == "overview") return;
         await Load();
-        if (RequestedPiece is { } id && _pieces.FirstOrDefault(x => x.Id == id) is { } piece)
-        { _pieceId = id; _weight = piece.Weight; _previewFeePercent = piece.MakingFeePercent ?? 0; _previewProfitPercent = piece.SellerProfitPercent ?? 0; _useLive = true; }
+        if (RequestedVariant is { } id && _variants.FirstOrDefault(x => x.Id == id) is { } variant)
+        { _variantId = id; _weight = variant.Weight; _previewFeePercent = variant.MakingFeePercent ?? 0; _previewProfitPercent = variant.SellerProfitPercent ?? 0; _useLive = true; }
     }
     private async Task Load()
     {
-        (_settings, _rule, _discounts, _pieces) = await Service.LoadAsync();
+        (_settings, _rule, _discounts, _variants) = await Service.LoadAsync();
         _current = await Rates.CurrentAsync(_settings);
         _schedule = await Rates.ScheduleStatusAsync(_settings);
         _liveSettings = new RateSettings { Provider = _settings.Provider, MaxAgeMinutes = _settings.MaxAgeMinutes };
@@ -138,7 +138,7 @@ public partial class PricingPage : IDisposable
         _discount = new PriceDiscount { Id = d.Id, Title = d.Title, Kind = d.Kind, Value = d.Value, Enabled = d.Enabled, RowVersion = d.RowVersion };
         _discountStart = OperationLogDate.FormatDate(OperationLogDate.FromUtc(d.StartsUtc)); _discountEnd = OperationLogDate.FormatDate(OperationLogDate.FromUtc(d.EndsUtc.AddSeconds(-1)));
     }
-    private void SelectPiece(ChangeEventArgs e) { if (int.TryParse(e.Value?.ToString(), out _pieceId) && _pieces.FirstOrDefault(x => x.Id == _pieceId) is { } piece) { _weight = piece.Weight; _previewFeePercent = piece.MakingFeePercent ?? 0; _previewProfitPercent = piece.SellerProfitPercent ?? 0; } }
+    private void SelectVariant(ChangeEventArgs e) { if (int.TryParse(e.Value?.ToString(), out _variantId) && _variants.FirstOrDefault(x => x.Id == _variantId) is { } variant) { _weight = variant.Weight; _previewFeePercent = variant.MakingFeePercent ?? 0; _previewProfitPercent = variant.SellerProfitPercent ?? 0; } }
     private void ShowInvoice()
     {
         var rate = _useLive ? (Fresh ? _current?.PriceToman ?? 0 : 0) : _sampleRate;
@@ -154,7 +154,7 @@ public partial class PricingPage : IDisposable
         _failed = false;
         _invoiceWeight = _weight;
         _invoiceRate = rate;
-        _invoicePieceTitle = _pieces.FirstOrDefault(x => x.Id == _pieceId)?.Title ?? "قطعه آزمایشی";
+        _invoicePieceTitle = _variants.FirstOrDefault(x => x.Id == _variantId)?.Title ?? "تنوع آزمایشی";
         _invoiceFooter = _rule?.InvoiceFooter ?? "";
         _invoiceDateUtc = DateTime.UtcNow;
     }

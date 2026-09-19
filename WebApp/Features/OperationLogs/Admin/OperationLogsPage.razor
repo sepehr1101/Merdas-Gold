@@ -7,11 +7,7 @@
 <PageTitle>لاگ عملیات‌ها | مرداس گلد</PageTitle>
 
 <section class="logs-page">
-    <a class="back-link" href="/admin/settings"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />بازگشت به تنظیمات</a>
-    <header class="logs-header">
-        <div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">لاگ عملیات‌ها</MudText><MudText Typo="Typo.body2" Color="Color.Secondary">سوابق ثبت‌شده عملیات و تغییرات کاربران در سامانه</MudText></div>
-        <span class="logs-mark" aria-hidden="true"><MudIcon Icon="@Icons.Material.Outlined.ManageSearch" Size="Size.Large" /></span>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/settings" ParentTitle="تنظیمات" Title="لاگ عملیات‌ها" Subtitle="سوابق ثبت‌شده عملیات و تغییرات کاربران در سامانه" />
 
     <form class="date-filter" @onsubmit="ApplyDatesAsync" @onsubmit:preventDefault>
         <div class="date-filter-heading"><MudIcon Icon="@Icons.Material.Outlined.DateRange" /><div><h2>جستجو در بازه زمانی</h2><p>تاریخ شمسی · تاریخ و ساعت بر اساس تهران</p></div></div>

@@ -4,8 +4,7 @@
 <PageTitle>برچسب‌های محصولات | مرداس گلد</PageTitle>
 
 <section class="manage-page tags-page">
-    <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small"/> بازگشت به کالاها</a>
-    <header class="page-header"><div><span class="eyebrow">گروه‌بندی سریع</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">برچسب‌ها</MudText></div><a class="primary-action" href="/admin/catalog/tags?edit=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small"/> برچسب جدید</a></header>
+    <AdminSectionHeader ParentHref="/admin/catalog" ParentTitle="کالاها" Title="برچسب‌ها"><Actions><a class="primary-action" href="/admin/catalog/tags?edit=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> برچسب جدید</a></Actions></AdminSectionHeader>
     @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")">@Message</div> }
     @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary"/> }
     else {

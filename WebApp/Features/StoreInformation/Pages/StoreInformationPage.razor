@@ -8,11 +8,7 @@
 <PageTitle>اطلاعات فروشگاه | مرداس گلد</PageTitle>
 
 <section class="store-page">
-    <a class="back-link" href="/admin/settings"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /><span>بازگشت به تنظیمات</span></a>
-    <header class="store-header">
-        <div><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">اطلاعات فروشگاه</MudText></div>
-        <span class="store-mark"><MudIcon Icon="@Icons.Material.Outlined.Storefront" Size="Size.Large" /></span>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/settings" ParentTitle="تنظیمات" Title="اطلاعات فروشگاه" />
 
     @if (Message is not null) { <div class="notice @(HasError ? "error" : "success")"><MudIcon Icon="@(HasError ? Icons.Material.Outlined.ErrorOutline : Icons.Material.Outlined.CheckCircle)" /><span>@Message</span></div> }
     @if (_loading) { <MudProgressLinear Indeterminate="true" /> }

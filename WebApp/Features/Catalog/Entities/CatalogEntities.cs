@@ -11,9 +11,16 @@ public sealed class ProductCategory
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public bool ShowOnHome { get; set; }
+    public bool IsSelectableForProducts { get; set; } = true;
+    public int? ProductTypeId { get; set; }
+    public ProductType? ProductType { get; set; }
     public string? ImageUrl { get; set; }
     public byte[]? ImageData { get; set; }
     public string? ImageContentType { get; set; }
+    public string SizeMode { get; set; } = "none";
+    public string SizeLabel { get; set; } = "اندازه";
+    public string SizeUnit { get; set; } = string.Empty;
+    public string SizeOptions { get; set; } = string.Empty;
     public byte[] RowVersion { get; set; } = [];
 }
 
@@ -120,13 +127,15 @@ public sealed class ProductVariant
     public int ProductId { get; set; }
     public Product Product { get; set; } = default!;
     public string Title { get; set; } = string.Empty;
-    public string Sku { get; set; } = string.Empty;
-    public string Barcode { get; set; } = string.Empty;
+    public string InternalCode { get; set; } = string.Empty;
+    public string SizeValue { get; set; } = string.Empty;
+    public decimal ExactGoldWeightGrams { get; set; }
+    public int Quantity { get; set; } = 1;
+    public string Status { get; set; } = "available";
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public byte[] RowVersion { get; set; } = [];
     public ICollection<ProductVariantAttributeValue> AttributeValues { get; set; } = [];
-    public ICollection<ProductPiece> Pieces { get; set; } = [];
 }
 
 public sealed class ProductVariantAttributeValue
@@ -136,20 +145,6 @@ public sealed class ProductVariantAttributeValue
     public int AttributeDefinitionId { get; set; }
     public ProductAttributeDefinition AttributeDefinition { get; set; } = default!;
     public string Value { get; set; } = string.Empty;
-}
-
-public sealed class ProductPiece
-{
-    public int Id { get; set; }
-    public int ProductVariantId { get; set; }
-    public ProductVariant ProductVariant { get; set; } = default!;
-    public string TrackingCode { get; set; } = string.Empty;
-    public decimal ExactGoldWeightGrams { get; set; }
-    public int Quantity { get; set; } = 1;
-    public decimal? StoneWeightCarats { get; set; }
-    public string Status { get; set; } = "available";
-    public bool IsActive { get; set; } = true;
-    public byte[] RowVersion { get; set; } = [];
 }
 
 public sealed class ProductImage

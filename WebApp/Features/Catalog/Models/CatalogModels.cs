@@ -3,6 +3,7 @@ namespace MerdasGold.Features.Catalog.Models;
 public sealed record CatalogActor(string UserId, string UserName, string IpAddress);
 public sealed record CatalogOverviewModel(int ProductCount, int ActiveProductCount, int AvailablePieceCount, int CategoryCount, int TypeCount, int AttributeCount);
 public sealed record CatalogLookup(int Id, string Name, bool IsActive = true);
+public sealed record ProductCategoryChoice(int Id, string Name, int ProductTypeId);
 public sealed record HomeCategoryItem(string Name, string Slug, string? ImageUrl);
 public sealed record StorefrontCategoryItem(string Name, string Slug, string Description, string? ImageUrl);
 
@@ -17,7 +18,14 @@ public sealed class CategoryListItem
     public int DisplayOrder { get; init; }
     public bool IsActive { get; init; }
     public bool ShowOnHome { get; init; }
+    public bool IsSelectableForProducts { get; init; }
+    public int? ProductTypeId { get; init; }
+    public string? ProductTypeName { get; init; }
     public string? ImageUrl { get; init; }
+    public string SizeMode { get; init; } = "none";
+    public string SizeLabel { get; init; } = "اندازه";
+    public string SizeUnit { get; init; } = string.Empty;
+    public string SizeOptions { get; init; } = string.Empty;
     public int ProductCount { get; init; }
     public string RowVersion { get; init; } = string.Empty;
 }
@@ -101,6 +109,8 @@ public sealed class ProductListItem
     public int AvailablePieceCount { get; init; }
     public int? PrimaryImageId { get; init; }
     public DateTime UpdatedAtUtc { get; init; }
+    public bool IsReadyForPublication { get; set; }
+    public IReadOnlyList<string> MissingRequirements { get; set; } = [];
 }
 
 public sealed class ProductEditModel
@@ -126,25 +136,15 @@ public sealed class ProductVariantModel
 {
     public int Id { get; init; }
     public string Title { get; init; } = string.Empty;
-    public string Sku { get; init; } = string.Empty;
-    public string Barcode { get; init; } = string.Empty;
+    public string InternalCode { get; init; } = string.Empty;
+    public string SizeValue { get; init; } = string.Empty;
+    public decimal ExactGoldWeightGrams { get; init; }
+    public int Quantity { get; init; } = 1;
+    public string Status { get; init; } = "available";
     public int DisplayOrder { get; init; }
     public bool IsActive { get; init; }
     public string RowVersion { get; init; } = string.Empty;
     public IReadOnlyDictionary<int, string> AttributeValues { get; init; } = new Dictionary<int, string>();
-    public IReadOnlyList<ProductPieceModel> Pieces { get; init; } = [];
-}
-
-public sealed class ProductPieceModel
-{
-    public int Id { get; init; }
-    public string TrackingCode { get; init; } = string.Empty;
-    public decimal ExactGoldWeightGrams { get; init; }
-    public int Quantity { get; init; } = 1;
-    public decimal? StoneWeightCarats { get; init; }
-    public string Status { get; init; } = string.Empty;
-    public bool IsActive { get; init; }
-    public string RowVersion { get; init; } = string.Empty;
 }
 
 public sealed class ProductImageModel
@@ -159,13 +159,17 @@ public sealed class ProductImageModel
 public sealed class ProductEditorData
 {
     public ProductEditModel Product { get; init; } = new();
-    public IReadOnlyList<CatalogLookup> Categories { get; init; } = [];
+    public IReadOnlyList<ProductCategoryChoice> Categories { get; init; } = [];
     public IReadOnlyList<CatalogLookup> Tags { get; init; } = [];
     public IReadOnlyList<CatalogLookup> ProductTypes { get; init; } = [];
     public IReadOnlyList<ProductTypeAttributeModel> ProductAttributes { get; init; } = [];
     public IReadOnlyList<ProductTypeAttributeModel> VariantAttributes { get; init; } = [];
     public IReadOnlyList<ProductVariantModel> Variants { get; init; } = [];
     public IReadOnlyList<ProductImageModel> Images { get; init; } = [];
+    public string SizeMode { get; init; } = "none";
+    public string SizeLabel { get; init; } = "اندازه";
+    public string SizeUnit { get; init; } = string.Empty;
+    public IReadOnlyList<string> SizeOptions { get; init; } = [];
 }
 
-public enum CatalogSaveResult { Saved, Conflict, Invalid, NotFound, InUse, Protected, HomeLimit, ImageLimit }
+public enum CatalogSaveResult { Saved, Conflict, Invalid, NotReady, NotFound, InUse, Protected, HomeLimit, ImageLimit }

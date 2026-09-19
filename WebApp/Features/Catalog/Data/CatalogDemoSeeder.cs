@@ -27,7 +27,10 @@ public sealed class CatalogDemoSeeder(IDbContextFactory<MerdasGoldDbContext> fac
     public async Task<int> SeedAsync(CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        var categories = await db.Set<ProductCategory>().AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Id).ToListAsync(ct);
+        var categories = await db.Set<ProductCategory>().AsNoTracking()
+            .Where(x => x.IsActive && x.IsSelectableForProducts && x.ProductTypeId.HasValue)
+            .OrderBy(x => x.Id)
+            .ToListAsync(ct);
         // The demo attributes must also be editable through each product type's admin form.
         var links = await db.Set<ProductTypeAttribute>().AsNoTracking()
             .Select(x => new { x.ProductTypeId, x.AttributeDefinitionId }).ToListAsync(ct);
@@ -56,11 +59,7 @@ public sealed class CatalogDemoSeeder(IDbContextFactory<MerdasGoldDbContext> fac
         var created = 0;
         foreach (var category in categories)
         {
-            var typeId = category.Slug switch
-            {
-                "rings" => 1, "necklaces" => 2, "bracelets" or "anklets" => 3,
-                "earrings" => 4, "pendants" => 5, "sets" => 6, "coins-bars" => 7, _ => 8
-            };
+            var typeId = category.ProductTypeId!.Value;
             for (var index = 0; index < 12; index++)
             {
                 var code = $"DEMO-{category.Id}-{index + 1:00}";
@@ -69,7 +68,7 @@ public sealed class CatalogDemoSeeder(IDbContextFactory<MerdasGoldDbContext> fac
                 var product = new Product
                 {
                     Title = title, Slug = $"demo-{category.Slug}-{index + 1:00}", Code = code,
-                    ShortDescription = $"طرح {Motifs[index]}، دارای سه رنگ و وزن مشخص برای هر قطعه.",
+                    ShortDescription = $"طرح {Motifs[index]}، دارای سه تنوع با رنگ، وزن و موجودی مشخص.",
                     Description = $"نمونهٔ آموزشی {title} برای نمایش شیوهٔ تعریف کالا، ویژگی، تنوع، موجودی و محاسبهٔ قیمت. تصویر از مجموعهٔ محدود عکس‌های نمایشی فروشگاه استفاده شده و ممکن است با نوع کالا یکسان نباشد.",
                     ProductTypeId = typeId, PrimaryCategoryId = category.Id, Status = "active",
                     IsFeatured = index < 4, MakingFeePercent = 8 + index % 6,
@@ -92,21 +91,14 @@ public sealed class CatalogDemoSeeder(IDbContextFactory<MerdasGoldDbContext> fac
                     var (value, name) = Colors[colorIndex];
                     var variant = new ProductVariant
                     {
-                        Title = $"{title} - {name}", Sku = $"{code}-{colorIndex + 1}",
-                        Barcode = $"{category.Id:D4}{index + 1:D2}{colorIndex + 1:D2}",
-                        DisplayOrder = colorIndex, IsActive = true,
-                        Pieces = [new ProductPiece {
-                            TrackingCode = $"{code}-P{colorIndex + 1}",
-                            ExactGoldWeightGrams = 1.5m + (index * 0.27m) + (colorIndex * 0.08m) + (typeId == 6 ? 4m : 0m),
-                            StoneWeightCarats = typeId is 1 or 4 && index % 3 == 0 ? 0.12m : null,
-                            Status = "available", IsActive = true
-                        }]
+                        Title = $"{title} - {name}", InternalCode = $"{code}-{colorIndex + 1}",
+                        ExactGoldWeightGrams = 1.5m + (index * 0.27m) + (colorIndex * 0.08m) + (typeId == 6 ? 4m : 0m),
+                        Quantity = 1, Status = "available", DisplayOrder = colorIndex, IsActive = true
                     };
                     variant.AttributeValues.Add(new ProductVariantAttributeValue { AttributeDefinitionId = 2, Value = value });
-                    if (typeId is 1 or 3)
-                        variant.AttributeValues.Add(new ProductVariantAttributeValue { AttributeDefinitionId = 3, Value = (typeId == 1 ? 52 + index % 5 : 17 + index % 4).ToString() });
-                    if (typeId == 2)
-                        variant.AttributeValues.Add(new ProductVariantAttributeValue { AttributeDefinitionId = 6, Value = (42 + index % 5).ToString() });
+                    if (typeId == 1) variant.SizeValue = (index % 3) switch { 0 => "بچه‌گانه", 1 => "کوچک", _ => "بزرگ" };
+                    if (typeId == 2) variant.SizeValue = (20 + (index % 3) * 4).ToString();
+                    if (typeId == 3) variant.SizeValue = (17 + index % 4).ToString();
                     product.Variants.Add(variant);
                 }
                 db.Set<Product>().Add(product);

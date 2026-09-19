@@ -1,0 +1,32 @@
+.admin-section-header {
+    margin-bottom: var(--admin-space-5);
+    padding: var(--admin-space-4) var(--admin-card-padding);
+    border: 1px solid var(--border);
+    border-radius: var(--admin-card-radius);
+    background: var(--surface);
+    box-shadow: var(--admin-shadow);
+}
+
+.admin-section-parent {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary);
+    font-size: var(--text-label);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.admin-section-parent:hover { color: var(--primary-hover); }
+.admin-section-heading { display: flex; align-items: end; justify-content: space-between; gap: var(--admin-space-4); }
+.admin-section-copy { min-width: 0; }
+.admin-section-copy h1 { margin: 5px 0 0; color: var(--ink); font-size: 22px; font-weight: 750; line-height: 1.45; }
+.admin-section-copy p { margin: 4px 0 0; color: var(--muted); font-size: var(--text-label); line-height: 1.8; }
+.admin-section-actions { flex: 0 0 auto; }
+
+@media (max-width: 650px) {
+    .admin-section-header { padding: var(--admin-space-4); }
+    .admin-section-heading { align-items: stretch; flex-direction: column; }
+    .admin-section-copy h1 { font-size: 19px; }
+    .admin-section-actions { align-self: flex-start; }
+}

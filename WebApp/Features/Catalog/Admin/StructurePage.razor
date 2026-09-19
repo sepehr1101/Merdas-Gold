@@ -5,11 +5,7 @@
 <PageTitle>الگوها و ویژگی‌های محصول | مرداس گلد</PageTitle>
 
 <section class="manage-page structure-page">
-    <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به کالاها</a>
-    <header class="page-header">
-        <div><span class="eyebrow">ساختار کاتالوگ</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">الگوها و ویژگی‌ها</MudText></div>
-        <a class="primary-action" href="@(IsAttributes ? "/admin/catalog/structure?view=attributes&edit=0" : "/admin/catalog/structure?view=types&edit=0")"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> @(IsAttributes ? "ویژگی جدید" : "الگوی جدید")</a>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/catalog" ParentTitle="کالاها" Title="الگوها و ویژگی‌ها"><Actions><a class="primary-action" href="@(IsAttributes ? "/admin/catalog/structure?view=attributes&edit=0" : "/admin/catalog/structure?view=types&edit=0")"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> @(IsAttributes ? "ویژگی جدید" : "الگوی جدید")</a></Actions></AdminSectionHeader>
 
     <nav class="view-tabs"><a class="@(!IsAttributes ? "active" : "")" href="/admin/catalog/structure?view=types"><MudIcon Icon="@Icons.Material.Outlined.ViewModule" Size="Size.Small" /> الگوهای محصول <b>@_types.Count</b></a><a class="@(IsAttributes ? "active" : "")" href="/admin/catalog/structure?view=attributes"><MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" /> ویژگی‌ها <b>@_attributes.Count</b></a></nav>
     @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")">@Message</div> }

@@ -24,7 +24,7 @@
     }
     else
     {
-        <header class="pricing-section-header"><a href="/admin/pricing"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> فروش و قیمت‌گذاری</a><h1>@Tabs.First(tab => tab.Key == Active).Title</h1></header>
+        <AdminSectionHeader ParentHref="/admin/pricing" ParentTitle="فروش و قیمت‌گذاری" Title="@Tabs.First(tab => tab.Key == Active).Title" />
     }
     @if (_message is not null) { <div class="notice @(_failed ? "failure" : "")" role="status">@_message</div> }
     @if (Active == "overview") { }
@@ -71,8 +71,8 @@
                     <ValidationSummary />
                     <fieldset disabled="@_busy">
                         <div class="rule-fields">
-                            <label>درصد پیش‌فرض مالیات بر ارزش افزوده<InputNumber @bind-Value="_rule.TaxPercent" min="0" max="100" step="0.01" /><small>بر اجرت پس از تخفیف محاسبه می‌شود.</small></label>
-                            <label>گرد کردن مبلغ نهایی<select @bind="RoundingUnit"><option value="1">نزدیک‌ترین تومان</option><option value="100">نزدیک‌ترین ۱۰۰ تومان</option><option value="1000">نزدیک‌ترین ۱٬۰۰۰ تومان</option><option value="10000">نزدیک‌ترین ۱۰٬۰۰۰ تومان</option></select></label>
+                            <label><span class="rule-field-title">درصد پیش‌فرض مالیات بر ارزش افزوده</span><InputNumber @bind-Value="_rule.TaxPercent" min="0" max="100" step="0.01" /><small>بر اجرت پس از تخفیف محاسبه می‌شود.</small></label>
+                            <label><span class="rule-field-title">گرد کردن مبلغ نهایی</span><select @bind="RoundingUnit"><option value="1">نزدیک‌ترین تومان</option><option value="100">نزدیک‌ترین ۱۰۰ تومان</option><option value="1000">نزدیک‌ترین ۱٬۰۰۰ تومان</option><option value="10000">نزدیک‌ترین ۱۰٬۰۰۰ تومان</option></select></label>
                             <button class="admin-form-submit" type="submit">ذخیره قاعده قیمت‌گذاری</button>
                         </div>
                     </fieldset>
@@ -95,7 +95,7 @@
             <article class="card invoice-controls no-print">
                 <h2>داده آزمایشی و قالب صورتحساب</h2>
                 <div class="field-grid">
-                    <label>قطعه کاتالوگ<select value="@_pieceId" @onchange="SelectPiece"><option value="0">وزن دلخواه برای آزمایش</option>@foreach (var piece in _pieces) { <option value="@piece.Id">@piece.Title · @piece.Weight گرم</option> }</select></label>
+                    <label>تنوع کاتالوگ<select value="@_variantId" @onchange="SelectVariant"><option value="0">وزن دلخواه برای آزمایش</option>@foreach (var variant in _variants) { <option value="@variant.Id">@variant.Title · @variant.Weight گرم</option> }</select></label>
                     <label>وزن طلای ۱۸ عیار (گرم)<input type="number" step="0.001" min="0.001" @bind="_weight" /></label>
                     <label>اجرت این کالا (درصد)<input type="number" step="0.0001" min="0" max="100" @bind="_previewFeePercent" /></label>
                     <label>سود فروشنده این کالا (درصد)<input type="number" step="0.0001" min="0" max="100" @bind="_previewProfitPercent" /></label>

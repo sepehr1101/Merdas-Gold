@@ -3,6 +3,7 @@
 <article class="product-card">
     <div class="product-image">
         <a class="product-link-image" href="@Href" aria-label="مشاهده @Title"><img src="@ImageUrl" alt="" width="300" height="300" loading="lazy" /></a>
+        @if (!Available) { <span class="sold-out">ناموجود</span> }
         <button class="heart @(Favorite ? "heart--active" : null)"
                 type="button"
                 aria-label="@(Favorite ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی")"
@@ -11,7 +12,7 @@
     </div>
     <h3><a href="@Href">@Title</a></h3>
     <p class="price">@Price</p>
-    <button class="add-cart" type="button" @onclick="UiState.AddToCart">افزودن به سبد خرید</button>
+    <button class="add-cart" type="button" disabled="@(!Available)" @onclick="UiState.AddToCart">@(Available ? "افزودن به سبد خرید" : "ناموجود")</button>
 </article>
 
 @code {
@@ -26,6 +27,8 @@
 
     [Parameter, EditorRequired]
     public string Href { get; set; } = string.Empty;
+
+    [Parameter] public bool Available { get; set; } = true;
 
     private bool Favorite { get; set; }
 

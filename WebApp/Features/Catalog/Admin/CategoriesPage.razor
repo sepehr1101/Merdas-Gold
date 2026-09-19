@@ -4,11 +4,7 @@
 <PageTitle>دسته‌بندی محصولات | مرداس گلد</PageTitle>
 
 <section class="manage-page">
-    <a class="back-link" href="/admin/catalog"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small"/> بازگشت به کالاها</a>
-    <header class="page-header">
-        <div><span class="eyebrow">چیدمان فروشگاه</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">دسته‌بندی‌ها</MudText></div>
-        <a class="primary-action" href="/admin/catalog/categories?edit=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small"/> دسته جدید</a>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/catalog" ParentTitle="کالاها" Title="دسته‌بندی‌ها"><Actions><a class="primary-action" href="/admin/catalog/categories?edit=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> دسته جدید</a></Actions></AdminSectionHeader>
     @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")">@Message</div> }
     @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary"/> }
     else {
@@ -23,7 +19,7 @@
                         <label class="field"><span>نام دسته *</span><input name="Name" value="@_editor.Name" maxlength="160" required/></label>
                         <label class="field"><span>نامک آدرس *</span><input name="Slug" value="@_editor.Slug" maxlength="180" dir="ltr" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="gold-rings" required/></label>
                         <label class="field"><span>دسته مادر</span><select name="ParentId"><option value="">بدون دسته مادر</option>@foreach (var item in ParentChoices) { <option value="@item.Id" selected="@(item.Id == _editor.ParentId)">@item.Name</option> }</select></label>
-                        <label class="field"><span>ترتیب نمایش</span><input type="number" name="DisplayOrder" value="@_editor.DisplayOrder" min="0"/></label>
+                        <label class="field"><span>ترتیب نمایش</span><input type="number" name="DisplayOrder" value="@_editor.DisplayOrder" min="0"/></label><label class="field"><span>الگوی مجاز محصول</span><select name="ProductTypeId"><option value="">بدون الگو</option>@foreach (var type in _types.Where(x => x.IsActive || x.Id == _editor.ProductTypeId)) { <option value="@type.Id" selected="@(type.Id == _editor.ProductTypeId)">@type.Name</option> }</select><small>برای دستهٔ قابل انتخاب، تعیین یک الگو الزامی است.</small></label><label class="category-product-toggle"><input type="checkbox" name="IsSelectableForProducts" value="true" checked="@_editor.IsSelectableForProducts"/><span><strong>قابل انتخاب برای محصول</strong><small>دسته‌های ساختاری را غیرفعال کنید.</small></span></label>
                         <div class="category-image-editor field full">
                             <div class="category-image-preview" aria-label="پیش‌نمایش تصویر دسته">
                                 @if (!string.IsNullOrWhiteSpace(_pendingImagePreview ?? _editor.ImageUrl)) { <img src="@(_pendingImagePreview ?? _editor.ImageUrl)" alt="پیش‌نمایش تصویر @_editor.Name" /> }
@@ -34,6 +30,7 @@
                             @if (_editor.ImageUrl is not null) { <label class="remove-image"><input type="checkbox" name="RemoveImage" value="true"/><span>حذف تصویر فعلی و نمایش پس‌زمینهٔ جایگزین</span></label> }
                         </div>
                         <label class="field full"><span>توضیح کوتاه</span><textarea name="Description" rows="3" maxlength="600">@_editor.Description</textarea></label>
+                        <div class="size-settings field full"><div><strong>اندازهٔ تنوع‌های این دسته</strong><small>نوع ورودی اندازه را برای محصولات این دسته مشخص کنید.</small></div><div class="form-grid"><label class="field"><span>نوع اندازه</span><select name="SizeMode"><option value="none" selected="@(_editor.SizeMode == "none")">بدون اندازه</option><option value="select" selected="@(_editor.SizeMode == "select")">گزینه‌های مشخص</option><option value="number" selected="@(_editor.SizeMode == "number")">مقدار عددی</option></select></label><label class="field"><span>عنوان نمایشی</span><input name="SizeLabel" value="@_editor.SizeLabel" placeholder="سایز یا طول" maxlength="80" /></label><label class="field"><span>واحد</span><input name="SizeUnit" value="@_editor.SizeUnit" placeholder="مثلاً سانتی‌متر" maxlength="30" /></label><label class="field"><span>گزینه‌ها</span><textarea name="SizeOptions" rows="3" placeholder="کوچک، بزرگ، بچه‌گانه">@_editor.SizeOptions</textarea><small>برای نوع «گزینه‌های مشخص»، موارد را با ویرگول یا در خط‌های جدا بنویسید.</small></label></div></div>
                     </div>
                     <label class="home-feature-toggle"><input type="checkbox" name="ShowOnHome" value="true" checked="@_editor.ShowOnHome" disabled="@(HomeSelectedCount >= 6 && !_editor.ShowOnHome)"/><span>نمایش در صفحهٔ اصلی فروشگاه</span></label>
                     @if (HomeSelectedCount >= 6 && !_editor.ShowOnHome) { <p class="home-limit-help">ظرفیت کامل است؛ برای انتخاب این دسته، ابتدا نمایش یکی از ۶ دستهٔ فعلی را بردارید.</p> }
@@ -48,7 +45,7 @@
                 <a class="manage-row @(item.ParentId.HasValue ? "child" : "root")" style="--depth:@DepthOf(item)" href="/admin/catalog/categories?edit=@item.Id">
                     <span class="row-icon">@if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <img src="@item.ImageUrl" alt="" loading="lazy" /> } else { <MudIcon Icon="@(item.ParentId.HasValue ? Icons.Material.Outlined.SubdirectoryArrowLeft : Icons.Material.Outlined.FolderOpen)"/> }</span>
                     <div class="row-copy"><h2>@item.Name</h2><p>@(item.ParentName is null ? "دسته اصلی" : $"زیرمجموعه {item.ParentName}") · <b dir="ltr">/@item.Slug</b></p></div>
-                    <span class="count">@item.ProductCount محصول</span>@if (item.IsActive && item.ShowOnHome) { <span class="state home">صفحهٔ اصلی</span> }<span class="state @(item.IsActive ? "on" : "off")">@(item.IsActive ? "فعال" : "غیرفعال")</span><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small"/>
+                    <span class="count">@item.ProductCount محصول</span>@if (item.IsSelectableForProducts) { <span class="state on">@(item.ProductTypeName ?? "بدون الگو")</span> }@if (item.IsActive && item.ShowOnHome) { <span class="state home">صفحهٔ اصلی</span> }<span class="state @(item.IsActive ? "on" : "off")">@(item.IsActive ? "فعال" : "غیرفعال")</span><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small"/>
                 </a>
             }
             @if (VisibleItems.Count == 0) { <div class="compact-empty"><MudIcon Icon="@Icons.Material.Outlined.SearchOff"/><strong>دسته‌ای با این مشخصات پیدا نشد</strong><span>عبارت جست‌وجو یا فیلتر وضعیت را تغییر دهید.</span></div> }

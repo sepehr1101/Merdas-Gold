@@ -1,0 +1,27 @@
+<header class="admin-section-header">
+    <a class="admin-section-parent" href="@ParentHref">
+        <MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" />
+        <span>@ParentTitle</span>
+    </a>
+    <div class="admin-section-heading">
+        <div class="admin-section-copy">
+            <h1>@Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p>@Subtitle</p>
+            }
+        </div>
+        @if (Actions is not null)
+        {
+            <div class="admin-section-actions">@Actions</div>
+        }
+    </div>
+</header>
+
+@code {
+    [Parameter, EditorRequired] public string ParentHref { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string ParentTitle { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

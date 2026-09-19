@@ -7,11 +7,7 @@
 <PageTitle>@(Id.HasValue ? "ویرایش کالا" : "کالای جدید") | مرداس گلد</PageTitle>
 
 <section class="editor-page">
-    <a class="back-link" href="/admin/catalog/products"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> بازگشت به فهرست کالاها</a>
-    <header class="page-header">
-        <div><span class="eyebrow">@(Id.HasValue ? "ویرایش کالا" : "افزودن کالای تازه")</span><MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">@(Id.HasValue ? _data?.Product.Title : "کالای جدید را قدم‌به‌قدم بسازید")</MudText></div>
-        <span class="status-badge @(_data?.Product.Status ?? "draft")"><i></i>@StatusLabel(_data?.Product.Status)</span>
-    </header>
+    <AdminSectionHeader ParentHref="/admin/catalog/products" ParentTitle="محصولات" Title="@(Id.HasValue ? (_data?.Product.Title ?? "ویرایش کالا") : "کالای جدید")"><Actions><span class="status-badge @(_data?.Product.Status ?? "draft")"><i></i>@StatusLabel(_data?.Product.Status)</span></Actions></AdminSectionHeader>
 
     @if (Message is not null) { <div class="notice @(Error is null ? "success" : "error")" role="status"><MudIcon Icon="@(Error is null ? Icons.Material.Outlined.CheckCircle : Icons.Material.Outlined.ErrorOutline)" /><span>@Message</span></div> }
     @if (_loading) { <div class="loading-card"><MudProgressLinear Indeterminate="true" Color="Color.Primary" /></div> }
@@ -44,16 +40,11 @@
                         <AntiforgeryToken /><input type="hidden" name="Id" value="@_data.Product.Id" /><input type="hidden" name="RowVersion" value="@_data.Product.RowVersion" />
                         <article class="editor-card" hidden="@(_step != 1)">
                             <header><span><MudIcon Icon="@Icons.Material.Outlined.Badge" /></span><div><span class="section-kicker">مرحله ۱ از ۵</span><h2>هویت کالا</h2></div></header>
-                            @if (!Id.HasValue)
-                            {
-                                <div class="type-intro"><div><MudIcon Icon="@Icons.Material.Outlined.AutoAwesome" /><span><strong>ابتدا یک الگوی کالا انتخاب کنید</strong></span></div><select aria-label="انتخاب الگوی کالا" @onchange="ChangeType">@foreach (var type in _data.ProductTypes) { <option value="@type.Id" selected="@(type.Id == _data.Product.ProductTypeId)">@type.Name</option> }</select></div>
-                            }
                             <div class="card-body form-grid">
                                 <label class="field full"><span>نام کالا <em>ضروری</em></span><input name="Title" value="@_data.Product.Title" maxlength="250" placeholder="مثلاً انگشتر سولیتر آوا" required /></label>
                                 <label class="field"><span>کد کالا <em>ضروری</em></span><input name="Code" value="@_data.Product.Code" maxlength="80" dir="ltr" placeholder="AVA-R01" required /></label>
                                 <label class="field"><span>نامک آدرس <em>ضروری</em></span><input name="Slug" value="@_data.Product.Slug" maxlength="280" dir="ltr" placeholder="ava-solitaire-ring" pattern="[^\s]+" required /></label>
-                                <label class="field"><span>الگوی کالا</span><select name="ProductTypeId">@foreach (var type in _data.ProductTypes) { <option value="@type.Id" selected="@(type.Id == _data.Product.ProductTypeId)">@type.Name</option> }</select></label>
-                                <label class="field"><span>دسته اصلی</span><select name="PrimaryCategoryId"><option value="">بدون دسته</option>@foreach (var category in _data.Categories) { <option value="@category.Id" selected="@(category.Id == _data.Product.PrimaryCategoryId)">@category.Name</option> }</select></label>
+                                <label class="field"><span>دسته‌بندی <em>ضروری</em></span>@if (!Id.HasValue) { <select name="PrimaryCategoryId" required @onchange="ChangeCategory">@foreach (var category in _data.Categories) { <option value="@category.Id" selected="@(category.Id == _data.Product.PrimaryCategoryId)">@category.Name</option> }</select> } else { <select name="PrimaryCategoryId" required>@foreach (var category in _data.Categories) { <option value="@category.Id" selected="@(category.Id == _data.Product.PrimaryCategoryId)">@category.Name</option> }</select> }<small>الگوی «@CurrentTypeName» و ویژگی‌های فرم از این دسته می‌آیند.</small></label>
                             </div>
                             <footer class="step-actions single"><button class="primary-action" type="button" @onclick="() => GoToStep(2)">مرحله بعد: مشخصات و محتوا <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></button></footer>
                         </article>
@@ -118,35 +109,33 @@
                 @if (_step == 4 && Id.HasValue)
                 {
                     <article class="editor-card variants-card">
-                        <header><span><MudIcon Icon="@Icons.Material.Outlined.AccountTree" /></span><div><span class="section-kicker">مرحله ۴ از ۵</span><h2>تنوع‌ها و موجودی فیزیکی</h2></div><a class="mini-action" href="/admin/catalog/products/edit/@Id?step=4&variant=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> تنوع جدید</a></header>
-                        
+                        <header><span><MudIcon Icon="@Icons.Material.Outlined.AccountTree" /></span><div><span class="section-kicker">مرحله ۴ از ۵</span><h2>تنوع‌ها و موجودی</h2></div><a class="mini-action" href="/admin/catalog/products/edit/@Id?step=4&variant=0"><MudIcon Icon="@Icons.Material.Outlined.Add" Size="Size.Small" /> تنوع جدید</a></header>
                         @if (_variantEditor is not null)
                         {
-                            <form class="inline-editor" method="post" action="/account/catalog/variants/save" data-enhance="false"><AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="Id" value="@_variantEditor.Id" /><input type="hidden" name="RowVersion" value="@_variantEditor.RowVersion" /><div class="inline-heading"><h3>@(_variantEditor.Id == 0 ? "تنوع تازه" : "ویرایش تنوع")</h3></div><div class="form-grid"><label class="field"><span>عنوان تنوع <em>ضروری</em></span><input name="Title" value="@_variantEditor.Title" placeholder="رزگلد / سایز ۵۴" required /></label><label class="field"><span>SKU</span><input name="Sku" value="@_variantEditor.Sku" dir="ltr" placeholder="AVA-RG-54" /></label><label class="field"><span>بارکد عمومی</span><input name="Barcode" value="@_variantEditor.Barcode" dir="ltr" /></label><label class="field"><span>ترتیب نمایش</span><input type="number" name="DisplayOrder" value="@_variantEditor.DisplayOrder" min="0" /></label></div>@if (_data.VariantAttributes.Count > 0) { <div class="attribute-grid compact">@foreach (var attr in _data.VariantAttributes) { <CatalogAttributeField Attribute="attr" Name="@($"attribute-{attr.Id}")" Value="@_variantEditor.AttributeValues.GetValueOrDefault(attr.Id)" /> }</div> }<div class="inline-actions"><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_variantEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span></span>فعال</label><a href="/admin/catalog/products/edit/@Id?step=4">انصراف</a><button type="submit">ذخیره تنوع</button></div></form>
+                            <form class="inline-editor" method="post" action="/account/catalog/variants/save" data-enhance="false">
+                                <AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="Id" value="@_variantEditor.Id" /><input type="hidden" name="RowVersion" value="@_variantEditor.RowVersion" />
+                                <div class="inline-heading"><h3>@(_variantEditor.Id == 0 ? "تنوع تازه" : "ویرایش تنوع")</h3><p>هر وزن متفاوت را به‌عنوان یک تنوع جدا ثبت کنید.</p></div>
+                                <div class="form-grid">
+                                    <label class="field"><span>عنوان تنوع <em>ضروری</em></span><input name="Title" value="@_variantEditor.Title" placeholder="مثلاً رزگلد کوتاه" required /></label>
+                                    @if (_data.SizeMode == "select") { <label class="field"><span>@_data.SizeLabel</span><select name="SizeValue" required><option value="">انتخاب کنید</option>@foreach (var option in _data.SizeOptions) { <option value="@option" selected="@(_variantEditor.SizeValue == option)">@option</option> }</select></label> }
+                                    else if (_data.SizeMode == "number") { <label class="field"><span>@_data.SizeLabel @(!string.IsNullOrWhiteSpace(_data.SizeUnit) ? $"({_data.SizeUnit})" : "")</span><input name="SizeValue" value="@_variantEditor.SizeValue" type="number" required min="0" step="0.001" /></label> }
+                                    <label class="field"><span>وزن دقیق طلا <em>ضروری</em></span><div class="with-unit"><input name="ExactGoldWeightGrams" value="@(_variantEditor.ExactGoldWeightGrams > 0 ? _variantEditor.ExactGoldWeightGrams.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : null)" type="number" min="0.001" step="0.001" required /><span>گرم</span></div></label>
+                                    <label class="field"><span>تعداد موجود <em>ضروری</em></span><input name="Quantity" value="@_variantEditor.Quantity" type="number" min="0" step="1" required /></label>
+                                    <label class="field"><span>وضعیت</span><select name="Status"><option value="available" selected="@(_variantEditor.Status == "available")">آماده فروش</option><option value="unavailable" selected="@(_variantEditor.Status == "unavailable")">غیرقابل فروش</option></select></label>
+                                    <label class="field"><span>ترتیب نمایش</span><input type="number" name="DisplayOrder" value="@_variantEditor.DisplayOrder" min="0" /></label>
+                                </div>
+                                @if (_data.VariantAttributes.Count > 0) { <div class="attribute-grid compact">@foreach (var attr in _data.VariantAttributes.Where(x => x.Id is not (3 or 6))) { <CatalogAttributeField Attribute="attr" Name="@($"attribute-{attr.Id}")" Value="@_variantEditor.AttributeValues.GetValueOrDefault(attr.Id)" /> }</div> }
+                                <div class="inline-actions"><label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_variantEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span></span>فعال</label><a href="/admin/catalog/products/edit/@Id?step=4">انصراف</a><button type="submit">ذخیره تنوع</button></div>
+                            </form>
                         }
                         <div class="variant-list">
                             @foreach (var variant in _data.Variants)
                             {
-                                <details class="variant" open="@(_pieceVariantId == variant.Id || _variantEditor?.Id == variant.Id)">
-                                    <summary class="variant-head"><span class="variant-main"><span class="variant-icon"><MudIcon Icon="@Icons.Material.Outlined.Style" /></span><span><strong>@variant.Title</strong><small>@(string.IsNullOrWhiteSpace(variant.Sku) ? "بدون SKU" : variant.Sku) · @variant.Pieces.Count ردیف · @variant.Pieces.Where(x => x.IsActive && x.Status == "available").Sum(x => x.Quantity) عدد آمادهٔ فروش</small></span></span><MudIcon Icon="@Icons.Material.Outlined.ExpandMore" Size="Size.Small" /></summary>
-                                    <div class="variant-actions"><a class="add-piece" href="/admin/catalog/products/edit/@Id?step=4&pieceVariant=@variant.Id&piece=0"><MudIcon Icon="@Icons.Material.Outlined.AddCircleOutline" Size="Size.Small" /> افزودن قطعه</a><a href="/admin/catalog/products/edit/@Id?step=4&variant=@variant.Id"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> ویرایش تنوع</a></div>
-                                    @if (_pieceVariantId == variant.Id && _pieceEditor is not null)
-                                    {
-                                        <form class="piece-editor" method="post" action="/account/catalog/pieces/save" data-enhance="false">
-                                            <AntiforgeryToken /><input type="hidden" name="ProductId" value="@Id" /><input type="hidden" name="VariantId" value="@variant.Id" /><input type="hidden" name="Id" value="@_pieceEditor.Id" /><input type="hidden" name="RowVersion" value="@_pieceEditor.RowVersion" />
-                                            <label class="field"><span>کد موجودی</span><input name="TrackingCode" value="@_pieceEditor.TrackingCode" dir="ltr" placeholder="ساخت خودکار در صورت خالی بودن" /><small>برای شناسایی این ردیف؛ قابل ویرایش است.</small></label>
-                                            <label class="field"><span>وزن دقیق طلا *</span><div class="with-unit"><input name="ExactGoldWeightGrams" value="@(_pieceEditor.ExactGoldWeightGrams.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))" type="number" min="0.001" step="0.001" required /><span>گرم</span></div></label>
-                                            <label class="field"><span>تعداد موجود *</span><input name="Quantity" value="@_pieceEditor.Quantity" type="number" min="0" step="1" required /><small>پیش‌فرض ۱ است.</small></label>
-                                            <label class="field"><span>وضعیت</span><select name="Status"><option value="available" selected="@(_pieceEditor.Status == "available")">آماده فروش</option><option value="reserved" selected="@(_pieceEditor.Status == "reserved")">رزرو</option><option value="sold" selected="@(_pieceEditor.Status == "sold")">فروخته‌شده</option><option value="damaged" selected="@(_pieceEditor.Status == "damaged")">آسیب‌دیده</option></select></label>
-                                            <label class="toggle-field"><input type="checkbox" name="IsActive" value="true" checked="@_pieceEditor.IsActive" /><input type="hidden" name="IsActive" value="false" /><span></span>فعال</label><button type="submit">ذخیره قطعه</button>
-                                        </form>
-                                    }
-                                    @if (variant.Pieces.Count == 0) { <div class="no-pieces"><MudIcon Icon="@Icons.Material.Outlined.Inventory2" /><span><strong>هنوز قطعه‌ای ثبت نشده</strong></span></div> }
-                                    else { <div class="piece-table"><div class="table-head"><span>کد موجودی</span><span>وزن طلا</span><span>تعداد</span><span>وضعیت</span><span></span></div>@foreach (var piece in variant.Pieces) { <div class="piece-row"><strong dir="ltr">@piece.TrackingCode</strong><span>@piece.ExactGoldWeightGrams.ToString("0.###") گرم</span><span>@piece.Quantity عدد</span><span class="piece-status @piece.Status">@PieceStatus(piece.Status)</span><span><a href="/admin/pricing/rules?piece=@piece.Id" aria-label="محاسبه قیمت قطعه"><MudIcon Icon="@Icons.Material.Outlined.Calculate" Size="Size.Small" /></a><a href="/admin/catalog/products/edit/@Id?step=4&pieceVariant=@variant.Id&piece=@piece.Id" aria-label="ویرایش قطعه"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /></a></span></div> }</div> }
-                                </details>
+                                <section class="variant"><div class="variant-head"><span class="variant-main"><span class="variant-icon"><MudIcon Icon="@Icons.Material.Outlined.Style" /></span><span><strong>@variant.Title</strong><small>@VariantSummary(variant)</small></span></span><a href="/admin/catalog/products/edit/@Id?step=4&variant=@variant.Id"><MudIcon Icon="@Icons.Material.Outlined.Edit" Size="Size.Small" /> ویرایش</a></div></section>
                             }
+                            @if (_data.Variants.Count == 0) { <div class="no-pieces"><MudIcon Icon="@Icons.Material.Outlined.Inventory2" /><span><strong>هنوز تنوعی ثبت نشده</strong><small>برای هر وزن و گزینهٔ قابل‌فروش یک تنوع بسازید.</small></span></div> }
                         </div>
-                        <footer class="step-actions finish-actions"><button class="secondary-action" type="button" @onclick="() => GoToStep(3)"><MudIcon Icon="@Icons.Material.Outlined.ArrowForward" Size="Size.Small" /> مرحله قبل</button><button class="primary-action" type="button" @onclick="() => GoToStep(5)">مرحله بعد: پیش‌نمایش فروشگاه <MudIcon Icon="@Icons.Material.Outlined.ArrowBack" Size="Size.Small" /></button></footer>
+                        <footer class="step-actions"><button class="secondary-action" type="button" @onclick="() => GoToStep(3)">مرحله قبل</button><button class="primary-action" type="button" @onclick="() => GoToStep(5)">مرحله بعد: پیش‌نمایش فروشگاه</button></footer>
                     </article>
                 }
 
@@ -160,7 +149,7 @@
                 }
             </main>
 
-            <aside><div class="summary-card"><div class="summary-visual">@if (_data.Images.FirstOrDefault(x => x.IsPrimary) is { } primaryImage) { <img src="/catalog-assets/images/@primaryImage.Id" alt="" /> } else { <MudIcon Icon="@Icons.Material.Outlined.Diamond" /> }</div><span class="summary-label">پیش‌نمایش اطلاعات</span><h2>@(string.IsNullOrWhiteSpace(_data.Product.Title) ? "کالای بدون نام" : _data.Product.Title)</h2><p>@(string.IsNullOrWhiteSpace(_data.Product.Code) ? "هنوز کدی ثبت نشده" : _data.Product.Code)</p><dl><div><dt>الگو</dt><dd>@CurrentTypeName</dd></div><div><dt>تصاویر</dt><dd>@_data.Images.Count</dd></div><div><dt>تنوع‌ها</dt><dd>@_data.Variants.Count</dd></div><div><dt>قطعات</dt><dd>@PieceCount</dd></div></dl><div class="progress-copy"><span>تکمیل ساخت کالا</span><strong>@CompletionPercent٪</strong></div><div class="progress-track"><i style="width:@CompletionPercent%"></i></div></div></aside>
+            <aside><div class="summary-card"><div class="summary-visual">@if (_data.Images.FirstOrDefault(x => x.IsPrimary) is { } primaryImage) { <img src="/catalog-assets/images/@primaryImage.Id" alt="" /> } else { <MudIcon Icon="@Icons.Material.Outlined.Diamond" /> }</div><span class="summary-label">پیش‌نمایش اطلاعات</span><h2>@(string.IsNullOrWhiteSpace(_data.Product.Title) ? "کالای بدون نام" : _data.Product.Title)</h2><p>@(string.IsNullOrWhiteSpace(_data.Product.Code) ? "هنوز کدی ثبت نشده" : _data.Product.Code)</p><dl><div><dt>الگو</dt><dd>@CurrentTypeName</dd></div><div><dt>تصاویر</dt><dd>@_data.Images.Count</dd></div><div><dt>تنوع‌ها</dt><dd>@_data.Variants.Count</dd></div><div><dt>موجودی</dt><dd>@AvailableQuantity</dd></div></dl><div class="progress-copy"><span>تکمیل ساخت کالا</span><strong>@CompletionPercent٪</strong></div><div class="progress-track"><i style="width:@CompletionPercent%"></i></div></div></aside>
         </div>
     }
 </section>

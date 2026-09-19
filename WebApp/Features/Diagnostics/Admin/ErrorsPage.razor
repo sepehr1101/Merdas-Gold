@@ -4,8 +4,7 @@
 
 <PageTitle>خطاهای سامانه | مرداس</PageTitle>
 <section class="errors-page">
-    <a class="back" href="/admin/settings">← تنظیمات</a>
-    <header><div><span class="eyebrow">سلامت سامانه</span><h1>جزئیات، برای حل مسئله</h1></div><span class="error-symbol"><MudIcon Icon="@Icons.Material.Outlined.Troubleshoot" /></span></header>
+    <AdminSectionHeader ParentHref="/admin/settings" ParentTitle="تنظیمات" Title="خطاهای سامانه" Subtitle="جزئیات ثبت‌شده برای بررسی و رفع خطاها" />
     <div class="summary"><div><span>نتایج جستجو</span><strong>@_count</strong></div><div><span>محدوده دسترسی</span><strong class="small">فقط مدیر سیستم</strong></div><div><span>انتقال به دیتابیس</span><strong class="small">@(_pending > 0 ? $"{_pending} خطا در صف ثبت" : "صف خالی است")</strong></div></div>
     <article class="error-card"><EditForm Model="this" OnSubmit="Search" FormName="errors-search"><div class="filters"><label class="wide">جستجو<input @bind="_search" maxlength="200" placeholder="پیام، نوع خطا، مسیر، Stack trace یا شناسه پیگیری…" /></label><label>از روز شمسی (تهران)<input @bind="_from" placeholder="۱۴۰۵/۰۶/۰۱" /></label><label>تا روز شمسی (تهران)<input @bind="_to" placeholder="۱۴۰۵/۰۶/۳۱" /></label><label>نوع<select @bind="_source"><option value="">همه خطاها</option><option value="HTTP">HTTP 500</option><option value="Blazor">Blazor</option><option value="Background">پردازش پس‌زمینه</option></select></label><button type="submit" disabled="@_loading">جستجو / تازه‌سازی</button></div></EditForm>
         

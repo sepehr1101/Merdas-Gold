@@ -123,11 +123,10 @@ td { color: var(--ink); font-size: var(--text-label); }
 }
 
 
-.pricing-section-header { margin-bottom: var(--admin-space-5); padding: var(--admin-space-4) var(--admin-card-padding); border: 1px solid var(--border); border-radius: var(--admin-card-radius); background: var(--surface); }
-.pricing-section-header a { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: var(--text-label); }
-.pricing-section-header h1 { margin: 5px 0 0; font-size: 22px; }
-.general-rule .rule-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; gap: var(--admin-space-4); }
+.general-rule .rule-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: start; gap: var(--admin-space-4); }
 .general-rule .rule-fields label { margin: 0; }
+.general-rule .rule-field-title { display: flex; align-items: flex-end; min-height: 38px; }
+.general-rule .rule-fields button { align-self: start; margin-top: 44px; }
 .general-rule .rule-fields label small { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .general-rule .rule-fields button { white-space: nowrap; }
 .invoice-workspace { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); align-items: start; gap: var(--admin-space-5); }
@@ -143,4 +142,4 @@ td { color: var(--ink); font-size: var(--text-label); }
 .invoice-paper .table-scroll { max-width: 100%; }
 .invoice-paper table { min-width: 470px; }
 @media (max-width: 850px) { .invoice-workspace { grid-template-columns: 1fr; } .general-rule .rule-fields { grid-template-columns: 1fr 1fr; } .general-rule .rule-fields button { justify-self: start; } }
-@media (max-width: 650px) { .general-rule .rule-fields, .invoice-controls .field-grid, .invoice-footer-row { grid-template-columns: 1fr; } .invoice-footer-row button { justify-self: start; } .pricing-section-header h1 { font-size: 19px; } }
+@media (max-width: 650px) { .general-rule .rule-fields, .invoice-controls .field-grid, .invoice-footer-row { grid-template-columns: 1fr; } .general-rule .rule-field-title { min-height: 0; } .general-rule .rule-fields button { margin-top: 0; } .invoice-footer-row button { justify-self: start; } }

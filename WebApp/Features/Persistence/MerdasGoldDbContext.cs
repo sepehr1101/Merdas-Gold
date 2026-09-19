@@ -22,7 +22,6 @@ public sealed class MerdasGoldDbContext(DbContextOptions<MerdasGoldDbContext> op
     public DbSet<ProductType> ProductTypes => Set<ProductType>();
     public DbSet<ProductAttributeDefinition> ProductAttributes => Set<ProductAttributeDefinition>();
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
-    public DbSet<ProductPiece> ProductPieces => Set<ProductPiece>();
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
 
     public DbSet<SecuritySettings> SecuritySettings => Set<SecuritySettings>();

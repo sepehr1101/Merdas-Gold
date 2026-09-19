@@ -5,20 +5,7 @@
 <PageTitle>تنظیمات | مرداس گلد</PageTitle>
 
 <section class="settings-page">
-    <header class="admin-hub-hero">
-        <div class="admin-hub-hero-copy">
-            <span class="admin-hub-eyebrow">
-                <MudIcon Icon="@Icons.Material.Outlined.Tune" Size="Size.Small" />
-                مرکز کنترل مرداس
-            </span>
-            <MudText Typo="Typo.h3" HtmlTag="h1" Class="admin-hub-title">همه‌چیز، دقیق و تحت کنترل</MudText>
-            
-        </div>
-        <div class="admin-hub-emblem" aria-hidden="true">
-            <span></span>
-            <MudIcon Icon="@Icons.Material.Outlined.SettingsSuggest" />
-        </div>
-    </header>
+    <AdminSectionHeader ParentHref="/admin" ParentTitle="پنل مدیریت" Title="تنظیمات" />
 
     <div class="settings-grid admin-hub-grid">
         @for (var index = 0; index < SettingsItems.Length; index++)
