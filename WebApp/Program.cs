@@ -78,9 +78,16 @@ builder.Services.AddScoped<ContentManagementService>();
 builder.Services.AddScoped<ContentSeeder>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddScoped<StorefrontCatalogService>();
+builder.Services.AddScoped<DeepSeekProductSearchService>();
 builder.Services.AddScoped<CatalogDemoSeeder>();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
+builder.Services.AddHttpClient("deepseek-search", client =>
+{
+    client.BaseAddress = new Uri("https://api.deepseek.com/");
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.MaxResponseContentBufferSize = 65536;
+}).RemoveAllLoggers();
 builder.Services.AddHttpClient("taban-gohar", client =>
 {
     client.BaseAddress = new Uri("https://webservice.tgnsrv.ir/");

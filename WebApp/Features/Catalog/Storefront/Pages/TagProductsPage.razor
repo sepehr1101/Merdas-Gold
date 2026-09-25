@@ -1,0 +1,78 @@
+@page "/products/tag/{Slug}"
+@layout StorefrontLayout
+@attribute [StreamRendering]
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontCatalogService Catalog
+@inject NavigationManager Navigation
+
+@if (_loading)
+{
+    <div class="collection-page tag-products-page" aria-busy="true">
+        <div class="collection-hero">
+            <div class="storefront-container">
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="180px" Height="22px" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="420px" Height="46px" />
+            </div>
+        </div>
+        <section class="inner-content">
+            <div class="storefront-container"><ProductGridSkeleton Class="tag-products-grid" Count="8" /></div>
+        </section>
+    </div>
+}
+else if (_collection is not null)
+{
+    <PageTitle>قطعات با برچسب @_collection.Name | مرداس</PageTitle>
+    <div class="collection-page tag-products-page">
+        <div class="collection-hero">
+            <div class="storefront-container">
+                <nav aria-label="مسیر صفحه">
+                    <a href="/">خانه</a><span aria-hidden="true">/</span>
+                    <span aria-current="page">@_collection.Name</span>
+                </nav>
+                <h1>قطعات با برچسب «@_collection.Name»</h1>
+                <p>@Persian(_collection.Products.Count) قطعه از کاتالوگ فروشگاه</p>
+            </div>
+        </div>
+        <section class="inner-content" aria-label="قطعات با برچسب @_collection.Name">
+            <div class="storefront-container">
+                @if (_collection.Products.Count == 0)
+                {
+                    <div class="collection-empty">
+                        <h2>فعلاً قطعه‌ای با این برچسب عرضه نمی‌شود</h2>
+                        <a class="storefront-action" href="/#products">دیدن قطعات دیگر</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="tag-products-grid">
+                        @foreach (var product in _collection.Products)
+                        {
+                            <ProductCard Code="@product.Code" Title="@product.Title" Price="@product.Price"
+                                         ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" />
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = string.Empty;
+    private StorefrontTagCollection? _collection;
+    private bool _loading = true;
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        try
+        {
+            _collection = await Catalog.TaggedProductsAsync(Slug);
+            if (_collection is null) Navigation.NotFound();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+    private static string Persian(int value) => string.Concat(value.ToString().Select(character => (char)('۰' + character - '0')));
+}

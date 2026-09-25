@@ -1,5 +1,6 @@
 @implements IDisposable
 @inject StorefrontUiState UiState
+@inject NavigationManager Navigation
 
 <div class="announcement" role="note">
     <StorefrontGoldRate />
@@ -33,10 +34,11 @@
             <button type="button" aria-label="جستجو" aria-expanded="@SearchOpen.ToString().ToLowerInvariant()" @onclick="ToggleSearch">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
             </button>
-            <a href="/#products" aria-label="علاقه‌مندی‌ها">
+            <a class="favorites-link" href="/favorites" aria-label="علاقه‌مندی‌ها، @PersianFavoriteCount قطعه">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l7.8-7.5a5.5 5.5 0 0 0-.2-7.8Z" /></svg>
+                <span class="action-count">@PersianFavoriteCount</span>
             </a>
-            <a class="bag" href="/#products" aria-label="سبد خرید، @PersianCount محصول">
+            <a class="bag" href="/cart" aria-label="سبد خرید، @PersianCount قطعه">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 13H6L5 8Z" /><path d="M9 9V6a3 3 0 0 1 6 0v3" /></svg>
                 <span>@PersianCount</span>
             </a>
@@ -46,9 +48,9 @@
     @if (SearchOpen)
     {
         <form class="search-panel storefront-container" role="search" @onsubmit="SubmitSearch" @onsubmit:preventDefault>
-            <label for="storefront-search">جستجو در محصولات</label>
+            <label for="storefront-search">جست‌وجو با زبان خودتان</label>
             <div>
-                <input id="storefront-search" name="q" type="search" placeholder="مثلاً انگشتر طلا" @bind="SearchTerm" />
+                <input id="storefront-search" name="q" type="search" placeholder="مثلاً گردنبند ظریف رزگلد" @bind="SearchTerm" />
                 <button type="submit">جستجو</button>
             </div>
         </form>
@@ -61,6 +63,7 @@
     private string SearchTerm { get; set; } = string.Empty;
 
     private string PersianCount => ToPersianDigits(UiState.CartCount.ToString());
+    private string PersianFavoriteCount => ToPersianDigits(UiState.FavoriteCount.ToString());
 
     protected override void OnInitialized() => UiState.Changed += HandleStateChanged;
 
@@ -70,10 +73,13 @@
 
     private void SubmitSearch()
     {
-        var message = string.IsNullOrWhiteSpace(SearchTerm)
-            ? "عبارت جستجو را وارد کنید"
-            : $"جستجوی «{SearchTerm.Trim()}» در فاز اتصال داده فعال می‌شود";
-        UiState.Notify(message);
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            UiState.Notify("عبارت جست‌وجو را وارد کنید");
+            return;
+        }
+        SearchOpen = false;
+        Navigation.NavigateTo("/products/search?q=" + Uri.EscapeDataString(SearchTerm.Trim()));
     }
 
     private void HandleStateChanged() => InvokeAsync(StateHasChanged);

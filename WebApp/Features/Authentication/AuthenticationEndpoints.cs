@@ -1,5 +1,6 @@
 using MerdasGold.Features.Authentication.Entities;
 using MerdasGold.Features.Authentication.Models;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
@@ -20,17 +21,35 @@ public static class AuthenticationEndpoints
     }
 
     private static async Task<IResult> LoginAsync(
-        [FromForm] LoginModel model,
+        HttpContext httpContext,
+        IAntiforgery antiforgery,
         SignInManager<ApplicationUser> signInManager)
     {
-        if (string.IsNullOrWhiteSpace(model.UserName) || string.IsNullOrEmpty(model.Password))
+        try
+        {
+            await antiforgery.ValidateRequestAsync(httpContext);
+        }
+        catch (AntiforgeryValidationException)
+        {
+            // A login can succeed while its redirect is interrupted. If the browser
+            // retries the old anonymous form, its token no longer matches the new user.
+            return httpContext.User.Identity?.IsAuthenticated == true
+                ? Results.LocalRedirect("/admin")
+                : Results.LocalRedirect("/login?error=session-changed");
+        }
+
+        var form = await httpContext.Request.ReadFormAsync(httpContext.RequestAborted);
+        var userName = form["UserName"].ToString();
+        var password = form["Password"].ToString();
+
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrEmpty(password))
         {
             return Results.LocalRedirect("/login?error=required");
         }
 
         var result = await signInManager.PasswordSignInAsync(
-            model.UserName.Trim(),
-            model.Password,
+            userName.Trim(),
+            password,
             isPersistent: false,
             lockoutOnFailure: true);
 

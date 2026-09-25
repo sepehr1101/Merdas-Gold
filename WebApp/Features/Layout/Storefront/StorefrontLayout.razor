@@ -2,6 +2,7 @@
 @implements IAsyncDisposable
 @inject StorefrontUiState UiState
 @inject IJSRuntime Js
+@inject NavigationManager Navigation
 
 <MudRTLProvider RightToLeft="true">
     <MudThemeProvider Theme="StorefrontTheme.Default" />
@@ -10,6 +11,10 @@
     <MudSnackbarProvider />
 
     <div class="storefront-shell">
+        <div class="navigation-progress @(_navigationTarget is null ? null : "navigation-progress--active")"
+             role="progressbar" aria-label="در حال باز کردن صفحه" aria-hidden="@(_navigationTarget is null).ToString().ToLowerInvariant()">
+            <span></span>
+        </div>
         <a class="skip-link" href="#storefront-content">رفتن به محتوای اصلی</a>
         <StorefrontHeader />
         <main id="storefront-content" class="storefront-main">@Body</main>
@@ -31,20 +36,42 @@
 
 @code {
     private CancellationTokenSource? _toastCancellation;
+    private IDisposable? _navigationRegistration;
+    private string? _navigationTarget;
     private bool _scrollInteropInitialized;
     private string ToastMessage { get; set; } = string.Empty;
     private bool ToastVisible { get; set; }
 
-    protected override void OnInitialized() => UiState.NotificationRequested += ShowToast;
+    protected override void OnInitialized()
+    {
+        UiState.NotificationRequested += ShowToast;
+        _navigationRegistration = Navigation.RegisterLocationChangingHandler(OnLocationChanging);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            await UiState.InitializeAsync();
             await Js.InvokeVoidAsync("storefrontScroll.initialize", "storefront-back-top");
             _scrollInteropInitialized = true;
         }
+
+        if (_navigationTarget is not null && SameLocation(Navigation.Uri, _navigationTarget))
+        {
+            _navigationTarget = null;
+            await InvokeAsync(StateHasChanged);
+        }
     }
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        _navigationTarget = context.TargetLocation;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static bool SameLocation(string current, string target)
+        => string.Equals(new Uri(current).PathAndQuery, new Uri(target).PathAndQuery, StringComparison.Ordinal);
 
     private async Task ScrollToTop() => await Js.InvokeVoidAsync("storefrontScroll.toTop");
 
@@ -73,6 +100,7 @@
     public async ValueTask DisposeAsync()
     {
         UiState.NotificationRequested -= ShowToast;
+        _navigationRegistration?.Dispose();
         _toastCancellation?.Cancel();
         _toastCancellation?.Dispose();
 

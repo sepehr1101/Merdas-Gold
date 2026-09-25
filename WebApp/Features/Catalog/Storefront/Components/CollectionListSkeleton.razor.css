@@ -1,0 +1,16 @@
+.collection-list-skeleton ::deep .collection-skeleton-image {
+    width: 120px;
+    height: 120px;
+    border-radius: var(--storefront-radius-sm);
+}
+
+.collection-list-skeleton .collection-details { width: 100%; }
+.collection-list-skeleton .collection-actions { align-items: center; }
+.collection-list-skeleton .collection-actions ::deep .mud-skeleton { border-radius: var(--storefront-radius-sm); }
+
+@media (max-width: 600px) {
+    .collection-list-skeleton ::deep .collection-skeleton-image {
+        width: 86px;
+        height: 86px;
+    }
+}

@@ -1,0 +1,22 @@
+@implements IDisposable
+
+@if (_visible)
+{
+    <p class="storefront-loading-delay" role="status">دریافت اطلاعات کمی بیشتر طول کشیده؛ لطفاً چند لحظه صبر کنید…</p>
+}
+
+@code {
+    private System.Threading.Timer? _timer;
+    private bool _visible;
+
+    protected override void OnInitialized()
+    {
+        _timer = new System.Threading.Timer(_ => InvokeAsync(() =>
+        {
+            _visible = true;
+            StateHasChanged();
+        }), null, TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan);
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

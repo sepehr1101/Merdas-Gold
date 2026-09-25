@@ -1,0 +1,26 @@
+<div class="product-detail-skeleton" role="status" aria-live="polite" aria-label="در حال دریافت مشخصات محصول" aria-busy="true">
+    <span class="storefront-visually-hidden">در حال دریافت مشخصات محصول…</span>
+    <div class="product-page-top">
+        <div class="storefront-container product-detail-skeleton__breadcrumb" aria-hidden="true">
+            <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="260px" Height="22px" />
+        </div>
+    </div>
+    <section class="inner-content">
+        <div class="storefront-container product-detail-skeleton__layout" aria-hidden="true">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Class="product-detail-skeleton__visual" />
+            <div class="product-detail-skeleton__summary">
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="72%" Height="44px" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="38%" Height="32px" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="45%" Height="28px" />
+                <div class="product-detail-skeleton__options">
+                    @for (var index = 0; index < 3; index++)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Height="70px" />
+                    }
+                </div>
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Width="205px" Height="46px" Class="product-detail-skeleton__button" />
+            </div>
+        </div>
+        <div class="storefront-container"><StorefrontLoadingDelay /></div>
+    </section>
+</div>

@@ -22,6 +22,13 @@ public partial class LoginPage
 
     private bool HasLoginError => !string.IsNullOrWhiteSpace(Error);
 
+    private string LoginErrorMessage => Error switch
+    {
+        "required" => "نام کاربری و رمز عبور را وارد کنید.",
+        "session-changed" => "نشست ورود تغییر کرده است؛ لطفاً دوباره وارد شوید.",
+        _ => "نام کاربری یا رمز عبور صحیح نیست."
+    };
+
     private string PasswordInputType => ShowPassword ? "text" : "password";
 
     private void TogglePasswordVisibility() => ShowPassword = !ShowPassword;

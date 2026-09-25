@@ -1,0 +1,87 @@
+@page "/favorites"
+@layout StorefrontLayout
+@implements IDisposable
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontUiState UiState
+@inject StorefrontCatalogService Catalog
+
+<PageTitle>علاقه‌مندی‌ها | مرداس</PageTitle>
+<div class="collection-page">
+    <div class="collection-hero">
+        <div class="storefront-container">
+            <nav aria-label="مسیر صفحه"><a href="/">خانه</a><span aria-hidden="true">/</span><span aria-current="page">علاقه‌مندی‌ها</span></nav>
+            <h1>علاقه‌مندی‌ها</h1>
+            <p>@Persian(UiState.FavoriteCount) قطعه که پسندیده‌اید</p>
+        </div>
+    </div>
+    <section class="inner-content" aria-label="قطعات علاقه‌مندی">
+        <div class="storefront-container">
+            @if (!UiState.IsReady)
+            {
+                <CollectionListSkeleton Count="3" />
+            }
+            else if (UiState.FavoriteCount == 0)
+            {
+                <div class="collection-empty">
+                    <span aria-hidden="true">♡</span>
+                    <h2>هنوز قطعه‌ای انتخاب نکرده‌اید</h2>
+                    <p>قطعاتی که دوست دارید را با نشان قلب نگه دارید تا اینجا ببینید.</p>
+                    <a class="storefront-action" href="/#products">دیدن قطعات</a>
+                </div>
+            }
+            else
+            {
+                <div class="collection-list">
+                    @foreach (var item in UiState.Favorites)
+                    {
+                        <article class="collection-item" @key="item.Href">
+                            <a class="collection-image" href="@item.Href"><img src="@item.ImageUrl" alt="@item.Title" width="120" height="120" loading="lazy" /></a>
+                            <div class="collection-details">
+                                <h2><a href="@item.Href">@item.Title</a></h2>
+                                <p>کد قطعه: <bdi dir="ltr">@item.Code</bdi></p>
+                                <small>قیمت روز را در صفحهٔ قطعه ببینید.</small>
+                            </div>
+                            <div class="collection-actions">
+                                <button class="storefront-action" type="button" disabled="@(_adding is not null)" aria-busy="@(_adding == item.Href).ToString().ToLowerInvariant()" @onclick="() => AddToCartAsync(item)">
+                                    @if (_adding == item.Href) { <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" /> <span>در حال افزودن…</span> }
+                                    else { <span>افزودن به سبد</span> }
+                                </button>
+                                <button class="collection-remove" type="button" @onclick="() => UiState.ToggleFavoriteAsync(item)">حذف از علاقه‌مندی‌ها</button>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    private string? _adding;
+    protected override void OnInitialized() => UiState.Changed += OnShopperChanged;
+    private async Task AddToCartAsync(SavedProduct item)
+    {
+        if (_adding is not null) return;
+        _adding = item.Href;
+        try
+        {
+            var product = await Catalog.ProductAsync(item.Href["/products/".Length..]);
+            var variant = product?.Variants.FirstOrDefault(value => value.Available);
+            if (product is null || variant is null)
+            {
+                UiState.Notify("این قطعه اکنون موجود نیست");
+                return;
+            }
+            await UiState.AddToCartAsync(new(product.Code, product.Title, item.Href,
+                product.Images.FirstOrDefault() ?? item.ImageUrl, variant.Id, variant.Title,
+                variant.Color, variant.Size, variant.Weight, 1), variant.Quantity);
+        }
+        finally
+        {
+            _adding = null;
+        }
+    }
+    private void OnShopperChanged() => _ = InvokeAsync(StateHasChanged);
+    private static string Persian(int value) => string.Concat(value.ToString().Select(character => (char)('۰' + character - '0')));
+    public void Dispose() => UiState.Changed -= OnShopperChanged;
+}

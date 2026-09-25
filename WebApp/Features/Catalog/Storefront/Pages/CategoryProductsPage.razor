@@ -1,10 +1,30 @@
 @page "/products/category/{Slug}"
 @layout StorefrontLayout
+@attribute [StreamRendering]
 @using MerdasGold.Features.Catalog.Services
 @inject StorefrontCatalogService Catalog
 @inject NavigationManager Navigation
 
-@if (_category is not null)
+@if (_loading)
+{
+    <div class="category-products-page" aria-busy="true">
+        <section class="category-hero" aria-label="در حال دریافت دسته‌بندی">
+            <div class="storefront-container category-hero-inner">
+                <div class="category-hero-copy" style="width:min(520px,70%)">
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="45%" Height="22px" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="68%" Height="48px" />
+                    <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="86%" Height="25px" />
+                </div>
+            </div>
+        </section>
+        <section class="inner-content category-content">
+            <div class="storefront-container">
+                <ProductGridSkeleton Class="category-product-grid" Count="8" />
+            </div>
+        </section>
+    </div>
+}
+else if (_category is not null)
 {
     <PageTitle>@_category.Name | محصولات مرداس</PageTitle>
     <div class="category-products-page">
@@ -38,7 +58,7 @@
                 }
                 else
                 {
-                    <div class="category-product-grid">@foreach (var product in FilteredProducts) { <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" /> }</div>
+                    <div class="category-product-grid">@foreach (var product in FilteredProducts) { <ProductCard Code="@product.Code" Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" /> }</div>
                 }
             </div>
         </section>
@@ -47,6 +67,7 @@
 @code {
     [Parameter] public string Slug { get; set; } = string.Empty;
     private StorefrontCategory? _category;
+    private bool _loading = true;
     private IReadOnlyList<StorefrontCategoryChoice> _categories = [];
     private string _search = "", _tag = "", _color = "", _size = "";
     private decimal? _minWeight, _maxWeight;
@@ -56,7 +77,21 @@
     private IReadOnlyList<string> Colors => Facets(x => x.Colors);
     private IReadOnlyList<string> Sizes => Facets(x => x.Sizes);
     private bool HasFilters => _search.Length > 0 || _tag.Length > 0 || _color.Length > 0 || _size.Length > 0 || _minWeight.HasValue || _maxWeight.HasValue || !_inStockOnly;
-    protected override async Task OnParametersSetAsync() { _categories = await Catalog.CategoriesAsync(); _category = await Catalog.CategoryAsync(Slug); if (_category is null) Navigation.NotFound(); ClearFilters(); }
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        try
+        {
+            _categories = await Catalog.CategoriesAsync();
+            _category = await Catalog.CategoryAsync(Slug);
+            if (_category is null) Navigation.NotFound();
+            ClearFilters();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
     private void ChangeCategory(ChangeEventArgs args) { var slug = args.Value?.ToString(); if (!string.IsNullOrWhiteSpace(slug) && slug != Slug) Navigation.NavigateTo($"/products/category/{slug}"); }
     private IReadOnlyList<string> Facets(Func<StorefrontProductCard, IEnumerable<string>> selector) => _category?.Products.SelectMany(selector).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x).ToList() ?? [];
     private void ClearFilters() { _search = _tag = _color = _size = ""; _minWeight = _maxWeight = null; _inStockOnly = true; }

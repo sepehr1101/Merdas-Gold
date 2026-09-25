@@ -8,10 +8,12 @@ namespace MerdasGold.Features.Catalog.Services;
 public sealed record StorefrontProductCard(string Title, string Code, string Price, string ImageUrl, string Href, string Category, string[] Tags, string[] Colors, string[] Sizes, decimal MinWeight, decimal MaxWeight, bool Available);
 public sealed record StorefrontCategory(string Name, string Description, string? ImageUrl, IReadOnlyList<StorefrontProductCard> Products);
 public sealed record StorefrontCategoryChoice(string Name, string Slug);
+public sealed record StorefrontProductTag(string Name, string Slug);
+public sealed record StorefrontTagCollection(string Name, IReadOnlyList<StorefrontProductCard> Products);
 public sealed record StorefrontVariant(int Id, string Title, string Color, string ColorHex, string? Size, decimal Weight, int Quantity, bool Available);
 public sealed record StorefrontProduct(
     string Title, string Code, string Description, string CategoryName, string CategorySlug, string ProductType,
-    string[] Images, string[] Tags, Dictionary<string, string> Attributes, string SizeLabel, string SizeUnit,
+    string[] Images, StorefrontProductTag[] Tags, Dictionary<string, string> Attributes, string SizeLabel, string SizeUnit,
     IReadOnlyList<StorefrontVariant> Variants, IReadOnlyList<StorefrontProductCard> Related);
 
 public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbContext> factory, ProductQuoteService quotes)
@@ -24,6 +26,12 @@ public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbConte
             .OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name)
             .Select(x => new StorefrontCategoryChoice(x.Name, x.Slug)).ToListAsync(ct);
     }
+    public async Task<IReadOnlyList<StorefrontProductCard>> SearchableProductsAsync(CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var products = await QueryProducts(db).OrderBy(x => x.Title).ToListAsync(ct);
+        return await CardsAsync(products, ct);
+    }
     public async Task<StorefrontCategory?> CategoryAsync(string slug, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
@@ -33,6 +41,17 @@ public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbConte
         return new(category.Name, category.Description, category.ImageUrl, await CardsAsync(products, ct));
     }
 
+    public async Task<StorefrontTagCollection?> TaggedProductsAsync(string slug, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var tag = await db.Set<ProductTag>().AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Slug == slug && item.IsActive, ct);
+        if (tag is null) return null;
+        var products = await QueryProducts(db)
+            .Where(product => product.Tags.Any(link => link.ProductTagId == tag.Id))
+            .OrderBy(product => product.Title).ToListAsync(ct);
+        return new(tag.Name, await CardsAsync(products, ct));
+    }
     public async Task<IReadOnlyList<StorefrontProductCard>> FeaturedAsync(int take = 8, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
@@ -79,7 +98,8 @@ public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbConte
         return new(product.Title, product.Code, product.Description, product.PrimaryCategory?.Name ?? "",
             product.PrimaryCategory?.Slug ?? "", product.ProductType.Name,
             product.Images.OrderBy(x => x.DisplayOrder).Select(x => $"/catalog-assets/images/{x.Id}").ToArray(),
-            product.Tags.Select(x => x.ProductTag.Name).ToArray(),
+            product.Tags.Where(x => x.ProductTag.IsActive && !string.IsNullOrWhiteSpace(x.ProductTag.Slug))
+                .Select(x => new StorefrontProductTag(x.ProductTag.Name, x.ProductTag.Slug)).ToArray(),
             product.AttributeValues.ToDictionary(x => x.AttributeDefinition.Name, x => x.Value),
             product.PrimaryCategory?.SizeLabel ?? "اندازه", product.PrimaryCategory?.SizeUnit ?? "", variants, await CardsAsync(related, ct));
     }
@@ -115,7 +135,7 @@ public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbConte
             cards.Add(new(product.Title, product.Code,
                 variant is null ? "ناموجود" : quote is null ? "قیمت پس از دریافت نرخ معتبر" : $"{quote.Breakdown.Total:N0} تومان",
                 image is null ? "" : $"/catalog-assets/images/{image.Id}", $"/products/{product.Slug}",
-                product.PrimaryCategory?.Name ?? "", product.Tags.Select(x => x.ProductTag.Name).ToArray(), colors, sizes,
+                product.PrimaryCategory?.Name ?? "", product.Tags.Where(x => x.ProductTag.IsActive).Select(x => x.ProductTag.Name).ToArray(), colors, sizes,
                 activeVariants.Count == 0 ? 0 : activeVariants.Min(x => x.ExactGoldWeightGrams),
                 activeVariants.Count == 0 ? 0 : activeVariants.Max(x => x.ExactGoldWeightGrams), variant is not null));
         }

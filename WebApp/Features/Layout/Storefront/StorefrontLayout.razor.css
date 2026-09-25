@@ -1,5 +1,41 @@
 .storefront-main { flex: 1; }
 
+.navigation-progress {
+    position: fixed;
+    z-index: 2100;
+    inset: 0 0 auto;
+    height: 3px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.navigation-progress--active { animation: navigation-progress-reveal 1ms 240ms both; }
+
+.navigation-progress span {
+    display: block;
+    width: 45%;
+    height: 100%;
+    border-radius: 0 0 0 3px;
+    background: var(--storefront-gold);
+    box-shadow: 0 0 10px rgba(205, 177, 129, .5);
+    transform: translateX(130%);
+}
+
+.navigation-progress--active span { animation: navigation-progress-move 1.15s ease-in-out 240ms infinite; }
+
+@keyframes navigation-progress-reveal { to { opacity: 1; } }
+@keyframes navigation-progress-move {
+    0% { transform: translateX(130%); }
+    50% { transform: translateX(-55%); }
+    100% { transform: translateX(-230%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .navigation-progress--active { opacity: 1; animation: none; }
+    .navigation-progress--active span { width: 100%; transform: none; animation: none; }
+}
+
 .skip-link {
     position: fixed;
     z-index: 9999;

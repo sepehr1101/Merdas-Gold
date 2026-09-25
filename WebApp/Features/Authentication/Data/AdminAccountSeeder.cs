@@ -22,10 +22,12 @@ public sealed class AdminAccountSeeder(
         const string userName = "admin";
         var admin = await userManager.FindByNameAsync(userName);
 
+        var resetPasswordOnStartup = configuration.GetValue<bool>("SeedAdmin:ResetPasswordOnStartup");
+        var configuredPassword = configuration["SeedAdmin:Password"];
+
         if (admin is null)
         {
-            var password = configuration["SeedAdmin:Password"];
-            if (string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(configuredPassword))
             {
                 throw new InvalidOperationException(
                     "برای ساخت حساب مدیر اولیه، متغیر SeedAdmin__Password را تنظیم کنید.");
@@ -38,7 +40,29 @@ public sealed class AdminAccountSeeder(
                 EmailConfirmed = true
             };
 
-            EnsureSucceeded(await userManager.CreateAsync(admin, password), "ایجاد حساب مدیر سیستم");
+            if (resetPasswordOnStartup)
+            {
+                EnsureSucceeded(await userManager.CreateAsync(admin), "ایجاد حساب مدیر سیستم");
+            }
+            else
+            {
+                EnsureSucceeded(await userManager.CreateAsync(admin, configuredPassword), "ایجاد حساب مدیر سیستم");
+            }
+        }
+
+        if (resetPasswordOnStartup)
+        {
+            if (string.IsNullOrWhiteSpace(configuredPassword))
+            {
+                throw new InvalidOperationException(
+                    "برای بازنشانی رمز مدیر، مقدار SeedAdmin:Password را تنظیم کنید.");
+            }
+
+            admin.PasswordHash = userManager.PasswordHasher.HashPassword(admin, configuredPassword);
+            admin.SecurityStamp = Guid.NewGuid().ToString();
+            admin.LockoutEnd = null;
+            admin.AccessFailedCount = 0;
+            EnsureSucceeded(await userManager.UpdateAsync(admin), "بازنشانی رمز مدیر سیستم");
         }
 
         if (!await userManager.IsInRoleAsync(admin, AdministratorRole))

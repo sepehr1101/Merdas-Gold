@@ -1,0 +1,13 @@
+<div class="@Class" role="status" aria-live="polite" aria-label="در حال دریافت محصولات" aria-busy="true">
+    <span class="storefront-visually-hidden">در حال دریافت محصولات…</span>
+    @for (var index = 0; index < Count; index++)
+    {
+        <ProductCardSkeleton />
+    }
+    <StorefrontLoadingDelay />
+</div>
+
+@code {
+    [Parameter] public int Count { get; set; } = 4;
+    [Parameter, EditorRequired] public string Class { get; set; } = string.Empty;
+}

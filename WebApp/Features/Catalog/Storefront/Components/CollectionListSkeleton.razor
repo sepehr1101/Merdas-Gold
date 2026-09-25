@@ -1,0 +1,23 @@
+<div class="collection-list collection-list-skeleton" role="status" aria-live="polite" aria-label="در حال دریافت فهرست" aria-busy="true">
+    <span class="storefront-visually-hidden">در حال دریافت فهرست…</span>
+    @for (var index = 0; index < Count; index++)
+    {
+        <div class="collection-item" aria-hidden="true">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Class="collection-skeleton-image" />
+            <div class="collection-details">
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="55%" Height="28px" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="78%" Height="20px" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="43%" Height="18px" />
+            </div>
+            <div class="collection-actions">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Width="100%" Height="44px" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Animation="Animation.Wave" Width="64%" Height="20px" />
+            </div>
+        </div>
+    }
+    <StorefrontLoadingDelay />
+</div>
+
+@code {
+    [Parameter] public int Count { get; set; } = 3;
+}

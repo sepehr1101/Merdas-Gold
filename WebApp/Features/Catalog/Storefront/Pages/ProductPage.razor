@@ -1,20 +1,34 @@
 @page "/products/{Id}"
 @layout StorefrontLayout
+@attribute [StreamRendering]
 @using MerdasGold.Features.Catalog.Services
 @inject StorefrontCatalogService Catalog
 @inject NavigationManager Navigation
 
-@if (_product is not null)
+@if (_loading)
+{
+    <ProductDetailSkeleton />
+}
+else if (_product is not null)
 {
     <PageTitle>@_product.Title | مرداس</PageTitle>
-    <ProductDetailView Product="_product" />
+    <ProductDetailView Product="_product" ProductHref="@($"/products/{Id}")" />
 }
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
     private StorefrontProduct? _product;
+    private bool _loading = true;
     protected override async Task OnParametersSetAsync()
     {
-        _product = await Catalog.ProductAsync(Id);
-        if (_product is null) Navigation.NotFound();
+        _loading = true;
+        try
+        {
+            _product = await Catalog.ProductAsync(Id);
+            if (_product is null) Navigation.NotFound();
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 }

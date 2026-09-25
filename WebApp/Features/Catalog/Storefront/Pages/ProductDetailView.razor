@@ -1,3 +1,4 @@
+@implements IDisposable
 @using MerdasGold.Features.Catalog.Services
 @inject StorefrontCatalogService Catalog
 @inject StorefrontUiState UiState
@@ -17,19 +18,10 @@
                 <div class="product-detail">
                     <div class="product-visual">
                         <ProductGallery Title="@Product.Title" Images="@Product.Images" />
-                        <div class="product-description">
-                            <h2>دربارهٔ محصول</h2>
-                            <p>@Product.Description</p>
-                            <p class="image-note">تصویر این کالای نمونه ممکن است با نوع کالا متفاوت باشد.</p>
-                        </div>
                     </div>
                     <div class="product-summary">
                         <h1 id="product-title">@Product.Title <span class="product-code" dir="ltr">(@Product.Code)</span></h1>
                         <p class="product-price">@(_price is null ? "قیمت پس از دریافت نرخ معتبر" : $"{_price:N0} تومان")</p>
-                        @if (Product.Tags.Length > 0)
-                        {
-                            <p class="product-tags">برچسب‌ها: @string.Join("، ", Product.Tags)</p>
-                        }
                         <div class="variant-picker" aria-label="انتخاب تنوع محصول">
                             <h2>انتخاب رنگ و مدل</h2>
                             <p>هر تنوع، وزن و موجودی خودش را دارد.</p>
@@ -37,7 +29,7 @@
                                 @foreach (var variant in Product.Variants)
                                 {
                                     <button type="button" class="variant-option @(variant.Id == _selected?.Id ? "selected" : null)"
-                                            disabled="@(!variant.Available)"
+                                            disabled="@(!variant.Available || _quoting)"
                                             aria-pressed="@(variant.Id == _selected?.Id ? "true" : "false")"
                                             @onclick="() => SelectVariantAsync(variant)">
                                         <span class="color-swatch" style="background-color:@variant.ColorHex" aria-hidden="true"></span>
@@ -58,12 +50,32 @@
                                 <span>وزن دقیق: <strong>@_selected.Weight.ToString("0.000") گرم</strong></span><span>موجودی: <strong>@_selected.Quantity عدد</strong></span>
                             </div>
                         }
-                        <button class="storefront-action product-add" type="button" disabled="@(Preview || _selected is null || _price is null)" @onclick="UiState.AddToCart">افزودن به سبد خرید</button>
-                        <p class="demo-note">سبد خرید فعلاً نمایشی است و سفارش ثبت نمی‌کند.</p>
+                        <div class="product-actions">
+                            <button class="storefront-action product-add" type="button" disabled="@(Preview || _selected is null || _adding)" aria-busy="@_adding.ToString().ToLowerInvariant()" @onclick="AddToCartAsync">
+                                @if (_adding) { <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" /> <span>در حال افزودن…</span> }
+                                else { <span>افزودن به سبد خرید</span> }
+                            </button>
+                            @if (!Preview)
+                            {
+                                <button class="product-favorite @(IsFavorite ? "is-favorite" : null)" type="button"
+                                        aria-pressed="@IsFavorite.ToString().ToLowerInvariant()"
+                                        @onclick="ToggleFavoriteAsync">
+                                    <span aria-hidden="true">@(IsFavorite ? "♥" : "♡")</span>
+                                    @(IsFavorite ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها")
+                                </button>
+                            }
+                        </div>
                     </div>
                 </div>
                 <details class="product-information">
-                    <summary><span>مشخصات محصول</span><span class="accordion-chevron" aria-hidden="true">⌄</span></summary>
+                    <summary><span>درباره این قطعه</span><span class="accordion-chevron" aria-hidden="true">⌄</span></summary>
+                    <div class="product-description">
+                        <p>@Product.Description</p>
+                        <p class="image-note">تصویر این کالای نمونه ممکن است با نوع کالا متفاوت باشد.</p>
+                    </div>
+                </details>
+                <details class="product-information">
+                    <summary><span>مشخصات قطعه</span><span class="accordion-chevron" aria-hidden="true">⌄</span></summary>
                     <div class="specs-content">
                         <dl class="product-specs">
                             <div><dt>نوع کالا</dt><dd>@Product.ProductType</dd></div>
@@ -75,12 +87,24 @@
                         </dl>
                     </div>
                 </details>
+                @if (Product.Tags.Length > 0)
+                {
+                    <details class="product-information">
+                        <summary><span>برچسب‌های این قطعه</span><span class="accordion-chevron" aria-hidden="true">⌄</span></summary>
+                        <nav class="product-tag-list" aria-label="برچسب‌های این قطعه">
+                            @foreach (var tag in Product.Tags)
+                            {
+                                <a href="@($"/products/tag/{Uri.EscapeDataString(tag.Slug)}")">@tag.Name</a>
+                            }
+                        </nav>
+                    </details>
+                }
                 <section class="related-products" aria-labelledby="related-title">
                     <div class="related-heading"><h2 id="related-title">محصولات همین دسته</h2><a href="/products/category/@Product.CategorySlug">دیدن همه</a></div>
                     <div class="related-grid">
                         @foreach (var related in Product.Related)
                         {
-                            <ProductCard Title="@related.Title" Price="@related.Price" ImageUrl="@related.ImageUrl" Href="@related.Href" Available="@related.Available" />
+                            <ProductCard Code="@related.Code" Title="@related.Title" Price="@related.Price" ImageUrl="@related.ImageUrl" Href="@related.Href" Available="@related.Available" />
                         }
                     </div>
                 </section>
@@ -91,8 +115,13 @@
 @code {
     [Parameter, EditorRequired] public StorefrontProduct? Product { get; set; }
     [Parameter] public bool Preview { get; set; }
+    [Parameter] public string ProductHref { get; set; } = string.Empty;
+    private bool IsFavorite => UiState.IsFavorite(ProductHref);
+    protected override void OnInitialized() => UiState.Changed += OnShopperChanged;
     private StorefrontVariant? _selected;
     private decimal? _price;
+    private bool _quoting;
+    private bool _adding;
     protected override async Task OnParametersSetAsync()
     {
         _selected = Product?.Variants.FirstOrDefault(x => x.Available);
@@ -100,9 +129,38 @@
     }
     private async Task SelectVariantAsync(StorefrontVariant variant)
     {
-        if (!variant.Available) return;
+        if (!variant.Available || _quoting) return;
         _selected = variant;
-        _price = (await (Preview ? Catalog.PreviewQuoteAsync(variant.Id) : Catalog.QuoteAsync(variant.Id)))?.Breakdown.Total;
+        _quoting = true;
+        try
+        {
+            _price = (await (Preview ? Catalog.PreviewQuoteAsync(variant.Id) : Catalog.QuoteAsync(variant.Id)))?.Breakdown.Total;
+        }
+        finally
+        {
+            _quoting = false;
+        }
     }
+    private async Task AddToCartAsync()
+    {
+        if (Preview || Product is null || _selected is null || _adding) return;
+        _adding = true;
+        try
+        {
+            await UiState.AddToCartAsync(new(Product.Code, Product.Title, ProductHref,
+                Product.Images.FirstOrDefault() ?? "", _selected.Id, _selected.Title,
+                _selected.Color, _selected.Size, _selected.Weight, 1), _selected.Quantity);
+        }
+        finally
+        {
+            _adding = false;
+        }
+    }
+    private Task ToggleFavoriteAsync() =>
+        Product is null || Preview ? Task.CompletedTask :
+        UiState.ToggleFavoriteAsync(new(Product.Code, Product.Title, ProductHref,
+            Product.Images.FirstOrDefault() ?? ""));
+    private void OnShopperChanged() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() => UiState.Changed -= OnShopperChanged;
     private static string DisplayValue(string name, string value) => name == "عیار" && value == "18" ? "۱۸ عیار" : value;
 }

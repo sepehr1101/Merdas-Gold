@@ -1,0 +1,8 @@
+.storefront-loading-delay {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin: 8px 0 0;
+    color: var(--storefront-muted);
+    font-size: 13px;
+    text-align: center;
+}

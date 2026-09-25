@@ -1,3 +1,6 @@
+@implements IDisposable
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontCatalogService Catalog
 @inject StorefrontUiState UiState
 
 <article class="product-card">
@@ -6,35 +9,57 @@
         @if (!Available) { <span class="sold-out">ناموجود</span> }
         <button class="heart @(Favorite ? "heart--active" : null)"
                 type="button"
-                aria-label="@(Favorite ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی")"
+                aria-label="@(Favorite ? $"حذف {Title} از علاقه‌مندی‌ها" : $"افزودن {Title} به علاقه‌مندی‌ها")"
                 aria-pressed="@Favorite.ToString().ToLowerInvariant()"
-                @onclick="ToggleFavorite">@(Favorite ? "♥" : "♡")</button>
+                @onclick="ToggleFavoriteAsync">@(Favorite ? "♥" : "♡")</button>
     </div>
     <h3><a href="@Href">@Title</a></h3>
     <p class="price">@Price</p>
-    <button class="add-cart" type="button" disabled="@(!Available)" @onclick="UiState.AddToCart">@(Available ? "افزودن به سبد خرید" : "ناموجود")</button>
+    <button class="add-cart" type="button" disabled="@(!Available || _adding)" aria-busy="@_adding.ToString().ToLowerInvariant()" @onclick="AddToCartAsync">
+        @if (_adding) { <MudProgressCircular Indeterminate="true" Size="Size.Small" aria-hidden="true" /> <span>در حال افزودن…</span> }
+        else { <span>@(Available ? "افزودن به سبد خرید" : "ناموجود")</span> }
+    </button>
 </article>
 
 @code {
-    [Parameter, EditorRequired]
-    public string Title { get; set; } = string.Empty;
-
-    [Parameter, EditorRequired]
-    public string Price { get; set; } = string.Empty;
-
-    [Parameter, EditorRequired]
-    public string ImageUrl { get; set; } = string.Empty;
-
-    [Parameter, EditorRequired]
-    public string Href { get; set; } = string.Empty;
-
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Price { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string ImageUrl { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Href { get; set; } = string.Empty;
     [Parameter] public bool Available { get; set; } = true;
 
-    private bool Favorite { get; set; }
+    private bool _adding;
+    private bool Favorite => UiState.IsFavorite(Href);
 
-    private void ToggleFavorite()
+    protected override void OnInitialized() => UiState.Changed += OnShopperChanged;
+
+    private Task ToggleFavoriteAsync() =>
+        UiState.ToggleFavoriteAsync(new(Code, Title, Href, ImageUrl));
+
+    private async Task AddToCartAsync()
     {
-        Favorite = !Favorite;
-        UiState.Notify(Favorite ? "به علاقه‌مندی‌ها اضافه شد" : "از علاقه‌مندی‌ها حذف شد");
+        if (_adding || !Href.StartsWith("/products/", StringComparison.Ordinal)) return;
+        _adding = true;
+        try
+        {
+            var product = await Catalog.ProductAsync(Href["/products/".Length..]);
+            var variant = product?.Variants.FirstOrDefault(item => item.Available);
+            if (product is null || variant is null)
+            {
+                UiState.Notify("این قطعه اکنون موجود نیست");
+                return;
+            }
+            await UiState.AddToCartAsync(new(product.Code, product.Title, Href,
+                product.Images.FirstOrDefault() ?? ImageUrl, variant.Id, variant.Title,
+                variant.Color, variant.Size, variant.Weight, 1), variant.Quantity);
+        }
+        finally
+        {
+            _adding = false;
+        }
     }
+
+    private void OnShopperChanged() => _ = InvokeAsync(StateHasChanged);
+    public void Dispose() => UiState.Changed -= OnShopperChanged;
 }

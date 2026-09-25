@@ -1,15 +1,28 @@
 @using MerdasGold.Features.Catalog.Services
 @inject StorefrontCatalogService Catalog
+@attribute [StreamRendering]
 <section class="products-section storefront-section" id="products">
     <StorefrontSectionTitle Kicker="MERDAS" Title="جدیدترین محصولات" />
-    <div class="product-grid storefront-container">
-        @foreach (var product in _products)
-        {
-            <ProductCard Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" />
-        }
-    </div>
+    @if (_loading)
+    {
+        <ProductGridSkeleton Class="product-grid storefront-container" Count="5" />
+    }
+    else
+    {
+        <div class="product-grid storefront-container">
+            @foreach (var product in _products)
+            {
+                <ProductCard Code="@product.Code" Title="@product.Title" Price="@product.Price" ImageUrl="@product.ImageUrl" Href="@product.Href" Available="@product.Available" />
+            }
+        </div>
+    }
 </section>
 @code {
     private IReadOnlyList<StorefrontProductCard> _products = [];
-    protected override async Task OnInitializedAsync() => _products = await Catalog.FeaturedAsync();
+    private bool _loading = true;
+    protected override async Task OnInitializedAsync()
+    {
+        try { _products = await Catalog.FeaturedAsync(); }
+        finally { _loading = false; }
+    }
 }

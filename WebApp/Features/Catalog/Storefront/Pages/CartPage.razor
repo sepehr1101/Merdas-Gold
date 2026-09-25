@@ -1,0 +1,120 @@
+@page "/cart"
+@layout StorefrontLayout
+@implements IDisposable
+@using MerdasGold.Features.Catalog.Services
+@inject StorefrontUiState UiState
+@inject StorefrontCatalogService Catalog
+
+<PageTitle>سبد خرید | مرداس</PageTitle>
+<div class="collection-page">
+    <div class="collection-hero">
+        <div class="storefront-container">
+            <nav aria-label="مسیر صفحه"><a href="/">خانه</a><span aria-hidden="true">/</span><span aria-current="page">سبد خرید</span></nav>
+            <h1>سبد خرید</h1>
+            <p>@Persian(UiState.CartCount) قطعه در سبد شما</p>
+        </div>
+    </div>
+    <section class="inner-content" aria-label="قطعات سبد خرید">
+        <div class="storefront-container">
+            @if (!UiState.IsReady || _loading)
+            {
+                <CollectionListSkeleton Count="3" />
+            }
+            else if (UiState.CartCount == 0)
+            {
+                <div class="collection-empty">
+                    <span aria-hidden="true">◇</span>
+                    <h2>سبد خرید شما خالی است</h2>
+                    <p>قطعه‌های دلخواهتان را انتخاب کنید تا اینجا کنار هم ببینید.</p>
+                    <a class="storefront-action" href="/#products">دیدن قطعات</a>
+                </div>
+            }
+            else
+            {
+                <div class="cart-layout">
+                    <div class="collection-list">
+                        @foreach (var item in UiState.CartItems)
+                        {
+                            _live.TryGetValue(item.VariantId, out var info);
+                            <article class="collection-item" @key="item.VariantId">
+                                <a class="collection-image" href="@item.Href"><img src="@item.ImageUrl" alt="@item.Title" width="120" height="120" loading="lazy" /></a>
+                                <div class="collection-details">
+                                    <h2><a href="@item.Href">@item.Title</a></h2>
+                                    <p>@item.Color @if (!string.IsNullOrWhiteSpace(item.Size)) { <span> · اندازه @item.Size</span> }</p>
+                                    <p>وزن: @item.Weight.ToString("0.000") گرم · کد: <bdi dir="ltr">@item.Code</bdi></p>
+                                    @if (info?.Variant is null || !info.Variant.Available)
+                                    {
+                                        <p class="collection-warning">این مدل اکنون موجود نیست.</p>
+                                    }
+                                    else if (item.Quantity > info.Variant.Quantity)
+                                    {
+                                        <p class="collection-warning">فقط @Persian(info.Variant.Quantity) عدد موجود است؛ تعداد را کم کنید.</p>
+                                    }
+                                </div>
+                                <div class="collection-actions">
+                                    <strong class="cart-price">@(info?.Price is null ? "قیمت پس از دریافت نرخ معتبر" : $"{info.Price:N0} تومان")</strong>
+                                    <div class="quantity-control" aria-label="تعداد @item.Title">
+                                        <button type="button" aria-label="کم کردن تعداد @item.Title" disabled="@(item.Quantity <= 1 || info?.Variant is null)" @onclick="() => ChangeQuantityAsync(item, -1)">−</button>
+                                        <span>@Persian(item.Quantity)</span>
+                                        <button type="button" aria-label="زیاد کردن تعداد @item.Title" disabled="@(info?.Variant is null || !info.Variant.Available || item.Quantity >= Math.Min(info.Variant.Quantity, 99))" @onclick="() => ChangeQuantityAsync(item, 1)">+</button>
+                                    </div>
+                                    <button class="collection-remove" type="button" @onclick="() => UiState.RemoveFromCartAsync(item.VariantId)">حذف از سبد</button>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <aside class="cart-summary" aria-label="خلاصه سبد">
+                        <h2>خلاصه سبد</h2>
+                        <div><span>تعداد قطعات</span><strong>@Persian(UiState.CartCount)</strong></div>
+                        <div class="cart-summary-total"><span>جمع بر اساس نرخ فعلی</span><strong>@(Total is null ? "قابل محاسبه نیست" : $"{Total:N0} تومان")</strong></div>
+                        <p>قیمت و موجودی ممکن است تا زمان ثبت سفارش تغییر کند.</p>
+                        <a href="/#products">ادامه دیدن قطعات</a>
+                    </aside>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    private sealed record LiveLine(StorefrontVariant? Variant, decimal? Price);
+    private readonly Dictionary<int, LiveLine> _live = [];
+    private bool _loading = true;
+
+    private decimal? Total
+    {
+        get
+        {
+            if (UiState.CartItems.Any(item => !_live.TryGetValue(item.VariantId, out var info)
+                || info.Price is null || info.Variant?.Available != true
+                || item.Quantity > info.Variant.Quantity)) return null;
+            return UiState.CartItems.Sum(item => _live[item.VariantId].Price!.Value * item.Quantity);
+        }
+    }
+
+    protected override void OnInitialized() => UiState.Changed += OnShopperChanged;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await UiState.InitializeAsync();
+        foreach (var item in UiState.CartItems.ToList())
+        {
+            var product = await Catalog.ProductAsync(item.Href["/products/".Length..]);
+            var variant = product?.Variants.FirstOrDefault(value => value.Id == item.VariantId);
+            var price = variant?.Available == true
+                ? (await Catalog.QuoteAsync(variant.Id))?.Breakdown.Total : null;
+            _live[item.VariantId] = new(variant, price);
+        }
+        _loading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task ChangeQuantityAsync(CartItem item, int difference)
+    {
+        if (!_live.TryGetValue(item.VariantId, out var info) || info.Variant is null) return Task.CompletedTask;
+        return UiState.SetQuantityAsync(item.VariantId, item.Quantity + difference, info.Variant.Quantity);
+    }
+    private void OnShopperChanged() => _ = InvokeAsync(StateHasChanged);
+    private static string Persian(int value) => string.Concat(value.ToString().Select(character => (char)('۰' + character - '0')));
+    public void Dispose() => UiState.Changed -= OnShopperChanged;
+}
