@@ -1,0 +1,40 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+<div class="simple-editor" @ref="_host">
+    <div class="editor-toolbar" role="toolbar" aria-label="قالب‌بندی متن">
+        <button type="button" data-block="p">متن</button>
+        <button type="button" data-block="h2">تیتر</button>
+        <button type="button" data-block="h3">زیرتیتر</button>
+        <button type="button" data-command="bold" aria-label="متن پررنگ"><strong>B</strong></button>
+        <button type="button" data-command="insertUnorderedList">• فهرست</button>
+        <button type="button" data-command="insertOrderedList">۱. فهرست</button>
+        <button type="button" data-command="undo" aria-label="بازگشت تغییر">↶</button>
+        <button type="button" data-command="redo" aria-label="انجام دوباره">↷</button>
+    </div>
+    <div class="editor-links">
+        <input type="url" dir="ltr" aria-label="نشانی لینک" placeholder="https://…" data-link-url />
+        <button type="button" data-link>افزودن لینک</button>
+        <button type="button" data-command="unlink">حذف لینک</button>
+    </div>
+    <div class="editor-body" contenteditable="true" role="textbox" aria-label="متن نوشته" aria-multiline="true" spellcheck="true" dir="rtl">@((MarkupString)MerdasGold.Features.Content.Services.BlogContent.Render(Value))</div>
+</div>
+@code {
+    [Parameter] public string Value { get; set; } = "[]";
+    private ElementReference _host;
+    private IJSObjectReference? _module;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "/scripts/blog-editor.js");
+            await _module.InvokeVoidAsync("init", _host);
+        }
+    }
+    public async Task<string> ReadAsync() => _module is null ? Value : await _module.InvokeAsync<string>("read", _host);
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is null) return;
+        try { await _module.InvokeVoidAsync("dispose", _host); await _module.DisposeAsync(); }
+        catch (JSDisconnectedException) { }
+    }
+}

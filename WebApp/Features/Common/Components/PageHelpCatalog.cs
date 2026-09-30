@@ -68,6 +68,15 @@ internal static class PageHelpCatalog
                 "برای کمپین‌ها و مجموعه‌های موقت، بدون سنگین‌کردن ساختار دسته‌ها.",
                 "یک عنوان کوتاه و قابل فهم انتخاب کنید.",
                 "نامک آدرس: از حروف انگلیسی کوچک، عدد و خط تیره استفاده کنید."]),
+        new("/admin/content/blog/new", "ایجاد و ویرایش نوشته بلاگ", [
+                "عنوان را وارد کنید. عنوان باید روشن و حداکثر ۲۰۰ نویسه باشد.",
+                "نشانی نوشته را وارد کنید. حروف فارسی یا انگلیسی، عدد و خط تیره مجاز است؛ فاصله مجاز نیست. نشانی باید یکتا و حداکثر ۱۸۰ نویسه باشد و بهتر است پس از انتشار تغییر نکند.",
+                "خلاصه را وارد کنید. خلاصه حداکثر ۶۰۰ نویسه است و در کارت مقاله و توضیحات موتورهای جست‌وجو نمایش داده می‌شود.",
+                "تصویر اصلی را با قالب JPG، PNG یا WebP و حداکثر حجم ۵ مگابایت انتخاب کنید. همین تصویر در کارت بلاگ و بالای مقاله نمایش داده می‌شود. در ویرایش، انتخاب تصویر تازه اختیاری است.",
+                "برای متن از تیتر، زیرتیتر، متن پررنگ و فهرست استفاده کنید. دکمه‌های بازگشت و انجام دوباره، تغییرات متن را کنترل می‌کنند.",
+                "برای لینک‌دادن، ابتدا بخشی از متن را انتخاب کنید، نشانی کامل را با http:// یا https:// وارد کنید و افزودن لینک را بزنید. متن چسبانده‌شده با ظاهر مرداس هماهنگ می‌شود.",
+                "با روشن کردن انتشار در ویترین و ذخیره، مقاله برای بازدیدکنندگان نمایش داده می‌شود. انتشار به متن و تصویر اصلی نیاز دارد. با خاموش کردن آن و ذخیره، نوشته به پیش‌نویس تبدیل می‌شود.",
+                "برای نگهداری تغییرات، ذخیره نوشته را بزنید. بازگشت به نوشته‌ها بدون ذخیره، تغییرات تازه را نگه نمی‌دارد."]),
         new("/admin/content/banners", "اسلایدر و بنر", [
                 "قاب‌هایی چشم‌نواز برای معرفی محصولات، مناسبت‌ها و پیشنهادها",
                 "برای اسلایدر، تصویر افقی با نسبت حدود ۲٫۵ به ۱ بهترین نتیجه را دارد.",
@@ -124,6 +133,11 @@ internal static class PageHelpCatalog
     public static PageHelpContent? Find(string path)
     {
         path = path.TrimEnd('/');
+        const string blogEditorPrefix = "/admin/content/blog/";
+        if (path.StartsWith(blogEditorPrefix, StringComparison.OrdinalIgnoreCase)
+            && (path[blogEditorPrefix.Length..].Equals("new", StringComparison.OrdinalIgnoreCase)
+                || int.TryParse(path[blogEditorPrefix.Length..], out _)))
+            return Pages.First(page => page.Route == "/admin/content/blog/new");
         var pricing = Pages.First(page => page.Route == "/admin/pricing");
         if (path.Equals("/admin/pricing/rates", StringComparison.OrdinalIgnoreCase))
             return pricing with { Title = "دریافت نرخ و سابقه قیمت", Paragraphs = pricing.Paragraphs[1..5] };

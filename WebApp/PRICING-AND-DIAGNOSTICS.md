@@ -86,3 +86,11 @@ BackgroundService مستقل از باز بودن مرورگر، فاصله در
 - تخفیف ناقص با پیام اعتبارسنجی رد شد و رکورد آزمایشی ایجاد نشد.
 - جستجوی خطا، کاهش نتایج به رکورد موردنظر و نمایش زمان میلی‌ثانیه‌ای UTC، Message و Stack trace واقعی بررسی شد.
 - نمایش گزینه گرد کردن مبلغ پس از بارگیری decimal دیتابیس اصلاح و در مرورگر تأیید شد؛ ۴۰ تست پس از اصلاح نیز موفق بودند.
+
+## Storefront market strip (Taban Gohar)
+
+The eight quotes share the existing server-side `Pr/Get/{Username}/{Password}` poll; browsers only read server state. Mapping follows the supplied Taban Gohar API guide: `YekGram18`, `SekehRob`, `SekehNim`, `SekehTamam` (old-design full coin), `SekehEmam`, `Dollar`, `Euro`, `Derham`. Coin values are multiplied by 1,000 to obtain toman. Gold and currencies in this market snapshot are already toman, independent of the existing admin gold-unit override.
+
+The market snapshot is held in memory for up to one day and replaced on a successful parsed response. After a restart, coin/currency quotes remain unavailable until the next successful poll; the existing persisted gold rate can still be shown. A failed request preserves the last snapshot, with its original source timestamp; quotes older than MaxAgeMinutes are labelled as the last recorded rate. Missing, null, nonnumeric, zero, negative, or out-of-range fields display a dash. No sample prices are used in the storefront. Product pricing and checkout freshness rules are unchanged.
+
+Validation: the documented sample is covered by MarketRateTests, including thousand-toman conversion, field-order independence and incomplete responses. Live provider access must be checked from the production IP allowed by Taban Gohar.

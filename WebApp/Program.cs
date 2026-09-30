@@ -28,7 +28,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents().AddHubOptions(options => options.MaximumReceiveMessageSize = 256 * 1024);
 
 builder.Services.AddCascadingAuthenticationState();
 
@@ -75,6 +75,8 @@ builder.Services.AddScoped<SecuritySettingsService>();
 builder.Services.AddScoped<StoreInformationService>();
 builder.Services.AddScoped<StoreInformationSeeder>();
 builder.Services.AddScoped<ContentManagementService>();
+builder.Services.AddScoped<BlogService>();
+builder.Services.AddScoped<BlogSeeder>();
 builder.Services.AddScoped<ContentSeeder>();
 builder.Services.AddScoped<CatalogService>();
 builder.Services.AddScoped<StorefrontCatalogService>();
@@ -119,7 +121,10 @@ try
     await scope.ServiceProvider.GetRequiredService<ContentSeeder>().SeedAsync();
     await scope.ServiceProvider.GetRequiredService<SecuritySettingsService>().ApplyCurrentSettingsAsync();
     await scope.ServiceProvider.GetRequiredService<AdminAccountSeeder>().SeedAsync();
-    if (args.Contains("--seed-demo-catalog", StringComparer.OrdinalIgnoreCase))
+    var seedDemoOnStartup = app.Configuration.GetValue<bool>("DemoContent:SeedOnStartup");
+    if (seedDemoOnStartup || args.Contains("--seed-blog", StringComparer.OrdinalIgnoreCase))
+        Console.WriteLine($"Seeded {await scope.ServiceProvider.GetRequiredService<BlogSeeder>().SeedAsync()} blog posts.");
+    if (seedDemoOnStartup || args.Contains("--seed-demo-catalog", StringComparer.OrdinalIgnoreCase))
     {
         var count = await scope.ServiceProvider.GetRequiredService<CatalogDemoSeeder>().SeedAsync();
         var demoDb = scope.ServiceProvider.GetRequiredService<MerdasGoldDbContext>();
@@ -160,4 +165,4 @@ app.MapCatalogEndpoints();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-if (!args.Contains("--seed-demo-catalog", StringComparer.OrdinalIgnoreCase)) app.Run();
+if (!args.Contains("--seed-demo-catalog", StringComparer.OrdinalIgnoreCase) && !args.Contains("--seed-blog", StringComparer.OrdinalIgnoreCase)) app.Run();

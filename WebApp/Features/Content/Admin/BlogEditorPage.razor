@@ -1,0 +1,86 @@
+@page "/admin/content/blog/new"
+@page "/admin/content/blog/{Id:int}"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using MerdasGold.Features.Content.Models
+@using MerdasGold.Features.Content.Services
+@using MerdasGold.Features.Content.Components
+@using System.Security.Claims
+@inject BlogService Blog
+@inject AuthenticationStateProvider Auth
+@inject NavigationManager Navigation
+
+<PageTitle>@(Id is null ? "نوشته جدید" : "ویرایش نوشته") | بلاگ مرداس</PageTitle>
+<section class="blog-editor-page">
+    <AdminSectionHeader ParentHref="/admin/content/blog" ParentTitle="بلاگ مرداس" Title="@(Id is null ? "نوشته جدید" : "ویرایش نوشته")" />
+    @if (_model is null) { <p role="status">@(_missing ? "نوشته پیدا نشد." : "در حال دریافت نوشته…")</p> }
+    else
+    {
+        <EditForm Model="_model" OnValidSubmit="Save" OnInvalidSubmit="ShowInvalidNotice" FormName="blog-editor" @key="_model.Id">
+            <DataAnnotationsValidator />
+            <fieldset disabled="@_busy" class="editor-fields">
+                <div class="writing-column">
+                    <label class="field">عنوان نوشته<InputText @bind-Value="_model.Title" maxlength="200" /></label>
+                    <label class="field">خلاصه<InputTextArea @bind-Value="_model.Summary" rows="3" maxlength="600" /></label>
+                    <div class="field"><span>متن نوشته</span><SimpleBlogEditor @ref="_editor" Value="@_model.BodyJson" @key="_model.Id" /></div>
+                </div>
+                <aside class="publishing-column">
+                    <h2>تصویر اصلی</h2>
+                    @if (_preview is not null || _model.HasImage) { <img class="cover-preview" src="@(_preview ?? $"/content-assets/blog/{_model.Id}?v={Uri.EscapeDataString(_model.RowVersion)}")" alt="پیش‌نمایش تصویر اصلی" /> }
+                    else { <div class="image-placeholder"><MudIcon Icon="@Icons.Material.Outlined.AddPhotoAlternate" /><span>تصویر این نوشته</span></div> }
+                    <label class="field">انتخاب تصویر<InputFile OnChange="PickImage" accept="image/jpeg,image/png,image/webp" /></label>
+                    <label class="field">نشانی نوشته<InputText @bind-Value="_model.Slug" maxlength="180" dir="ltr" /></label>
+                    <label class="publish-toggle"><InputCheckbox @bind-Value="_model.IsPublished" /> انتشار در ویترین</label>
+                    <button type="submit" class="primary-action" disabled="@(_busy || _imageInvalid)">@(_busy ? "در حال ذخیره…" : "ذخیره نوشته")</button>
+                    <a href="/admin/content/blog" class="back-link">بازگشت به نوشته‌ها</a>
+                </aside>
+            </fieldset>
+            @if (_message is not null) { <p class="notice" role="alert">@_message</p> }
+        </EditForm>
+    }
+</section>
+@code {
+    [Parameter] public int? Id { get; set; }
+    private BlogEditModel? _model;
+    private SimpleBlogEditor? _editor;
+    private bool _missing, _busy, _imageInvalid;
+    private byte[]? _image;
+    private string? _preview, _message;
+    protected override async Task OnParametersSetAsync()
+    {
+        _model = Id is null ? new() : await Blog.EditAsync(Id.Value);
+        _missing = _model is null; _image = null; _preview = null; _message = null; _imageInvalid = false;
+    }
+    private async Task PickImage(InputFileChangeEventArgs e)
+    {
+        _imageInvalid = true; _image = null; _preview = null;
+        try
+        {
+            await using var stream = e.File.OpenReadStream(5 * 1024 * 1024);
+            using var buffer = new MemoryStream(); await stream.CopyToAsync(buffer);
+            var bytes = buffer.ToArray(); var type = BlogService.ImageType(bytes);
+            if (type is null) { _message = "تصویر معتبر نیست. JPG، PNG یا WebP انتخاب کنید."; return; }
+            _image = bytes; _preview = $"data:{type};base64,{Convert.ToBase64String(bytes)}"; _imageInvalid = false; _message = null;
+        }
+        catch (IOException) { _message = "تصویر خوانده نشد یا بیشتر از ۵ مگابایت است."; }
+    }
+    private void ShowInvalidNotice() => _message = "اطلاعات ضروری کامل یا معتبر نیست؛ راهنمای ؟ را ببینید.";
+
+    private async Task Save()
+    {
+        if (_busy || _model is null || _editor is null || _imageInvalid) return;
+        _busy = true; _message = null;
+        try
+        {
+            var user = (await Auth.GetAuthenticationStateAsync()).User;
+            if (!user.IsInRole("Administrator")) { _message = "برای ذخیره دوباره وارد حساب مدیریت شوید."; return; }
+            _model.BodyJson = await _editor.ReadAsync();
+            var result = await Blog.SaveAsync(_model, _image, new ContentActor(user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "", user.Identity?.Name ?? "", "Blazor"));
+            if (result.Error is not null) { _message = result.Error; return; }
+            Navigation.NavigateTo("/admin/content/blog?saved=true");
+        }
+        catch (Exception ex) when (ex is IOException or Microsoft.JSInterop.JSException or Microsoft.EntityFrameworkCore.DbUpdateException)
+        { _message = "ذخیره انجام نشد؛ متن شما در این صفحه حفظ شده است. دوباره تلاش کنید."; }
+        finally { _busy = false; }
+    }
+}

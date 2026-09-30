@@ -2,21 +2,55 @@
 @inject IDbContextFactory<MerdasGoldDbContext> Factory
 @inject GoldRateService Rates
 
-<p class="storefront-rate" title="نرخ مبنای محاسبه قیمت محصولات">
-    @if (_rate?.PriceToman is { } price)
-    {
-        <span>هر گرم طلای ۱۸ عیار: <b>@price.ToString("N0") تومان</b></span>
-        <small>به‌روزرسانی @LocalTime(_rate.SourceUtc)</small>
-    }
-    else
-    {
-        <span>نرخ طلا در حال به‌روزرسانی است</span>
-    }
-</p>
+<section class="market-bar" aria-label="نرخ طلا، سکه و ارز">
+    <div class="market-inner">
+        <div class="market-caption" title="@StatusDescription">
+            <span class="market-heading">نرخ بازار <span class="market-unit">/ تومان</span></span>
+            <span class="market-status" role="status">@StatusText</span>
+        </div>
+        <div class="market-quotes">
+            <dl class="market-list">
+                @foreach (var item in Items)
+                {
+                    var price = Price(item.Key);
+                    <div class="market-item" title="@(item.Description + " · " + StatusDescription)">
+                        <dt><MarketRateIcon Kind="@item.Icon" /><span>@item.Label</span></dt>
+                        <dd><bdi>@(price is { } value ? value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) : "—")</bdi>@if (price is null) { <span class="sr-only">نرخ در دسترس نیست</span> }</dd>
+                    </div>
+                }
+            </dl>
+        </div>
+    </div>
+</section>
 
 @code {
     private readonly CancellationTokenSource _cancellation = new();
     private GoldRate? _rate;
+    private MarketRateSnapshot? _market;
+    private int _maxAge;
+    private bool _enabled;
+    private bool Fresh => _enabled && (_market is not null
+        ? _market.SourceUtc >= DateTime.UtcNow.AddMinutes(-_maxAge) && _market.SourceUtc <= DateTime.UtcNow.AddMinutes(1)
+        : GoldRateService.IsFresh(_rate, _maxAge, DateTime.UtcNow));
+    private DateTime? SourceUtc => _market?.SourceUtc ?? _rate?.SourceUtc;
+    private string StatusText => SourceUtc is null ? "نرخ در دسترس نیست" : $"{(Fresh ? "به‌روزرسانی" : "آخرین ثبت")} {LocalTime(SourceUtc)}";
+    private string StatusDescription => SourceUtc is null ? "در انتظار دریافت نرخ از تأمین‌کننده"
+        : $"{(Fresh ? "زمان نرخ" : "نرخ قدیمی؛ در انتظار به‌روزرسانی")} {LocalDate(SourceUtc)}؛ قیمت‌ها به تومان";
+    private decimal? Price(string key) => _market is not null
+        ? (_market.Prices.TryGetValue(key, out var price) ? price : null)
+        : key == "YekGram18" ? _rate?.PriceToman : null;
+
+    private static readonly (string Key, string Label, string Icon, string Description)[] Items =
+    [
+        ("YekGram18", "گرم ۱۸ عیار", "gold", "هر گرم طلای ۱۸ عیار"),
+        ("SekehRob", "ربع سکه", "quarter", "ربع سکه بهار آزادی"),
+        ("SekehNim", "نیم سکه", "half", "نیم سکه بهار آزادی"),
+        ("SekehTamam", "تمام سکه", "coin", "تمام سکه بهار آزادی؛ طرح قدیم"),
+        ("SekehEmam", "سکه امامی", "emami", "تمام سکه امامی؛ طرح جدید"),
+        ("Dollar", "دلار", "dollar", "دلار آمریکا"),
+        ("Euro", "یورو", "euro", "یورو"),
+        ("Derham", "درهم", "dirham", "درهم امارات")
+    ];
 
     protected override async Task OnInitializedAsync()
     {
@@ -29,28 +63,26 @@
         await using var db = await Factory.CreateDbContextAsync(ct);
         var settings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
         _rate = await Rates.CurrentAsync(settings, ct);
+        _market = settings.Provider == GoldProviderNames.TabanGohar ? Rates.CurrentMarketRates() : null;
+        _maxAge = settings.MaxAgeMinutes;
+        _enabled = settings.Enabled;
     }
 
     private async Task RefreshLoopAsync()
     {
         try
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(15));
             while (await timer.WaitForNextTickAsync(_cancellation.Token))
-            {
-                await LoadAsync(_cancellation.Token);
-                await InvokeAsync(StateHasChanged);
-            }
+                await InvokeAsync(async () => { await LoadAsync(_cancellation.Token); StateHasChanged(); });
         }
         catch (OperationCanceledException) when (_cancellation.IsCancellationRequested) { }
     }
 
-    private static string LocalTime(DateTime? utc)
-    {
-        if (utc is null) return "نامشخص";
-        var zone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran");
-        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc), zone).ToString("HH:mm");
-    }
+    private static DateTime? TehranTime(DateTime? utc) => utc is null ? null :
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran"));
+    private static string LocalTime(DateTime? utc) => TehranTime(utc)?.ToString("HH:mm") ?? "—";
+    private static string LocalDate(DateTime? utc) => TehranTime(utc)?.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) ?? "—";
 
     public void Dispose()
     {

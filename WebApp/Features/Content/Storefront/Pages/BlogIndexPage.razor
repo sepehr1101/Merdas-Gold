@@ -1,0 +1,24 @@
+@page "/blog"
+@layout StorefrontLayout
+@using MerdasGold.Features.Content.Components
+@using MerdasGold.Features.Content.Models
+@inject MerdasGold.Features.Content.Services.BlogService Blog
+<PageTitle>بلاگ مرداس | روایت‌ها و راهنمای انتخاب طلا</PageTitle>
+<HeadContent><meta name="description" content="در بلاگ مرداس، درباره انتخاب زیورآلات، هدیه دادن و جزئیات یک انتخاب ماندگار بخوانید." /></HeadContent>
+<section class="journal storefront-container">
+    <header><span>مجله مرداس</span><h1>قصه‌ها و انتخاب‌های ماندگار</h1><p>کمی الهام، کمی شناخت؛ برای انتخاب قطعه‌ای که به شما نزدیک‌تر است.</p></header>
+    @if (_articles is null) { <p role="status">در حال دریافت نوشته‌ها…</p> }
+    else if (_articles.Count == 0) { <p>هنوز نوشته‌ای در این صفحه منتشر نشده است.</p> }
+    else { <BlogCards Items="_articles" /> }
+    <nav class="pagination" aria-label="صفحه‌های بلاگ">
+        @if(Page > 1) { <a href="/blog?page=@(Page-1)">صفحه قبل</a> }
+        <span>صفحه @Page</span>
+        @if(Page * 9 < _count) { <a href="/blog?page=@(Page+1)">صفحه بعد</a> }
+    </nav>
+</section>
+@code {
+    [SupplyParameterFromQuery] public int Page { get; set; } = 1;
+    private List<BlogCard>? _articles;
+    private int _count;
+    protected override async Task OnParametersSetAsync() { Page = Math.Clamp(Page, 1, 100000); _articles = await Blog.ListAsync(page: Page, size: 9); _count = await Blog.CountAsync(); }
+}

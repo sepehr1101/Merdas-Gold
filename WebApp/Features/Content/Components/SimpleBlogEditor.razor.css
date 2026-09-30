@@ -1,0 +1,14 @@
+.simple-editor { border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); overflow:hidden; }
+.editor-toolbar,.editor-links { display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:8px; background:var(--field); border-bottom:1px solid var(--border); }
+.editor-toolbar button,.editor-links button { min-height:36px; padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink); font:inherit; cursor:pointer; }
+.editor-toolbar button:hover,.editor-links button:hover { color:var(--primary); border-color:var(--primary); }
+.editor-links input { flex:1; min-width:120px; padding:8px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--ink); }
+.editor-body { min-height:320px; padding:20px; line-height:2.1; overflow-wrap:anywhere; font-size:15px; }
+.editor-body:focus { outline:2px solid var(--primary); outline-offset:-2px; }
+.editor-body ::deep h2 { font-size:22px; margin:16px 0 8px; }
+.editor-body ::deep h3 { font-size:18px; margin:14px 0 8px; }
+.editor-body ::deep p { margin:0 0 12px; }
+.editor-body ::deep ul,.editor-body ::deep ol { padding-inline-start:24px; }
+.editor-body ::deep ul { list-style:disc; }
+.editor-body ::deep ol { list-style:decimal; }
+.editor-body ::deep a { color:var(--primary); text-decoration:underline; }

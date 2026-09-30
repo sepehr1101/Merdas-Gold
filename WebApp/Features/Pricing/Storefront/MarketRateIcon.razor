@@ -1,0 +1,33 @@
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    @switch (Kind)
+    {
+        case "gold":
+            <path d="m5 9-3 10h20L19 9H5Z M5 9l4-5h6l4 5 M9 4l-2 15 M15 4l2 15 M10 13h4" />
+            break;
+        case "quarter":
+            <circle cx="12" cy="12" r="9" /><path d="M12 3v9h9" /><path d="M12 3a9 9 0 0 1 9 9h-9Z" fill="currentColor" opacity=".2" stroke="none" />
+            break;
+        case "half":
+            <circle cx="12" cy="12" r="9" /><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" opacity=".2" stroke="none" />
+            break;
+        case "coin":
+            <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="6" /><path d="m12 8 3 4-3 4-3-4Z" />
+            break;
+        case "emami":
+            <circle cx="12" cy="12" r="9" /><path d="m12 6 1.7 3.6 3.9.5-2.8 2.8.7 4-3.5-1.9L8.5 17l.7-4.1-2.8-2.8 3.9-.5Z" />
+            break;
+        case "dollar":
+            <rect x="2" y="5" width="20" height="14" rx="3" /><path d="M14.5 9H11a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9.5 M12 7v12" transform="translate(0 -1)" />
+            break;
+        case "euro":
+            <rect x="2" y="5" width="20" height="14" rx="3" /><path d="M15 8a4 4 0 1 0 0 8 M7 11h7 M7 13h6" />
+            break;
+        default:
+            <rect x="2" y="5" width="20" height="14" rx="3" /><path d="M10 8v8h2a4 4 0 0 0 0-8h-2 M8 11h8 M8 13h8" />
+            break;
+    }
+</svg>
+
+@code {
+    [Parameter] public string Kind { get; set; } = "gold";
+}

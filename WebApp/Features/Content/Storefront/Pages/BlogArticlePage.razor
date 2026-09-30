@@ -1,0 +1,29 @@
+@page "/blog/{Slug}"
+@layout StorefrontLayout
+@using MerdasGold.Features.Content.Models
+@inject MerdasGold.Features.Content.Services.BlogService Blog
+@inject NavigationManager Navigation
+
+<PageTitle>@(_article?.Card.Title ?? "نوشته پیدا نشد") | بلاگ مرداس</PageTitle>
+@if (_article is not null)
+{
+    <HeadContent><meta name="description" content="@_article.Card.Summary" /><meta property="og:title" content="@_article.Card.Title" /><meta property="og:description" content="@_article.Card.Summary" /><meta property="og:type" content="article" /><meta property="og:image" content="@(new Uri(new Uri(Navigation.BaseUri), $"content-assets/blog/{_article.Card.Id}"))" /></HeadContent>
+    <article class="journal-article storefront-container">
+        <nav aria-label="مسیر نوشته"><a href="/">خانه</a><span>/</span><a href="/blog">بلاگ مرداس</a></nav>
+        <header><span class="article-eyebrow">روایت‌های مرداس</span><h1>@_article.Card.Title</h1><p>@_article.Card.Summary</p><time datetime="@_article.Card.PublishedAtUtc?.ToString("O")">@DateLabel(_article.Card.PublishedAtUtc)</time></header>
+        <img class="article-cover" src="/content-assets/blog/@_article.Card.Id" alt="@_article.Card.Title" width="1000" height="667" />
+        <div class="article-body">@((MarkupString)_article.Html)</div>
+        <footer><a href="/blog">← بازگشت به همه نوشته‌ها</a></footer>
+    </article>
+}
+else if (_loaded)
+{
+    <section class="article-empty storefront-container"><h1>این نوشته در دسترس نیست</h1><p>ممکن است هنوز منتشر نشده باشد یا نشانی آن تغییر کرده باشد.</p><a href="/blog">بازگشت به بلاگ مرداس</a></section>
+}
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    private BlogArticle? _article;
+    private bool _loaded;
+    protected override async Task OnParametersSetAsync() { _article = await Blog.ArticleAsync(Slug); _loaded = true; if (_article is null) Navigation.NotFound(); }
+    private static string DateLabel(DateTime? date) => date is null ? "" : TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(date.Value, DateTimeKind.Utc), TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran")).ToString("d MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("fa-IR"));
+}

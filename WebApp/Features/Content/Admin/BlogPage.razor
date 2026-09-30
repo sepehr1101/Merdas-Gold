@@ -1,0 +1,40 @@
+@page "/admin/content/blog"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Administrator")]
+@using MerdasGold.Features.Content.Models
+@using MerdasGold.Features.Content.Services
+@inject BlogService Blog
+
+<PageTitle>بلاگ مرداس | مدیریت محتوا</PageTitle>
+<section class="blog-admin">
+    <AdminSectionHeader ParentHref="/admin/content" ParentTitle="محتوا" Title="بلاگ مرداس"><Actions><a class="primary-action" href="/admin/content/blog/new">نوشته جدید</a></Actions></AdminSectionHeader>
+    @if (Saved) { <p role="status" class="saved-notice">نوشته با موفقیت ذخیره شد.</p> }
+    <p class="intro">روایت‌ها و راهنماهای مرداس؛ از اولین پیش‌نویس تا انتشار در ویترین.</p>
+    @if (_items is null) { <p role="status">در حال دریافت نوشته‌ها…</p> }
+    else if (_items.Count == 0) { <p>هنوز نوشته‌ای ندارید. اولین مطلب بلاگ را بسازید.</p> }
+    else
+    {
+        <div class="post-list">
+        @foreach (var item in _items)
+        {
+            <article class="post-row">
+                @if (item.HasImage) { <img src="/content-assets/blog/@item.Id" alt="" loading="lazy" /> } else { <span class="empty-cover">بدون تصویر</span> }
+                <div><span class="post-status">@(item.IsPublished ? "منتشرشده" : "پیش‌نویس")</span><h2>@item.Title</h2><p>@item.Summary</p></div>
+                <div class="post-actions"><a href="/admin/content/blog/@item.Id">ویرایش نوشته</a>@if(item.IsPublished) { <a href="/blog/@item.Slug" target="_blank" rel="noopener">نمایش در ویترین ↗</a> }</div>
+            </article>
+        }
+        </div>
+        <nav class="pagination" aria-label="صفحه‌های نوشته‌ها">
+            @if(Page > 1) { <a href="/admin/content/blog?page=@(Page - 1)">صفحه قبل</a> }
+            <span>صفحه @Page</span>
+            @if(Page * 12 < _count) { <a href="/admin/content/blog?page=@(Page + 1)">صفحه بعد</a> }
+        </nav>
+    }
+</section>
+@code {
+    [SupplyParameterFromQuery] public bool Saved { get; set; }
+    [SupplyParameterFromQuery] public int Page { get; set; } = 1;
+    private List<BlogCard>? _items;
+    private int _count;
+    protected override async Task OnParametersSetAsync() { Page = Math.Clamp(Page, 1, 100000); _items = await Blog.ListAsync(false, Page); _count = await Blog.CountAsync(false); }
+}

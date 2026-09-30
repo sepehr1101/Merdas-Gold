@@ -25,6 +25,8 @@ public sealed class GoldRateService(
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly Dictionary<string, DateTime> _lastAttempts = [];
 
+    public MarketRateSnapshot? CurrentMarketRates() => cache.Get<MarketRateSnapshot>("market:taban-gohar");
+
     public string ProtectKey(string key) => protection.CreateProtector("MerdasGold.GoldProvider.v1").Protect(key);
 
     public bool HasCredentials(RateSettings settings) => settings.Provider switch
@@ -171,9 +173,13 @@ public sealed class GoldRateService(
 
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
         if (json.RootElement.TryGetProperty("Error", out _)) throw new UnauthorizedAccessException();
-        return settings.Provider == GoldProviderNames.TabanGohar
-            ? ParseTabanGohar(json.RootElement, settings.SourceUnit, now)
-            : ParseNavasan(json.RootElement, settings.SourceUnit, now);
+        if (settings.Provider != GoldProviderNames.TabanGohar)
+            return ParseNavasan(json.RootElement, settings.SourceUnit, now);
+
+        var gold = ParseTabanGohar(json.RootElement, settings.SourceUnit, now);
+        var market = MarketRateSnapshot.ParseTabanGohar(json.RootElement, gold.SourceUtc);
+        cache.Set("market:taban-gohar", market, TimeSpan.FromDays(1));
+        return gold;
     }
 
     private Task<HttpResponseMessage> FetchTabanGoharAsync(CancellationToken ct)

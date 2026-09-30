@@ -21,6 +21,16 @@ public static class ContentEndpoints
         group.MapPost("/banners/save", SaveBannerAsync);
         group.MapPost("/banners/delete", DeleteBannerAsync);
         endpoints.MapGet("/content-assets/banners/{id:int}", GetBannerImageAsync);
+        endpoints.MapGet("/content-assets/blog/{id:int}", async (int id, HttpContext context, MerdasGold.Features.Persistence.MerdasGoldDbContext db) =>
+        {
+            var admin = context.User.IsInRole(AdminAccountSeeder.AdministratorRole);
+            var image = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleOrDefaultAsync(
+                db.Set<MerdasGold.Features.Content.Entities.BlogPost>().Where(x => x.Id == id && (x.IsPublished || admin))
+                    .Select(x => new { x.ImageData, x.ImageContentType }), context.RequestAborted);
+            context.Response.Headers.CacheControl = "no-store";
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            return image?.ImageData is null ? Results.NotFound() : Results.File(image.ImageData, image.ImageContentType);
+        });
         return endpoints;
     }
 

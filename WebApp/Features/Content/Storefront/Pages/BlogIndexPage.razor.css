@@ -1,0 +1,8 @@
+.journal { padding-block:48px 64px; }
+.journal header { text-align:center; margin-bottom:36px; }
+.journal header>span { color:var(--storefront-plum); font-size:13px; }
+.journal h1 { font-size:32px; margin:12px 0; }
+.journal header p { color:var(--storefront-muted); }
+.pagination { display:flex; justify-content:center; align-items:center; gap:24px; margin-top:32px; }
+.pagination a { color:var(--storefront-primary); padding:10px; }
+@media(max-width:599px) { .journal { padding-block:28px 40px; } .journal h1 { font-size:25px; } }

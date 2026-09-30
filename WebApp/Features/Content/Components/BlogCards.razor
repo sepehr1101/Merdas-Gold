@@ -1,0 +1,16 @@
+@using MerdasGold.Features.Content.Models
+<div class="article-grid">
+    @foreach (var article in Items)
+    {
+        <article class="article-card">
+            <a href="/blog/@article.Slug" tabindex="-1" aria-hidden="true"><img src="/content-assets/blog/@article.Id" alt="" width="626" height="417" loading="lazy" /></a>
+            <div class="article-copy">
+                <span class="article-kicker">بلاگ مرداس</span>
+                <h2><a href="/blog/@article.Slug">@article.Title</a></h2>
+                <p>@article.Summary</p>
+                <a class="article-more" href="/blog/@article.Slug" aria-label="@($"ادامه مطلب {article.Title}")">خواندن نوشته ←</a>
+            </div>
+        </article>
+    }
+</div>
+@code { [Parameter] public IReadOnlyList<BlogCard> Items { get; set; } = []; }

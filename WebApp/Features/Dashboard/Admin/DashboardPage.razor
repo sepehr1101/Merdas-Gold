@@ -5,73 +5,94 @@
 <PageTitle>داشبورد مدیریت | مرداس گلد</PageTitle>
 
 <section class="dashboard-page">
-<MudStack Spacing="4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <header class="dashboard-heading">
         <div>
-            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">داشبورد</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">نمای کلی فروشگاه مرداس گلد</MudText>
+            <MudText Typo="Typo.h4" HtmlTag="h1" Class="page-title">نبض فروشگاه</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">نگاهی به فروش، سفارش‌ها و انتخاب مشتریان مرداس گلد</MudText>
         </div>
-        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Icon="@Icons.Material.Outlined.AutoAwesome">
-            نسخه اولیه
-        </MudChip>
-    </MudStack>
+        <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Icon="@Icons.Material.Outlined.Science">داده‌های نمایشی</MudChip>
+    </header>
+    <p class="demo-note">تمام اعداد و نمودارهای این صفحه ساختگی و صرفاً برای نمایش هستند؛ به اطلاعات واقعی فروشگاه متصل نیستند.</p>
 
-    <MudGrid Spacing="3">
-        <MudItem xs="12" sm="6" lg="3">
+    <div class="metrics-grid">
+        @foreach (var metric in Metrics)
+        {
             <MudPaper Class="summary-card" Elevation="0">
-                <MudIcon Icon="@Icons.Material.Outlined.ShoppingBag" Color="Color.Primary" Size="Size.Large" />
-                <div>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">سفارش‌های امروز</MudText>
-                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
-                </div>
+                <div class="metric-top"><span>@metric.Label</span><MudIcon Icon="@metric.Icon" Color="Color.Primary" /></div>
+                <div class="metric-value">@metric.Value <span>@metric.Unit</span></div>
+                <div class="metric-detail">@metric.Detail</div>
             </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" lg="3">
-            <MudPaper Class="summary-card" Elevation="0">
-                <MudIcon Icon="@Icons.Material.Outlined.Payments" Color="Color.Primary" Size="Size.Large" />
-                <div>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">فروش امروز</MudText>
-                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" lg="3">
-            <MudPaper Class="summary-card" Elevation="0">
-                <MudIcon Icon="@Icons.Material.Outlined.Diamond" Color="Color.Primary" Size="Size.Large" />
-                <div>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">محصولات فعال</MudText>
-                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" lg="3">
-            <MudPaper Class="summary-card" Elevation="0">
-                <MudIcon Icon="@Icons.Material.Outlined.TrendingUp" Color="Color.Primary" Size="Size.Large" />
-                <div>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary">قیمت روز طلا</MudText>
-                    <MudText Typo="Typo.h5" Class="summary-value">—</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
+        }
+    </div>
 
-        <MudItem xs="12" lg="8">
-            <MudPaper Class="content-card content-card-large" Elevation="0">
-                <MudText Typo="Typo.h6">روند فروش</MudText>
-                <div class="empty-state">
-                    <MudIcon Icon="@Icons.Material.Outlined.InsertChart" Size="Size.Large" />
-                    <MudText Typo="Typo.body2">نمودار فروش در مرحله بعد اضافه می‌شود.</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" lg="4">
-            <MudPaper Class="content-card content-card-large" Elevation="0">
-                <MudText Typo="Typo.h6">آخرین سفارش‌ها</MudText>
-                <div class="empty-state">
-                    <MudIcon Icon="@Icons.Material.Outlined.ReceiptLong" Size="Size.Large" />
-                    <MudText Typo="Typo.body2">هنوز سفارشی ثبت نشده است.</MudText>
-                </div>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-</MudStack>
+    <div class="charts-grid">
+        <MudPaper Class="content-card sales-card" Elevation="0">
+            <div class="card-heading">
+                <div><h2>روند فروش</h2><p>مقایسه دو دورهٔ ۷ روزه · میلیون تومان</p></div>
+                <span class="insight">۲۵٪ رشد فروش</span>
+            </div>
+            <div class="chart-total">۱٬۰۵۰ <span>میلیون تومان در دورهٔ جاری</span></div>
+            <div class="chart-frame" role="img" aria-label="روند فروش نمایشی؛ دوره جاری ۱۰۵۰ و دوره قبل ۸۴۰ میلیون تومان">
+                <MudChart T="double" ChartType="ChartType.Line" ChartSeries="Sales" ChartLabels="Days" ChartOptions="SalesOptions" Width="100%" Height="280px" />
+            </div>
+            <div class="card-foot"><MudIcon Icon="@Icons.Material.Outlined.Insights" Size="Size.Small" /><span>پنج‌شنبه، اوج فروش هفته با ۲۱۰ میلیون تومان</span></div>
+        </MudPaper>
+
+        <MudPaper Class="content-card" Elevation="0">
+            <div class="card-heading"><div><h2>سلیقهٔ مشتریان</h2><p>سهم گروه‌ها از تعداد محصولات فروخته‌شده</p></div></div>
+            <div class="donut-wrap" role="img" aria-label="سهم نمایشی فروش: انگشتر ۳۸، گردنبند ۲۷، دستبند ۲۱ و گوشواره ۱۴ درصد">
+                <MudChart T="double" ChartType="ChartType.Donut" ChartSeries="Categories" ChartLabels="CategoryLabels" ChartOptions="CategoryOptions" Width="100%" Height="240px" />
+                <div class="donut-center"><strong>۱۰۰٪</strong><span>ترکیب فروش</span></div>
+            </div>
+            <div class="category-legend">
+                @for (var i = 0; i < CategoryLabels.Length; i++)
+                {
+                    <div><span class="legend-label"><i style="background: @Palette[i]"></i>@CategoryLabels[i]</span><strong>@CategoryPercentages[i]٪</strong></div>
+                }
+            </div>
+        </MudPaper>
+
+        <MudPaper Class="content-card" Elevation="0">
+            <div class="card-heading"><div><h2>ریتم سفارش‌ها</h2><p>تعداد سفارش ثبت‌شده در هر روز هفته</p></div><span class="card-tag">۱۲۶ سفارش</span></div>
+            <div class="chart-frame" role="img" aria-label="سفارش‌های نمایشی شنبه تا جمعه: ۱۲، ۱۶، ۱۴، ۲۰، ۱۸، ۲۸، ۱۸">
+                <MudChart T="double" ChartType="ChartType.Bar" ChartSeries="Orders" ChartLabels="Days" ChartOptions="OrderOptions" Width="100%" Height="260px" />
+            </div>
+            <div class="card-foot"><MudIcon Icon="@Icons.Material.Outlined.ShoppingBag" Size="Size.Small" /><span>پنج‌شنبه با ۲۸ سفارش، شلوغ‌ترین روز هفته است</span></div>
+        </MudPaper>
+
+        <MudPaper Class="content-card" Elevation="0">
+            <div class="card-heading"><div><h2>از بازدید تا خرید</h2><p>درصد کاربران در هر مرحله نسبت به کل بازدیدکنندگان</p></div><span class="card-tag">۷ روز اخیر</span></div>
+            <div class="chart-frame" role="img" aria-label="مسیر تبدیل نمایشی: بازدید ۱۰۰ درصد، مشاهده محصول ۶۴ درصد، سبد خرید ۲۴ درصد و خرید ۱۲ درصد">
+                <MudChart T="double" ChartType="ChartType.Bar" ChartSeries="Conversion" ChartLabels="ConversionLabels" ChartOptions="ConversionOptions" Width="100%" Height="260px" />
+            </div>
+            <div class="card-foot"><MudIcon Icon="@Icons.Material.Outlined.TouchApp" Size="Size.Small" /><span>از هر ۱۰۰ بازدیدکننده، ۱۲ نفر خرید کرده‌اند</span></div>
+        </MudPaper>
+    </div>
 </section>
+
+@code {
+    private static readonly string[] Palette = ["#594ae2", "#168575", "#bd8b38", "#ce6686"];
+    private static readonly string[] Days = ["شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه"];
+    private static readonly string[] CategoryLabels = ["انگشتر", "گردنبند", "دستبند", "گوشواره"];
+    private static readonly string[] CategoryPercentages = ["۳۸", "۲۷", "۲۱", "۱۴"];
+    private static readonly string[] ConversionLabels = ["بازدید", "محصول", "سبد خرید", "خرید"];
+    private readonly List<ChartSeries<double>> Sales =
+    [
+        new() { Name = "دورهٔ جاری", Data = new double[] { 100, 130, 110, 160, 150, 210, 190 } },
+        new() { Name = "دورهٔ قبل", Data = new double[] { 80, 100, 90, 130, 120, 170, 150 } }
+    ];
+    private readonly List<ChartSeries<double>> Categories = [new() { Name = "سهم فروش", Data = new double[] { 38, 27, 21, 14 } }];
+    private readonly List<ChartSeries<double>> Orders = [new() { Name = "سفارش", Data = new double[] { 12, 16, 14, 20, 18, 28, 18 } }];
+    private readonly List<ChartSeries<double>> Conversion = [new() { Name = "درصد بازدیدکنندگان", Data = new double[] { 100, 64, 24, 12 } }];
+    private readonly LineChartOptions SalesOptions = new() { ChartPalette = [Palette[0], Palette[2]], LineStrokeWidth = 3, YAxisTicks = 50, YAxisRequireZeroPoint = true };
+    private readonly DonutChartOptions CategoryOptions = new() { ChartPalette = Palette, ShowLegend = false, DonutRingRatio = 0.28 };
+    private readonly BarChartOptions OrderOptions = new() { ChartPalette = [Palette[1]], ShowLegend = false, YAxisTicks = 10 };
+    private readonly BarChartOptions ConversionOptions = new() { ChartPalette = [Palette[0]], ShowLegend = false, YAxisTicks = 25 };
+    private static readonly (string Label, string Value, string Unit, string Detail, string Icon)[] Metrics =
+    [
+        ("فروش هفته", "۱٬۰۵۰", "میلیون تومان", "۲۵٪ بیشتر از دورهٔ قبل", Icons.Material.Outlined.Payments),
+        ("سفارش‌های هفته", "۱۲۶", "سفارش", "میانگین روزانه: ۱۸ سفارش", Icons.Material.Outlined.ShoppingBag),
+        ("میانگین ارزش سفارش", "۸٫۳۳", "میلیون تومان", "بر اساس فروش و سفارش‌های همین هفته", Icons.Material.Outlined.Diamond),
+        ("نرخ تبدیل", "۱۲٪", "", "۱۲۶ خرید از ۱٬۰۵۰ بازدیدکننده", Icons.Material.Outlined.TrendingUp)
+    ];
+}

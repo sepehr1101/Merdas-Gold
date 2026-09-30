@@ -1,0 +1,32 @@
+.market-bar {
+    background: var(--storefront-aubergine-deep);
+    color: var(--storefront-paper);
+    border-bottom: 1px solid var(--storefront-gold);
+}
+.market-inner { max-width: 1440px; margin-inline: auto; padding-inline: 24px; display: flex; align-items: center; gap: 16px; }
+.market-caption { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; line-height: 1.7; }
+.market-heading { font-size: 12px; font-weight: 700; color: var(--storefront-gold-soft); }
+.market-unit { font-size: 11px; font-weight: 300; }
+.market-status { font-size: 11px; color: var(--storefront-gold-soft); }
+.market-quotes { flex: 1; min-width: 0; }
+.market-list { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); margin: 0; padding: 8px 0; }
+.market-item { position: relative; min-width: 0; padding: 2px 12px; border-inline-start: 1px solid rgb(230 215 188 / 18%); }
+.market-item dt { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--storefront-gold-soft); white-space: nowrap; line-height: 1.6; }
+.market-item ::deep svg { width: 24px; height: 24px; flex: 0 0 24px; color: var(--storefront-gold); }
+.market-item dd { margin: 3px 0 0; font-size: 15px; font-weight: 700; line-height: 1.6; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.market-item bdi { display: inline-block; direction: ltr; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 1250px) {
+    .market-inner { display: block; }
+    .market-caption { flex-direction: row; align-items: center; justify-content: space-between; padding-top: 6px; }
+    .market-list { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 8px; }
+    .market-item:nth-child(4n + 1) { border-inline-start: 0; }
+    .market-item:nth-child(n + 5) { border-top: 1px solid rgb(230 215 188 / 18%); padding-top: 8px; }
+}
+@media (max-width: 599px) {
+    .market-inner { padding-inline: 14px; }
+    .market-list { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }
+    .market-item { padding-inline: 10px; }
+    .market-item:nth-child(2n + 1) { border-inline-start: 0; }
+    .market-item:nth-child(n + 3) { border-top: 1px solid rgb(230 215 188 / 18%); padding-top: 6px; }
+}

@@ -2,11 +2,7 @@
 @inject StorefrontUiState UiState
 @inject NavigationManager Navigation
 
-<div class="announcement" role="note">
-    <StorefrontGoldRate />
-    <span aria-hidden="true"></span>
-    <p>قیمت محصولات بر پایه آخرین نرخ معتبر محاسبه می‌شود</p>
-</div>
+<StorefrontGoldRate />
 
 <header class="site-header">
     <div class="header-inner storefront-container">
@@ -25,7 +21,7 @@
             <NavLink href="/" Match="NavLinkMatch.All" @onclick="CloseMenu">خانه</NavLink>
             <a href="/#products" @onclick="CloseMenu">فروشگاه</a>
             <a href="/#categories" @onclick="CloseMenu">مجموعه‌ها</a>
-            <a href="/#blog" @onclick="CloseMenu">مجله مرداس</a>
+            <a href="/blog" @onclick="CloseMenu">مجله مرداس</a>
             <NavLink href="/about" @onclick="CloseMenu">درباره ما</NavLink>
             <NavLink href="/contact" @onclick="CloseMenu">تماس</NavLink>
         </nav>
