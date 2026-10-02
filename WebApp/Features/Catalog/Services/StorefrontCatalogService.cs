@@ -105,7 +105,7 @@ public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbConte
     }
 
     public Task<MerdasGold.Features.Pricing.Services.ProductPriceQuote?> QuoteAsync(int variantId, CancellationToken ct = default)
-        => quotes.CreateAsync(variantId, DateTime.UtcNow, ct);
+        => quotes.CreateDisplayAsync(variantId, DateTime.UtcNow, ct);
 
     public Task<MerdasGold.Features.Pricing.Services.ProductPriceQuote?> PreviewQuoteAsync(int variantId, CancellationToken ct = default)
         => quotes.CreatePreviewAsync(variantId, DateTime.UtcNow, ct);
@@ -127,13 +127,13 @@ public sealed class StorefrontCatalogService(IDbContextFactory<MerdasGoldDbConte
         {
             var activeVariants = product.Variants.Where(x => x.IsActive).OrderBy(x => x.ExactGoldWeightGrams).ToList();
             var variant = activeVariants.FirstOrDefault(x => x.Status == "available" && x.Quantity > 0);
-            var quote = variant is null ? null : await quotes.CreateAsync(variant.Id, DateTime.UtcNow, ct);
+            var quote = variant is null ? null : await quotes.CreateDisplayAsync(variant.Id, DateTime.UtcNow, ct);
             var image = product.Images.OrderByDescending(x => x.IsPrimary).ThenBy(x => x.DisplayOrder).FirstOrDefault();
             var colors = activeVariants.SelectMany(x => x.AttributeValues)
                 .Where(x => x.AttributeDefinitionId == 2).Select(x => ColorName(x.Value)).Distinct().ToArray();
             var sizes = activeVariants.Select(x => x.SizeValue).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToArray();
             cards.Add(new(product.Title, product.Code,
-                variant is null ? "ناموجود" : quote is null ? "قیمت پس از دریافت نرخ معتبر" : $"{quote.Breakdown.Total:N0} تومان",
+                variant is null ? "ناموجود" : quote is null ? "در انتظار قیمت‌گذاری" : $"{quote.Breakdown.Total:N0} تومان",
                 image is null ? "" : $"/catalog-assets/images/{image.Id}", $"/products/{product.Slug}",
                 product.PrimaryCategory?.Name ?? "", product.Tags.Where(x => x.ProductTag.IsActive).Select(x => x.ProductTag.Name).ToArray(), colors, sizes,
                 activeVariants.Count == 0 ? 0 : activeVariants.Min(x => x.ExactGoldWeightGrams),

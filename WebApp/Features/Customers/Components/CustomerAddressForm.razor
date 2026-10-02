@@ -1,0 +1,38 @@
+@using MerdasGold.Features.Customers.Entities
+
+<EditForm Model="Address" OnValidSubmit="OnSave" class="customer-form customer-address-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <fieldset disabled="@Busy" class="customer-fieldset">
+        <label>آدرس کامل (الزامی)
+            <textarea @ref="_street" @bind="Address.Street" autocomplete="street-address" maxlength="500" rows="3" required aria-required="true"></textarea>
+        </label>
+        <p class="customer-help">شهر، خیابان، پلاک و واحد را در همین آدرس بنویسید.</p>
+        <div class="customer-fields">
+            <label>نام خریدار (الزامی)<InputText @bind-Value="Address.Recipient" autocomplete="name" maxlength="150" required /></label>
+            <label>کد پستی (اختیاری)<InputText @bind-Value="Address.PostalCode" autocomplete="postal-code" dir="ltr" inputmode="numeric" maxlength="10" /></label>
+            <label>عنوان آدرس (اختیاری)<InputText @bind-Value="Address.Title" maxlength="80" placeholder="مثلاً خانه یا محل کار" /></label>
+        </div>
+        <label class="customer-check"><InputCheckbox @bind-Value="Address.IsDefault" />آدرس پیش‌فرض من</label>
+        <div class="customer-actions">
+            <button class="storefront-action" type="submit">@(Busy ? "در حال ذخیره…" : "ذخیره آدرس")</button>
+            @if (OnCancel.HasDelegate) { <button class="customer-link" type="button" @onclick="OnCancel">انصراف</button> }
+        </div>
+    </fieldset>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public CustomerAddress Address { get; set; } = default!;
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    private ElementReference _street;
+    private CustomerAddress? _focused;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focused == Address) return;
+        _focused = Address;
+        await _street.FocusAsync();
+    }
+}

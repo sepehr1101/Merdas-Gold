@@ -11,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MerdasGold.Features.Persistence.Migrations
 {
     [DbContext(typeof(MerdasGoldDbContext))]
-    partial class MerdasGoldDbContextModelSnapshot : ModelSnapshot
+    [Microsoft.EntityFrameworkCore.Migrations.Migration("20261001090000_PersistMarketRateSnapshot")]
+    partial class PersistMarketRateSnapshot
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

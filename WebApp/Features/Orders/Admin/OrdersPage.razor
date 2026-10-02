@@ -1,0 +1,41 @@
+@page "/admin/orders"
+@layout AdminLayout
+@using MerdasGold.Features.Orders.Entities
+@using MerdasGold.Features.Orders.Services
+@attribute [Authorize(Roles = "Administrator")]
+@inject OrderService Orders
+<PageTitle>مدیریت سفارش‌ها | مرداس</PageTitle>
+<AdminSectionHeader ParentHref="/admin" ParentTitle="مدیریت" Title="سفارش‌ها" Subtitle="بررسی درخواست خرید، رزرو موجودی و پیگیری تحویل" />
+<MudStack Row="true" Wrap="Wrap.Wrap" Class="mb-4" AlignItems="AlignItems.Center">
+    <MudTextField @bind-Value="_search" Label="جستجو: کد، گیرنده یا موبایل" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudSelect T="OrderStatus?" @bind-Value="_status" Label="وضعیت" Variant="Variant.Outlined" Margin="Margin.Dense">
+        <MudSelectItem T="OrderStatus?" Value="@((OrderStatus?)null)">همه وضعیت‌ها</MudSelectItem>
+        @foreach (var status in Enum.GetValues<OrderStatus>()) { <MudSelectItem T="OrderStatus?" Value="@((OrderStatus?)status)">@OrderFlow.Label(status)</MudSelectItem> }
+    </MudSelect>
+    <MudButton OnClick="SearchAsync" Variant="Variant.Filled" Color="Color.Primary" Disabled="_loading">جستجو</MudButton>
+</MudStack>
+<MudTable Items="_items" Loading="_loading" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm">
+    <HeaderContent><MudTh>کد سفارش</MudTh><MudTh>گیرنده</MudTh><MudTh>مبلغ قطعات</MudTh><MudTh>وضعیت</MudTh><MudTh>ثبت</MudTh><MudTh /></HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="کد"><span class="customer-code" dir="ltr">@context.Number</span></MudTd>
+        <MudTd DataLabel="گیرنده">@context.Recipient<br /><span dir="ltr">@context.Mobile</span></MudTd>
+        <MudTd DataLabel="مبلغ">@context.Total.ToString("N0") تومان</MudTd>
+        <MudTd DataLabel="وضعیت">@OrderFlow.Label(context.Status)</MudTd>
+        <MudTd DataLabel="تاریخ">@OrderFlow.DateLabel(context.CreatedUtc)</MudTd>
+        <MudTd><MudButton Href="@($"/admin/orders/{context.Id}")" Color="Color.Primary">بررسی</MudButton></MudTd>
+    </RowTemplate>
+    <NoRecordsContent>سفارشی پیدا نشد.</NoRecordsContent>
+</MudTable>
+<MudStack Row="true" Class="mt-4"><MudButton Disabled="@(_page == 0 || _loading)" OnClick="PreviousAsync">قبلی</MudButton><MudText>صفحه @(_page + 1)</MudText><MudButton Disabled="@(_items.Count < 25 || _loading)" OnClick="NextAsync">بعدی</MudButton></MudStack>
+@code {
+    private List<Order> _items = [];
+    private string _search = "";
+    private OrderStatus? _status;
+    private int _page;
+    private bool _loading;
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private async Task SearchAsync() { _page = 0; await LoadAsync(); }
+    private async Task PreviousAsync() { _page--; await LoadAsync(); }
+    private async Task NextAsync() { _page++; await LoadAsync(); }
+    private async Task LoadAsync() { _loading = true; try { _items = await Orders.AdminListAsync(_status, _search.Trim(), _page); } finally { _loading = false; } }
+}

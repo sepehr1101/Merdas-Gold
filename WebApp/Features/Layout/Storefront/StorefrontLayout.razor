@@ -70,8 +70,9 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private static bool SameLocation(string current, string target)
-        => string.Equals(new Uri(current).PathAndQuery, new Uri(target).PathAndQuery, StringComparison.Ordinal);
+    private bool SameLocation(string current, string target)
+        => string.Equals(Navigation.ToAbsoluteUri(current).PathAndQuery,
+            Navigation.ToAbsoluteUri(target).PathAndQuery, StringComparison.Ordinal);
 
     private async Task ScrollToTop() => await Js.InvokeVoidAsync("storefrontScroll.toTop");
 

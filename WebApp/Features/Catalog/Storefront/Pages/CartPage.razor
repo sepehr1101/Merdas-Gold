@@ -4,19 +4,20 @@
 @using MerdasGold.Features.Catalog.Services
 @inject StorefrontUiState UiState
 @inject StorefrontCatalogService Catalog
+@inject ILogger<CartPage> Logger
 
 <PageTitle>سبد خرید | مرداس</PageTitle>
 <div class="collection-page">
-    <div class="collection-hero">
+    <div class="collection-hero cart-breadcrumb-bar">
         <div class="storefront-container">
             <nav aria-label="مسیر صفحه"><a href="/">خانه</a><span aria-hidden="true">/</span><span aria-current="page">سبد خرید</span></nav>
-            <h1>سبد خرید</h1>
-            <p>@Persian(UiState.CartCount) قطعه در سبد شما</p>
         </div>
     </div>
-    <section class="inner-content" aria-label="قطعات سبد خرید">
+    <section class="inner-content" aria-label="قطعات سبد خرید" tabindex="-1" @ref="_cartContent">
+        <h1 class="storefront-visually-hidden">سبد خرید</h1>
         <div class="storefront-container">
-            @if (!UiState.IsReady || _loading)
+            <StorefrontGoldRate Compact="true" RateChanged="RefreshRateAsync" />
+            @if (!UiState.IsReady || (_loading && _live.Count == 0))
             {
                 <CollectionListSkeleton Count="3" />
             }
@@ -31,18 +32,22 @@
             }
             else
             {
-                <div class="cart-layout">
+                <div class="cart-content">
                     <div class="collection-list">
                         @foreach (var item in UiState.CartItems)
                         {
                             _live.TryGetValue(item.VariantId, out var info);
-                            <article class="collection-item" @key="item.VariantId">
+                            <article class="collection-item @(_removing.Contains(item.VariantId) ? "cart-item-removing" : null)" aria-busy="@_removing.Contains(item.VariantId).ToString().ToLowerInvariant()" @key="item.VariantId">
                                 <a class="collection-image" href="@item.Href"><img src="@item.ImageUrl" alt="@item.Title" width="120" height="120" loading="lazy" /></a>
                                 <div class="collection-details">
                                     <h2><a href="@item.Href">@item.Title</a></h2>
                                     <p>@item.Color @if (!string.IsNullOrWhiteSpace(item.Size)) { <span> · اندازه @item.Size</span> }</p>
                                     <p>وزن: @item.Weight.ToString("0.000") گرم · کد: <bdi dir="ltr">@item.Code</bdi></p>
-                                    @if (info?.Variant is null || !info.Variant.Available)
+                                    @if (info is null)
+                                    {
+                                        <p class="collection-warning">قیمت و موجودی این قطعه هنوز تأیید نشده است.</p>
+                                    }
+                                    else if (info.Variant is null || !info.Variant.Available)
                                     {
                                         <p class="collection-warning">این مدل اکنون موجود نیست.</p>
                                     }
@@ -52,24 +57,34 @@
                                     }
                                 </div>
                                 <div class="collection-actions">
-                                    <strong class="cart-price">@(info?.Price is null ? "قیمت پس از دریافت نرخ معتبر" : $"{info.Price:N0} تومان")</strong>
+                                    <strong class="cart-price">@(info?.Price is null ? "—" : $"{info.Price * item.Quantity:N0} تومان")</strong>
+                                    <div class="cart-item-controls">
                                     <div class="quantity-control" aria-label="تعداد @item.Title">
-                                        <button type="button" aria-label="کم کردن تعداد @item.Title" disabled="@(item.Quantity <= 1 || info?.Variant is null)" @onclick="() => ChangeQuantityAsync(item, -1)">−</button>
+                                        <button type="button" aria-label="کم کردن تعداد @item.Title" disabled="@(_removing.Contains(item.VariantId) || item.Quantity <= 1 || info?.Variant is null)" @onclick="() => ChangeQuantityAsync(item, -1)">−</button>
                                         <span>@Persian(item.Quantity)</span>
-                                        <button type="button" aria-label="زیاد کردن تعداد @item.Title" disabled="@(info?.Variant is null || !info.Variant.Available || item.Quantity >= Math.Min(info.Variant.Quantity, 99))" @onclick="() => ChangeQuantityAsync(item, 1)">+</button>
+                                        <button type="button" aria-label="زیاد کردن تعداد @item.Title" disabled="@(_removing.Contains(item.VariantId) || info?.Variant is null || !info.Variant.Available || item.Quantity >= Math.Min(info.Variant.Quantity, 99))" @onclick="() => ChangeQuantityAsync(item, 1)">+</button>
                                     </div>
-                                    <button class="collection-remove" type="button" @onclick="() => UiState.RemoveFromCartAsync(item.VariantId)">حذف از سبد</button>
+                                    <button class="cart-remove-icon" type="button" aria-label="حذف @item.Title از سبد خرید" title="حذف از سبد خرید" disabled="@_removing.Contains(item.VariantId)" @onclick="() => RemoveAsync(item.VariantId)">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
+                                    </button>
+                                    </div>
                                 </div>
                             </article>
                         }
                     </div>
-                    <aside class="cart-summary" aria-label="خلاصه سبد">
-                        <h2>خلاصه سبد</h2>
-                        <div><span>تعداد قطعات</span><strong>@Persian(UiState.CartCount)</strong></div>
-                        <div class="cart-summary-total"><span>جمع بر اساس نرخ فعلی</span><strong>@(Total is null ? "قابل محاسبه نیست" : $"{Total:N0} تومان")</strong></div>
-                        <p>قیمت و موجودی ممکن است تا زمان ثبت سفارش تغییر کند.</p>
-                        <a href="/#products">ادامه دیدن قطعات</a>
-                    </aside>
+                    <div class="cart-checkout-footer">
+                        <div class="cart-checkout-total"><span>جمع @Persian(UiState.CartCount) قطعه</span><strong>@(Total is null ? "در انتظار قیمت‌گذاری" : $"{Total:N0} تومان")</strong></div>
+                        <a class="storefront-action" href="/checkout">ثبت سفارش <span aria-hidden="true">←</span></a>
+                    </div>
+                    <div class="cart-checkout-help">
+                        <p>مبلغ بر اساس نرخ طلای بالا محاسبه شده است؛ قیمت نهایی را پیش از ثبت درخواست تأیید می‌کنید.</p>
+                        @if (_error is not null)
+                        {
+                            <p role="alert" class="collection-warning">@_error</p>
+                        }
+                        <button class="customer-link" type="button" disabled="@_loading" @onclick="RefreshAsync">@(_loading ? "در حال بررسی…" : "به‌روزرسانی قیمت و موجودی")</button>
+                        <a class="customer-link" href="/#products">ادامه خرید</a>
+                    </div>
                 </div>
             }
         </div>
@@ -80,14 +95,17 @@
     private sealed record LiveLine(StorefrontVariant? Variant, decimal? Price);
     private readonly Dictionary<int, LiveLine> _live = [];
     private bool _loading = true;
+    private string? _error;
+    private readonly HashSet<int> _removing = [];
+    private ElementReference _cartContent;
+    private bool _focusAfterRemoval;
 
     private decimal? Total
     {
         get
         {
             if (UiState.CartItems.Any(item => !_live.TryGetValue(item.VariantId, out var info)
-                || info.Price is null || info.Variant?.Available != true
-                || item.Quantity > info.Variant.Quantity)) return null;
+                || info.Price is null)) return null;
             return UiState.CartItems.Sum(item => _live[item.VariantId].Price!.Value * item.Quantity);
         }
     }
@@ -95,18 +113,52 @@
     protected override void OnInitialized() => UiState.Changed += OnShopperChanged;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
-        await UiState.InitializeAsync();
-        foreach (var item in UiState.CartItems.ToList())
+        if (!firstRender)
         {
-            var product = await Catalog.ProductAsync(item.Href["/products/".Length..]);
-            var variant = product?.Variants.FirstOrDefault(value => value.Id == item.VariantId);
-            var price = variant?.Available == true
-                ? (await Catalog.QuoteAsync(variant.Id))?.Breakdown.Total : null;
-            _live[item.VariantId] = new(variant, price);
+            if (_focusAfterRemoval) { _focusAfterRemoval = false; await _cartContent.FocusAsync(preventScroll: true); }
+            return;
         }
-        _loading = false;
+        await UiState.InitializeAsync();
+        await RefreshAsync();
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAsync()
+    {
+        _loading = true;
+        _error = null;
+        var live = new Dictionary<int, LiveLine>();
+        try
+        {
+            foreach (var item in UiState.CartItems.ToList())
+            {
+                var product = await Catalog.ProductAsync(item.Href["/products/".Length..]);
+                var variant = product?.Variants.FirstOrDefault(value => value.Id == item.VariantId);
+                var price = variant?.Available == true
+                    ? (await Catalog.QuoteAsync(variant.Id))?.Breakdown.Total : null;
+                live[item.VariantId] = new(variant, price);
+            }
+            _live.Clear();
+            foreach (var line in live) _live[line.Key] = line.Value;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(exception, "Unable to refresh cart prices and availability");
+            _error = "دریافت قیمت و موجودی ممکن نشد. دوباره تلاش کنید یا برای بررسی سفارش به مرحله بعد بروید.";
+        }
+        finally { _loading = false; }
+    }
+
+    private Task RefreshRateAsync() => !UiState.IsReady || _loading ? Task.CompletedTask : RefreshAsync();
+
+    private async Task RemoveAsync(int variantId)
+    {
+        if (!_removing.Add(variantId)) return;
+        // Let the exit animation finish before removing the row from the basket.
+        await Task.Delay(240);
+        await UiState.RemoveFromCartAsync(variantId);
+        _removing.Remove(variantId);
+        _focusAfterRemoval = true;
     }
 
     private Task ChangeQuantityAsync(CartItem item, int difference)

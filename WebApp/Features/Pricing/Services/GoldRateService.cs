@@ -23,9 +23,28 @@ public sealed class GoldRateService(
     IConfiguration configuration)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _marketGate = new(1, 1);
     private readonly Dictionary<string, DateTime> _lastAttempts = [];
 
-    public MarketRateSnapshot? CurrentMarketRates() => cache.Get<MarketRateSnapshot>("market:taban-gohar");
+    public async Task<MarketRateSnapshot?> CurrentMarketRatesAsync(CancellationToken ct = default)
+    {
+        const string key = "market:taban-gohar";
+        if (cache.TryGetValue(key, out MarketRateSnapshot? cached)) return cached;
+        await _marketGate.WaitAsync(ct);
+        try
+        {
+            if (cache.TryGetValue(key, out cached)) return cached;
+            await using var db = await factory.CreateDbContextAsync(ct);
+            var json = await db.Set<GoldRate>().AsNoTracking()
+                .Where(x => x.Provider == GoldProviderNames.TabanGohar && x.IsValid && x.MarketSnapshotJson != null)
+                .OrderByDescending(x => x.Id).Select(x => x.MarketSnapshotJson).FirstOrDefaultAsync(ct);
+            if (json is null) return null;
+            var snapshot = JsonSerializer.Deserialize<MarketRateSnapshot>(json);
+            if (snapshot is not null) cache.Set(key, snapshot, TimeSpan.FromMinutes(1));
+            return snapshot;
+        }
+        finally { _marketGate.Release(); }
+    }
 
     public string ProtectKey(string key) => protection.CreateProtector("MerdasGold.GoldProvider.v1").Protect(key);
 
@@ -40,18 +59,8 @@ public sealed class GoldRateService(
 
     public async Task<GoldRate?> CurrentAsync(RateSettings settings, CancellationToken ct = default)
     {
-        if (settings.ManualPrice.HasValue && settings.ManualExpiresUtc > DateTime.UtcNow)
-        {
-            await using var manualDb = await factory.CreateDbContextAsync(ct);
-            var manual = await manualDb.Set<GoldRate>().AsNoTracking()
-                .Where(x => x.Provider == "دستی" && x.IsValid)
-                .OrderByDescending(x => x.Id).FirstOrDefaultAsync(ct);
-            if (manual is not null)
-            {
-                manual.ValidUntilUtc = settings.ManualExpiresUtc;
-                return manual;
-            }
-        }
+        var manual = await ActiveManualAsync(settings, DateTime.UtcNow, ct);
+        if (manual is not null) return manual;
 
         var cacheKey = $"gold:last-valid:{settings.Provider}";
         if (!cache.TryGetValue(cacheKey, out GoldRate? rate))
@@ -65,9 +74,26 @@ public sealed class GoldRateService(
         return rate;
     }
 
-    // Checkout must fail closed: a manual rate or an earlier success cannot hide a failed latest poll.
+    private async Task<GoldRate?> ActiveManualAsync(RateSettings settings, DateTime nowUtc, CancellationToken ct)
+    {
+        if (settings.ManualPrice is not > 0 || settings.ManualExpiresUtc <= nowUtc || settings.ManualExpiresUtc is null)
+            return null;
+        await using var db = await factory.CreateDbContextAsync(ct);
+        var manual = await db.Set<GoldRate>().AsNoTracking()
+            .Where(x => x.Provider == "دستی" && x.IsValid)
+            .OrderByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+        if (manual is null || manual.PriceToman != settings.ManualPrice) return null;
+        // SQL datetime2 has no Kind; cache expiration must not interpret this UTC value as local time.
+        manual.ValidUntilUtc = DateTime.SpecifyKind(settings.ManualExpiresUtc.Value, DateTimeKind.Utc);
+        return IsFresh(manual, settings.MaxAgeMinutes, nowUtc) ? manual : null;
+    }
+
+    // An active administrator override takes precedence, including when automatic polling is disabled.
+    // Without it, sale still requires a successful, fresh latest provider poll.
     public async Task<GoldRate?> SaleRateAsync(RateSettings settings, DateTime nowUtc, CancellationToken ct = default)
     {
+        var manual = await ActiveManualAsync(settings, nowUtc, ct);
+        if (manual is not null) return manual;
         if (!settings.Enabled) return null;
         await using var db = await factory.CreateDbContextAsync(ct);
         var latest = await db.Set<GoldRate>().AsNoTracking()
@@ -122,6 +148,7 @@ public sealed class GoldRateService(
             try
             {
                 var parsed = await FetchProviderAsync(settings, attemptedUtc, ct);
+                row.MarketSnapshotJson = parsed.Market is null ? null : JsonSerializer.Serialize(parsed.Market);
                 row.PriceToman = parsed.Price;
                 row.SourceUtc = parsed.SourceUtc;
                 row.IsValid = true;
@@ -141,6 +168,12 @@ public sealed class GoldRateService(
 
             db.Add(row);
             await db.SaveChangesAsync(ct);
+            if (row.MarketSnapshotJson is not null)
+            {
+                await _marketGate.WaitAsync(ct);
+                try { cache.Set("market:taban-gohar", JsonSerializer.Deserialize<MarketRateSnapshot>(row.MarketSnapshotJson)!, TimeSpan.FromMinutes(1)); }
+                finally { _marketGate.Release(); }
+            }
             if (row.IsValid)
                 cache.Set($"gold:last-valid:{settings.Provider}", row, TimeSpan.FromMinutes(1));
             return row.Status;
@@ -159,7 +192,7 @@ public sealed class GoldRateService(
         return await db.Set<GoldRate>().Where(x => x.ReceivedUtc < cutoff).ExecuteDeleteAsync(ct);
     }
 
-    private async Task<(decimal Price, DateTime SourceUtc)> FetchProviderAsync(RateSettings settings, DateTime now, CancellationToken ct)
+    private async Task<(decimal Price, DateTime SourceUtc, MarketRateSnapshot? Market)> FetchProviderAsync(RateSettings settings, DateTime now, CancellationToken ct)
     {
         using var response = settings.Provider switch
         {
@@ -174,12 +207,15 @@ public sealed class GoldRateService(
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
         if (json.RootElement.TryGetProperty("Error", out _)) throw new UnauthorizedAccessException();
         if (settings.Provider != GoldProviderNames.TabanGohar)
-            return ParseNavasan(json.RootElement, settings.SourceUnit, now);
+            {
+            var navasan = ParseNavasan(json.RootElement, settings.SourceUnit, now);
+            return (navasan.Price, navasan.SourceUtc, null);
+        }
 
         var gold = ParseTabanGohar(json.RootElement, settings.SourceUnit, now);
         var market = MarketRateSnapshot.ParseTabanGohar(json.RootElement, gold.SourceUtc);
-        cache.Set("market:taban-gohar", market, TimeSpan.FromDays(1));
-        return gold;
+        // Publish to the cache only after the gold rate and market snapshot are saved together.
+        return (gold.Price, gold.SourceUtc, market);
     }
 
     private Task<HttpResponseMessage> FetchTabanGoharAsync(CancellationToken ct)

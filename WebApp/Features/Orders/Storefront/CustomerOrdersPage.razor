@@ -1,0 +1,27 @@
+@page "/customer/orders"
+@using MerdasGold.Features.Customers.Components
+@using MerdasGold.Features.Orders.Entities
+@using MerdasGold.Features.Orders.Services
+@attribute [Authorize(Policy = "Customer")]
+@inject OrderService Orders
+<PageTitle>سفارش‌های من | مرداس</PageTitle>
+<section class="customer-page storefront-container">
+    <CustomerNavigation /><h1>سفارش‌های من</h1>
+    @if (_items is null) { <p role="status">در حال دریافت سفارش‌ها…</p> }
+    else if (_items.Count == 0) { <p>هنوز سفارشی ثبت نکرده‌اید.</p><a class="storefront-action" href="/#products">دیدن قطعات</a> }
+    else
+    {
+        @foreach (var order in _items)
+        {
+            <article class="customer-record">
+                <h2>@OrderFlow.Label(order.Status)</h2><p class="customer-code" dir="ltr">@order.Number</p>
+                <p>@OrderFlow.DateLabel(order.CreatedUtc) · جمع قطعات: @order.Total.ToString("N0") تومان</p>
+                <a class="customer-link" href="@($"/customer/orders/{order.Id}")">جزئیات و پیگیری</a>
+            </article>
+        }
+    }
+</section>
+@code {
+    private List<Order>? _items;
+    protected override async Task OnInitializedAsync() => _items = await Orders.CustomerOrdersAsync();
+}

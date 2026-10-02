@@ -53,6 +53,7 @@
 }
 
 .header-actions > a,
+.customer-menu-toggle,
 .header-actions > button {
     width: 42px;
     height: 42px;
@@ -68,6 +69,7 @@
 }
 
 .header-actions > a:hover,
+.customer-menu-toggle:hover,
 .header-actions > button:hover { background: #f7f4ee; color: var(--storefront-primary); }
 .header-actions svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.5; }
 .bag span,.favorites-link .action-count { width: 16px; height: 16px; position: absolute; top: 1px; right: 0; display: grid; place-items: center; border-radius: 50%; background: var(--storefront-primary); color: #fff; font-size: 8px; }
@@ -104,6 +106,7 @@
 @media (max-width: 820px) {
     .header-inner { min-height: 70px; gap: 7px; }
     .header-actions > a,
+    .customer-menu-toggle,
     .header-actions > button { width: 44px; height: 44px; }
     .menu-toggle { width: 38px; padding-inline: 7px; order: 3; }
     .header-actions { order: 2; }

@@ -1,0 +1,104 @@
+@using MerdasGold.Features.Orders.Entities
+@using System.Text.Json
+
+<div class="order-receipt">
+    <header class="receipt-heading">
+        <div><span class="customer-eyebrow">پیگیری خرید شما</span><h1>جزئیات سفارش</h1><p>ثبت‌شده در @OrderFlow.DateLabel(Order.CreatedUtc)</p></div>
+        <span class="receipt-status @(Stopped ? "is-stopped" : "")">@(Order.Status == OrderStatus.Shipped ? StepLabel(Order.Status) : OrderFlow.Label(Order.Status))</span>
+    </header>
+    <div class="receipt-reference"><span>کد سفارش</span><bdi class="receipt-code" dir="ltr">@Order.Number</bdi></div>
+
+    <section class="receipt-progress" aria-labelledby="order-progress-title">
+        <h2 id="order-progress-title">روند سفارش</h2>
+        <p class="receipt-status-hint">@StatusHint</p>
+        @if (Stopped)
+        {
+            <p class="receipt-stop-message">@(Order.Status == OrderStatus.Cancelled ? "این سفارش لغو شده و ادامه مراحل متوقف است." : "مهلت رزرو به پایان رسیده است. برای خرید دوباره، موجودی و قیمت قطعات را بررسی کنید.")</p>
+        }
+        <ol class="receipt-stepper" aria-label="مراحل سفارش">
+            @for (var index = 0; index < Steps.Length; index++)
+            {
+                var step = Steps[index];
+                var completed = index < ActiveIndex || Order.Status == OrderStatus.Delivered;
+                var current = index == ActiveIndex && !Stopped && Order.Status != OrderStatus.Delivered;
+                var entry = Order.Events.Where(x => x.Status == step).OrderBy(x => x.CreatedUtc).FirstOrDefault();
+                <li class="@(completed ? "is-complete" : current ? "is-current" : "")" aria-current="@(current ? "step" : null)">
+                    <span class="receipt-step-dot" aria-hidden="true">@(completed ? "✓" : Digits(index + 1))</span>
+                    <div><strong>@StepLabel(step)</strong><span class="receipt-step-caption">@(Stopped && index == ActiveIndex ? "آخرین مرحله" : completed ? "انجام‌شده" : current ? "مرحله فعلی" : Stopped ? "انجام‌نشده" : "مرحله بعد")</span>
+                    @if (entry is not null) { <time>@OrderFlow.DateLabel(entry.CreatedUtc)</time> }</div>
+                </li>
+            }
+        </ol>
+    </section>
+
+    <div class="receipt-information">
+        <section aria-labelledby="receipt-delivery-title">
+            <h2 id="receipt-delivery-title">اطلاعات تحویل</h2>
+            <dl class="receipt-facts">
+                <div><dt>خریدار</dt><dd>@Order.Recipient</dd></div>
+                <div><dt>شماره تماس</dt><dd><bdi dir="ltr">@Order.Mobile</bdi></dd></div>
+                <div><dt>روش تحویل</dt><dd>@OrderFlow.DeliveryLabel(Order.Delivery)</dd></div>
+                @if (Order.Address.Length > 0) { <div class="receipt-fact-wide"><dt>آدرس تحویل</dt><dd>@Order.Address</dd></div> }
+                @if (Order.TrackingCode.Length > 0) { <div class="receipt-fact-wide"><dt>کد رهگیری ارسال</dt><dd><bdi class="receipt-code" dir="ltr">@Order.TrackingCode</bdi></dd></div> }
+                @if (Order.CustomerNote.Length > 0) { <div class="receipt-fact-wide"><dt>یادداشت شما</dt><dd>@Order.CustomerNote</dd></div> }
+            </dl>
+        </section>
+        <section class="receipt-amount" aria-labelledby="receipt-amount-title">
+            <h2 id="receipt-amount-title">مبلغ سفارش</h2>
+            <span>جمع @Digits(Order.Lines.Sum(x => x.Quantity)) قطعه</span>
+            <strong class="receipt-total">@Order.Total.ToString("N0") <small>تومان</small></strong>
+            <p>@(Order.Delivery == DeliveryMethod.Pickup ? "تحویل حضوری بدون هزینه ارسال" : "هزینه ارسال جداگانه و با هماهنگی فروشگاه اعلام می‌شود.")</p>
+            <p class="receipt-payment-note">این رسید، ثبت درخواست خرید است و به معنی تأیید پرداخت نیست.</p>
+        </section>
+    </div>
+
+    <section class="receipt-products" aria-labelledby="receipt-products-title">
+        <h2 id="receipt-products-title">قطعات سفارش</h2>
+        @foreach (var line in Order.Lines)
+        {
+            <article class="receipt-product">
+                <div><h3>@line.ProductTitle</h3><p>@line.VariantTitle @if (!string.IsNullOrWhiteSpace(line.Size)) { <span> · اندازه @line.Size</span> }</p><span class="customer-eyebrow">کد محصول: <bdi dir="ltr">@line.ProductCode</bdi></span></div>
+                <dl><div><dt>وزن هر قطعه</dt><dd>@line.Weight.ToString("0.###") گرم</dd></div><div><dt>تعداد</dt><dd>@Digits(line.Quantity)</dd></div><div><dt>قیمت واحد</dt><dd>@line.UnitPrice.ToString("N0") تومان</dd></div></dl>
+                <div class="receipt-line-total"><span>جمع این قطعه</span><strong>@((line.UnitPrice * line.Quantity).ToString("N0")) تومان</strong></div>
+            </article>
+        }
+    </section>
+    <details class="receipt-disclosure"><summary>جزئیات محاسبه قیمت</summary>
+        <p class="customer-eyebrow">مبالغ به تومان و برای هر قطعه، بر اساس نرخ زمان ثبت سفارش هستند.</p>
+        @foreach (var line in Order.Lines)
+        {
+            var quote = JsonSerializer.Deserialize<ProductPriceQuote>(line.PriceSnapshotJson);
+            @if (quote is not null)
+            {
+                <h3>@line.ProductTitle</h3><dl class="receipt-price-details">
+                    <div><dt>نرخ هر گرم طلا</dt><dd>@quote.GoldRateToman.ToString("N0")</dd></div>
+                    <div><dt>بهای محصول</dt><dd>@quote.Breakdown.ProductPrice.ToString("N0")</dd></div>
+                    <div><dt>اجرت</dt><dd>@quote.Breakdown.Fee.ToString("N0")</dd></div>
+                    <div><dt>تخفیف</dt><dd>@quote.Breakdown.Discount.ToString("N0")</dd></div>
+                    <div><dt>مالیات</dt><dd>@quote.Breakdown.Tax.ToString("N0")</dd></div>
+                    <div><dt>گرد کردن</dt><dd>@quote.Breakdown.Rounding.ToString("N0")</dd></div>
+                </dl>
+            }
+        }
+    </details>
+    <details class="receipt-disclosure"><summary>تاریخچه تغییر وضعیت</summary><ol class="order-history">
+        @foreach (var entry in Order.Events.OrderBy(x => x.CreatedUtc))
+        { <li><strong>@OrderFlow.Label(entry.Status)</strong><span> · @OrderFlow.DateLabel(entry.CreatedUtc)</span></li> }
+    </ol></details>
+</div>
+@code {
+    [Parameter, EditorRequired] public Order Order { get; set; } = default!;
+    private static readonly OrderStatus[] Steps = [OrderStatus.PendingReview, OrderStatus.Confirmed, OrderStatus.Preparing, OrderStatus.Shipped, OrderStatus.Delivered];
+    private bool Stopped => Order.Status is OrderStatus.Cancelled or OrderStatus.Expired;
+    private int ActiveIndex => Math.Max(0, Stopped ? Order.Events.Select(x => Array.IndexOf(Steps, x.Status)).DefaultIfEmpty(0).Max() : Array.IndexOf(Steps, Order.Status));
+    private string StepLabel(OrderStatus status) => status switch {
+        OrderStatus.PendingReview => "ثبت درخواست", OrderStatus.Confirmed => "تأیید فروشگاه", OrderStatus.Preparing => "آماده‌سازی",
+        OrderStatus.Shipped => Order.Delivery == DeliveryMethod.Pickup ? "آماده تحویل" : "ارسال سفارش", _ => "تحویل‌شده" };
+    private string StatusHint => Order.Status switch {
+        OrderStatus.PendingReview => "درخواست شما ثبت شده و در انتظار بررسی فروشگاه است.",
+        OrderStatus.Confirmed => "فروشگاه سفارش شما را تأیید کرده است.",
+        OrderStatus.Preparing => "قطعات سفارش شما در حال آماده‌سازی هستند.",
+        OrderStatus.Shipped => Order.Delivery == DeliveryMethod.Pickup ? "سفارش شما آماده تحویل حضوری است؛ برای دریافت با فروشگاه هماهنگ کنید." : "سفارش شما ارسال شده است. اطلاعات رهگیری را در بخش تحویل ببینید.",
+        OrderStatus.Delivered => "سفارش شما تحویل شده است. از همراهی شما با مرداس سپاسگزاریم.", _ => "این سفارش دیگر در مسیر آماده‌سازی و تحویل نیست." };
+    private static string Digits(int value) => string.Concat(value.ToString().Select(c => (char)('۰' + c - '0')));
+}

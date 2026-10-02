@@ -1,0 +1,24 @@
+<svg class="checkout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+    @switch (Name)
+    {
+        case "store":
+            <path d="M3 10V7l2-4h14l2 4v3M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M4 13v8h16v-8M9 21v-6h6v6M3 7h18" />
+            break;
+        case "truck":
+            <path d="M3 5h11v12H3zM14 9h4l3 4v4h-7M14 13h7" /><circle cx="7" cy="18" r="2" /><circle cx="18" cy="18" r="2" />
+            break;
+        case "plus":
+            <path d="M12 5v14M5 12h14" />
+            break;
+        case "trash":
+            <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+            break;
+        case "back":
+            <path d="m13 5 7 7-7 7M20 12H4" />
+            break;
+        case "next":
+            <path d="m11 5-7 7 7 7M4 12h16" />
+            break;
+    }
+</svg>
+@code { [Parameter] public string Name { get; set; } = "next"; }

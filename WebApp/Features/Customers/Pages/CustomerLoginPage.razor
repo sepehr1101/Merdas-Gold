@@ -1,0 +1,55 @@
+@page "/customer/login"
+@using MerdasGold.Features.Customers.Services
+@inject CustomerOtpService Otp
+@inject NavigationManager Navigation
+
+<PageTitle>ورود و ثبت‌نام | مرداس</PageTitle>
+<section class="customer-page customer-narrow storefront-container">
+    <span class="customer-eyebrow">حساب مشتری</span>
+    <h1>ورود به مرداس</h1>
+    <p>با شماره موبایل وارد شوید. اگر حساب ندارید، با تأیید همین شماره ساخته می‌شود.</p>
+    @if (!string.IsNullOrEmpty(_error) || Error is not null)
+    { <p class="customer-error" role="alert">@(_error ?? (_challenge is null ? "کد منقضی شده یا تعداد تلاش‌ها تمام شده است. دوباره کد بگیرید." : "کد واردشده صحیح نیست. دوباره تلاش کنید."))</p> }
+    @if (_challenge is null)
+    {
+        <form class="customer-form" @onsubmit="RequestAsync" @onsubmit:preventDefault>
+            <label for="customer-mobile">شماره موبایل</label>
+            <input id="customer-mobile" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" maxlength="13" @bind="_mobile" required />
+            <button class="storefront-action" type="submit" disabled="@_busy">@(_busy ? "در حال دریافت کد…" : "دریافت کد ورود")</button>
+        </form>
+    }
+    else
+    {
+        <p>کد ورود شماره <b dir="ltr">@_challenge.Mobile</b> را وارد کنید. اعتبار کد: ۳ دقیقه.</p>
+        @if (_challenge.DemoCode is not null)
+        { <p class="customer-notice" role="status">حالت آزمایشی؛ پیامکی ارسال نشده است. کد ورود: <strong dir="ltr">@_challenge.DemoCode</strong></p> }
+        <form class="customer-form" method="post" action="/customer/verify" data-enhance="false">
+            <AntiforgeryToken />
+            <input type="hidden" name="Challenge" value="@_challenge.Id" />
+            <input type="hidden" name="ReturnUrl" value="@MerdasGold.Features.Customers.CustomerEndpoints.SafeReturn(ReturnUrl)" />
+            <label for="customer-code">کد شش‌رقمی</label>
+            <input id="customer-code" name="Code" inputmode="numeric" autocomplete="one-time-code" dir="ltr" minlength="6" maxlength="6" required />
+            <button class="storefront-action" type="submit">تأیید و ورود</button>
+        </form>
+        <button class="customer-link" @onclick="Reset">تغییر شماره / دریافت دوباره کد</button>
+    }
+</section>
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] public string? Error { get; set; }
+    [SupplyParameterFromQuery] public string? Challenge { get; set; }
+    private string _mobile = "";
+    private string? _error;
+    private bool _busy;
+    private OtpChallenge? _challenge;
+    protected override void OnParametersSet() { if (Challenge is not null) _challenge = Otp.Describe(Challenge); }
+    private void Reset() { _challenge = null; _error = null; Error = null; }
+    private async Task RequestAsync()
+    {
+        if (_busy) return;
+        _busy = true; _error = null; Error = null;
+        try { _challenge = await Otp.RequestAsync(_mobile); }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException) { _error = e.Message; }
+        finally { _busy = false; }
+    }
+}

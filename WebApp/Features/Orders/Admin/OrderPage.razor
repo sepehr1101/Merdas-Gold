@@ -1,0 +1,48 @@
+@page "/admin/orders/{Id:guid}"
+@layout AdminLayout
+@using MerdasGold.Features.Orders.Components
+@using MerdasGold.Features.Orders.Entities
+@using MerdasGold.Features.Orders.Services
+@attribute [Authorize(Roles = "Administrator")]
+@inject OrderService Orders
+<PageTitle>بررسی سفارش | مرداس</PageTitle>
+<AdminSectionHeader ParentHref="/admin/orders" ParentTitle="سفارش‌ها" Title="بررسی سفارش" Subtitle="اطلاعات قطعات و گیرنده در زمان ثبت سفارش ذخیره شده‌اند" />
+@if (_error is not null) { <MudAlert Severity="Severity.Error" Class="mb-4">@_error</MudAlert> }
+@if (_loading) { <MudProgressLinear Indeterminate="true" /> }
+else if (_order is null) { <MudAlert Severity="Severity.Warning">سفارش پیدا نشد.</MudAlert> }
+else
+{
+    <OrderSummary Order="_order" ShowInternalNotes="true" />
+    @if (_order.Status == OrderStatus.PendingReview) { <MudAlert Severity="Severity.Info">مهلت رزرو: @OrderFlow.DateLabel(_order.ReservationExpiresUtc). تأیید سفارش، ثبت پرداخت نیست.</MudAlert> }
+    @if (Allowed.Any())
+    {
+        <MudStack Class="mt-4" Spacing="3">
+            <MudSelect T="OrderStatus" @bind-Value="_next" Label="وضعیت بعدی" Variant="Variant.Outlined">
+                @foreach (var status in Allowed) { <MudSelectItem Value="status">@OrderFlow.Label(status)</MudSelectItem> }
+            </MudSelect>
+            <MudTextField @bind-Value="_tracking" Label="کد رهگیری ارسال" MaxLength="100" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_note" Label="یادداشت داخلی تغییر وضعیت" MaxLength="500" Lines="2" Variant="Variant.Outlined" />
+            <MudButton OnClick="ChangeAsync" Disabled="_busy" Color="Color.Primary" Variant="Variant.Filled">ثبت تغییر وضعیت</MudButton>
+        </MudStack>
+    }
+    <MudButton OnClick="ReloadAsync" Disabled="_busy">تازه‌سازی</MudButton>
+}
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Order? _order;
+    private bool _loading = true, _busy;
+    private OrderStatus _next;
+    private string _tracking = "", _note = "";
+    private string? _error;
+    private IEnumerable<OrderStatus> Allowed => Enum.GetValues<OrderStatus>().Where(x => _order is not null && x != OrderStatus.Expired && OrderFlow.CanTransition(_order.Status, x));
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+    private async Task ReloadAsync() { _order = await Orders.AdminOrderAsync(Id); _loading = false; _next = Allowed.FirstOrDefault(); _tracking = _order?.TrackingCode ?? ""; }
+    private async Task ChangeAsync()
+    {
+        if (_busy || _order is null) return; _busy = true; _error = null;
+        try { await Orders.ChangeStatusAsync(Id, _next, _order.RowVersion, _tracking, _note); _note = ""; }
+        catch (ArgumentException e) { _error = e.Message; }
+        catch (Exception e) when (e is DbUpdateException or Microsoft.Data.SqlClient.SqlException) { _error = "سفارش هم‌زمان تغییر کرده؛ وضعیت تازه را بررسی کنید."; }
+        finally { await ReloadAsync(); _busy = false; }
+    }
+}

@@ -132,6 +132,13 @@ public sealed class StorefrontUiState(IJSRuntime js)
 
     public void Notify(string message) => NotificationRequested?.Invoke(message);
 
+    public async Task ClearCartAsync()
+    {
+        _cart.Clear();
+        Changed?.Invoke();
+        await SaveAsync();
+    }
+
     private async Task SaveAsync()
     {
         try

@@ -1,0 +1,45 @@
+@page "/customer/orders/{Id:guid}"
+@using MerdasGold.Features.Customers.Components
+@using MerdasGold.Features.Orders.Components
+@using MerdasGold.Features.Orders.Entities
+@using MerdasGold.Features.Orders.Services
+@attribute [Authorize(Policy = "Customer")]
+@inject OrderService Orders
+<PageTitle>پیگیری سفارش | مرداس</PageTitle>
+<section class="customer-page customer-order-page storefront-container">
+    <CustomerNavigation />
+    @if (_loading || _order is null) { <h1>جزئیات سفارش</h1> }
+    @if (_error is not null) { <p class="customer-error" role="alert">@_error</p> }
+    @if (_loading) { <p role="status">در حال دریافت سفارش…</p> }
+    else if (_order is null) { <p>سفارش پیدا نشد.</p> }
+    else
+    {
+        <CustomerOrderReceipt Order="_order" />
+        <div class="receipt-actions">
+        @if (_order.Status == OrderStatus.PendingReview)
+        {
+            <p class="customer-notice">مهلت بررسی و رزرو تا @OrderFlow.DateLabel(_order.ReservationExpiresUtc) است.</p>
+            @if (!_confirmCancel) { <button class="customer-link" @onclick="() => _confirmCancel = true">لغو درخواست خرید</button> }
+            else { <p>درخواست خرید لغو و موجودی آزاد شود؟</p><button class="customer-link" disabled="@_busy" @onclick="CancelAsync">بله، لغو شود</button><button class="customer-link" @onclick="() => _confirmCancel = false">انصراف</button> }
+        }
+        <button class="customer-link" disabled="@_busy" @onclick="ReloadAsync">تازه‌سازی وضعیت</button>
+        <a class="customer-link" href="/customer/orders">بازگشت به سفارش‌های من</a>
+        </div>
+    }
+</section>
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private Order? _order;
+    private bool _loading = true, _busy, _confirmCancel;
+    private string? _error;
+    protected override async Task OnParametersSetAsync() => await ReloadAsync();
+    private async Task ReloadAsync() { _order = await Orders.CustomerOrderAsync(Id); _loading = false; }
+    private async Task CancelAsync()
+    {
+        if (_busy || _order is null) return; _busy = true; _error = null;
+        try { await Orders.CancelAsync(Id, _order.RowVersion); _confirmCancel = false; }
+        catch (ArgumentException e) { _error = e.Message; }
+        catch (DbUpdateException) { _error = "وضعیت سفارش تغییر کرده؛ دوباره بررسی کنید."; }
+        finally { await ReloadAsync(); _busy = false; }
+    }
+}

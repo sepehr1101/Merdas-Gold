@@ -1,0 +1,14 @@
+@page "/customer"
+@using MerdasGold.Features.Customers.Components
+@attribute [Authorize(Policy = "Customer")]
+<PageTitle>حساب من | مرداس</PageTitle>
+<section class="customer-page storefront-container">
+    <CustomerNavigation />
+    <h1>حساب من</h1>
+    <p>آدرس‌های تحویل و وضعیت سفارش‌های خود را اینجا مدیریت کنید.</p>
+    <div class="customer-actions">
+        <a class="storefront-action" href="/customer/orders">پیگیری سفارش‌ها</a>
+        <a class="customer-link" href="/customer/addresses">مدیریت آدرس‌ها</a>
+    </div>
+    <form method="post" action="/customer/logout" data-enhance="false"><AntiforgeryToken /><button class="customer-link" type="submit">خروج از حساب</button></form>
+</section>

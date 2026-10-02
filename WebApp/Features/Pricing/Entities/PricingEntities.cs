@@ -37,6 +37,7 @@ public sealed class GoldRate
     public DateTime ReceivedUtc { get; set; }
     public DateTime? SourceUtc { get; set; }
     public decimal? PriceToman { get; set; }
+    public string? MarketSnapshotJson { get; set; }
     public string Provider { get; set; } = "Navasan";
     public bool IsValid { get; set; }
     public string Status { get; set; } = "";

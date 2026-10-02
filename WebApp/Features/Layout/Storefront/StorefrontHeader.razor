@@ -2,7 +2,7 @@
 @inject StorefrontUiState UiState
 @inject NavigationManager Navigation
 
-<StorefrontGoldRate />
+@if (!IsPurchasePage) { <StorefrontGoldRate /> }
 
 <header class="site-header">
     <div class="header-inner storefront-container">
@@ -27,6 +27,25 @@
         </nav>
 
         <div class="header-actions">
+            <div class="customer-menu" @onkeydown="HandleAccountKey">
+                <button class="customer-menu-toggle" @ref="_accountButton" type="button" aria-label="منوی حساب مشتری" aria-expanded="@AccountOpen.ToString().ToLowerInvariant()" aria-controls="customer-account-menu" @onclick="() => AccountOpen = !AccountOpen">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4" /><path d="M4 22v-3a8 8 0 0 1 16 0v3" /></svg>
+                </button>
+                @if (AccountOpen)
+                {
+                    <button class="customer-menu-backdrop" type="button" tabindex="-1" aria-label="بستن منوی حساب" @onclick="() => AccountOpen = false"></button>
+                    <nav id="customer-account-menu" class="customer-menu-panel" aria-label="حساب مشتری">
+                        <AuthorizeView Policy="Customer">
+                            <Authorized>
+                                <a href="/customer/addresses">آدرس‌های من</a>
+                                <a href="/customer/orders">سفارش‌های من</a>
+                                <form method="post" action="/customer/logout" data-enhance="false"><AntiforgeryToken /><button type="submit">خروج</button></form>
+                            </Authorized>
+                            <NotAuthorized><a href="@LoginHref">ورود</a></NotAuthorized>
+                        </AuthorizeView>
+                    </nav>
+                }
+            </div>
             <button type="button" aria-label="جستجو" aria-expanded="@SearchOpen.ToString().ToLowerInvariant()" @onclick="ToggleSearch">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
             </button>
@@ -56,12 +75,33 @@
 @code {
     private bool MenuOpen { get; set; }
     private bool SearchOpen { get; set; }
+    private bool AccountOpen { get; set; }
+    private ElementReference _accountButton;
+    private bool IsPurchasePage => new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/') is "/cart" or "/checkout"
+        || new Uri(Navigation.Uri).AbsolutePath.StartsWith("/customer/orders/", StringComparison.OrdinalIgnoreCase);
+    private string LoginHref => "/customer/login?returnUrl=" + Uri.EscapeDataString(
+        MerdasGold.Features.Customers.CustomerEndpoints.SafeReturn(new Uri(Navigation.Uri).PathAndQuery));
     private string SearchTerm { get; set; } = string.Empty;
 
     private string PersianCount => ToPersianDigits(UiState.CartCount.ToString());
     private string PersianFavoriteCount => ToPersianDigits(UiState.FavoriteCount.ToString());
 
-    protected override void OnInitialized() => UiState.Changed += HandleStateChanged;
+    protected override void OnInitialized()
+    {
+        UiState.Changed += HandleStateChanged;
+        Navigation.LocationChanged += LocationChanged;
+    }
+    private void LocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        AccountOpen = false; MenuOpen = false; SearchOpen = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+    private async Task HandleAccountKey(KeyboardEventArgs args)
+    {
+        if (args.Key != "Escape") return;
+        AccountOpen = false;
+        await _accountButton.FocusAsync();
+    }
 
     private void ToggleMenu() => MenuOpen = !MenuOpen;
     private void CloseMenu() => MenuOpen = false;
@@ -84,5 +124,9 @@
         .Replace('0', '۰').Replace('1', '۱').Replace('2', '۲').Replace('3', '۳').Replace('4', '۴')
         .Replace('5', '۵').Replace('6', '۶').Replace('7', '۷').Replace('8', '۸').Replace('9', '۹');
 
-    public void Dispose() => UiState.Changed -= HandleStateChanged;
+    public void Dispose()
+    {
+        UiState.Changed -= HandleStateChanged;
+        Navigation.LocationChanged -= LocationChanged;
+    }
 }

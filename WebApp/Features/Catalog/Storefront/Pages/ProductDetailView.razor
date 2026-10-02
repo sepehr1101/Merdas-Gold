@@ -21,7 +21,7 @@
                     </div>
                     <div class="product-summary">
                         <h1 id="product-title">@Product.Title <span class="product-code" dir="ltr">(@Product.Code)</span></h1>
-                        <p class="product-price">@(_price is null ? "قیمت پس از دریافت نرخ معتبر" : $"{_price:N0} تومان")</p>
+                        <p class="product-price">@(_price is null ? "در انتظار قیمت‌گذاری" : $"{_price:N0} تومان")</p>
                         <div class="variant-picker" aria-label="انتخاب تنوع محصول">
                             <h2>انتخاب رنگ و مدل</h2>
                             <p>هر تنوع، وزن و موجودی خودش را دارد.</p>

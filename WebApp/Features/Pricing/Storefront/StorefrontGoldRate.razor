@@ -2,6 +2,17 @@
 @inject IDbContextFactory<MerdasGoldDbContext> Factory
 @inject GoldRateService Rates
 
+@if (Compact)
+{
+    <div class="purchase-gold-rate" aria-label="قیمت هر گرم طلای ۱۸ عیار">
+        <span class="purchase-rate-indicator @(Fresh ? "is-live" : null)" aria-hidden="true"></span>
+        <span>هر گرم طلای ۱۸ عیار</span>
+        <strong><bdi>@(_rate?.PriceToman?.ToString("N0") ?? "—")</bdi> <span>تومان</span></strong>
+        <span class="purchase-rate-time">@(Fresh ? "به‌روز" : "آخرین نرخ ثبت‌شده") · @LocalTime(_rate?.SourceUtc)</span>
+    </div>
+}
+else
+{
 <section class="market-bar" aria-label="نرخ طلا، سکه و ارز">
     <div class="market-inner">
         <div class="market-caption" title="@StatusDescription">
@@ -22,21 +33,24 @@
         </div>
     </div>
 </section>
+}
 
 @code {
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public EventCallback RateChanged { get; set; }
     private readonly CancellationTokenSource _cancellation = new();
     private GoldRate? _rate;
     private MarketRateSnapshot? _market;
     private int _maxAge;
     private bool _enabled;
-    private bool Fresh => _enabled && (_market is not null
+    private bool Fresh => _enabled && (!Compact && _market is not null
         ? _market.SourceUtc >= DateTime.UtcNow.AddMinutes(-_maxAge) && _market.SourceUtc <= DateTime.UtcNow.AddMinutes(1)
         : GoldRateService.IsFresh(_rate, _maxAge, DateTime.UtcNow));
     private DateTime? SourceUtc => _market?.SourceUtc ?? _rate?.SourceUtc;
     private string StatusText => SourceUtc is null ? "نرخ در دسترس نیست" : $"{(Fresh ? "به‌روزرسانی" : "آخرین ثبت")} {LocalTime(SourceUtc)}";
     private string StatusDescription => SourceUtc is null ? "در انتظار دریافت نرخ از تأمین‌کننده"
         : $"{(Fresh ? "زمان نرخ" : "نرخ قدیمی؛ در انتظار به‌روزرسانی")} {LocalDate(SourceUtc)}؛ قیمت‌ها به تومان";
-    private decimal? Price(string key) => _market is not null
+    private decimal? Price(string key) => key == "YekGram18" ? _rate?.PriceToman : _market is not null
         ? (_market.Prices.TryGetValue(key, out var price) ? price : null)
         : key == "YekGram18" ? _rate?.PriceToman : null;
 
@@ -62,10 +76,12 @@
     {
         await using var db = await Factory.CreateDbContextAsync(ct);
         var settings = await db.Set<RateSettings>().AsNoTracking().SingleAsync(ct);
+        var previous = _rate?.Id;
         _rate = await Rates.CurrentAsync(settings, ct);
-        _market = settings.Provider == GoldProviderNames.TabanGohar ? Rates.CurrentMarketRates() : null;
+        _market = !Compact && settings.Provider == GoldProviderNames.TabanGohar ? await Rates.CurrentMarketRatesAsync(ct) : null;
         _maxAge = settings.MaxAgeMinutes;
         _enabled = settings.Enabled;
+        if (previous != _rate?.Id) await RateChanged.InvokeAsync();
     }
 
     private async Task RefreshLoopAsync()

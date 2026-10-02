@@ -23,6 +23,10 @@ using MudBlazor.Services;
 using MerdasGold.Features.Pricing.Services;
 using MerdasGold.Features.Diagnostics.Services;
 using MerdasGold.Features.Layout.Storefront;
+using MerdasGold.Features.Customers;
+using MerdasGold.Features.Customers.Services;
+using MerdasGold.Features.Orders.Services;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,9 +68,39 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.SlidingExpiration = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+    options.Events.OnRedirectToLogin = context =>
+    {
+        var path = context.Request.Path.Value ?? "/";
+        context.Response.Redirect(CustomerEndpoints.IsCustomerPath(path)
+            ? "/customer/login?returnUrl=" + Uri.EscapeDataString(CustomerEndpoints.SafeReturn(path))
+            : context.RedirectUri);
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        var path = context.Request.Path.Value ?? "/";
+        context.Response.Redirect(CustomerEndpoints.IsCustomerPath(path)
+            ? "/customer/login?returnUrl=" + Uri.EscapeDataString(CustomerEndpoints.SafeReturn(path))
+            : context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options => options.AddPolicy("Customer", policy => policy.RequireAuthenticatedUser().RequireClaim(CustomerEndpoints.CustomerClaim)));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ISmsProviper, MockSmsProvider>();
+builder.Services.AddSingleton<CustomerOtpService>();
+builder.Services.AddScoped<CustomerSession>();
+builder.Services.AddScoped<CustomerAddressService>();
+builder.Services.AddScoped<OrderService>();
+builder.Services.AddHostedService<OrderReservationWorker>();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("customer-auth", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        { PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 builder.Services.AddScoped<AdminAccountSeeder>();
 builder.Services.AddScoped<UserAdministrationService>();
 builder.Services.AddScoped<OperationLogService>();
@@ -154,10 +188,12 @@ app.UseStatusCodePagesWithReExecute("/status/{0}", createScopeForStatusCodePages
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapAuthenticationEndpoints();
+app.MapCustomerEndpoints();
 app.MapSettingsEndpoints();
 app.MapStoreInformationEndpoints();
 app.MapContentEndpoints();

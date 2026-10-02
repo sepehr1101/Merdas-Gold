@@ -1,0 +1,64 @@
+@page "/customer/addresses"
+@using MerdasGold.Features.Customers.Components
+@using MerdasGold.Features.Customers.Entities
+@using MerdasGold.Features.Customers.Services
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize(Policy = "Customer")]
+@inject CustomerAddressService Addresses
+
+<PageTitle>آدرس‌های من | مرداس</PageTitle>
+<section class="customer-page storefront-container">
+    <CustomerNavigation />
+    <h1>آدرس‌های من</h1>
+    <p>آدرس پیش‌فرض در مرحله ثبت سفارش انتخاب می‌شود. تغییر آدرس، سفارش‌های قبلی را تغییر نمی‌دهد.</p>
+    @if (ReturnUrl == "/checkout") { <a class="customer-link" href="/checkout">بازگشت به ثبت سفارش</a> }
+    @if (_error is not null) { <p class="customer-error" role="alert">@_error</p> }
+    @if (_loading) { <p role="status">در حال دریافت آدرس‌ها…</p> }
+    else if (_edit is not null)
+    {
+        <h2>@(_edit.Id == 0 ? "آدرس تازه" : "ویرایش آدرس")</h2>
+        <CustomerAddressForm Address="_edit" Busy="_busy" OnSave="SaveAsync" OnCancel="() => _edit = null" />
+    }
+    else
+    {
+        <button class="storefront-action" @onclick="() => _edit = new() { Mobile = _mobile }">افزودن آدرس</button>
+        @if (_items.Count == 0) { <p>هنوز آدرسی ذخیره نکرده‌اید.</p> }
+        @foreach (var item in _items)
+        {
+            <article class="customer-record" @key="item.Id">
+                <h2>@(string.IsNullOrWhiteSpace(item.Title) ? item.Recipient : item.Title) @if (item.IsDefault) { <small>پیش‌فرض</small> }</h2>
+                <p>@item.Recipient · <span dir="ltr">@item.Mobile</span></p><p>@item.FullAddress</p>
+                <div class="customer-actions">
+                    <button class="customer-link" disabled="@_busy" @onclick="() => Edit(item)">ویرایش</button>
+                    @if (!item.IsDefault) { <button class="customer-link" disabled="@_busy" @onclick="() => DefaultAsync(item)">انتخاب پیش‌فرض</button> }
+                    <button class="customer-link" disabled="@_busy" @onclick="() => _delete = item.Id">حذف</button>
+                </div>
+                @if (_delete == item.Id) { <div class="customer-notice">این آدرس حذف شود؟ <button disabled="@_busy" @onclick="() => DeleteAsync(item.Id)">بله، حذف شود</button> <button @onclick="() => _delete = null">انصراف</button></div> }
+            </article>
+        }
+    }
+</section>
+@code {
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
+    private List<CustomerAddress> _items = [];
+    private CustomerAddress? _edit;
+    private int? _delete;
+    private bool _loading = true, _busy;
+    private string? _error;
+    private string _mobile = "";
+    protected override async Task OnInitializedAsync() { _items = await Addresses.ListAsync(); _mobile = await Addresses.AccountMobileAsync(); _loading = false; }
+    private void Edit(CustomerAddress a) => _edit = new() { Id = a.Id, Title = a.Title, Recipient = a.Recipient, Mobile = a.Mobile,
+        Street = string.Join("، ", new[] { a.Province, a.City, a.Street }.Where(x => !string.IsNullOrWhiteSpace(x))),
+        PostalCode = a.PostalCode, IsDefault = a.IsDefault, RowVersion = a.RowVersion };
+    private async Task SaveAsync() => await RunAsync(async () => { await Addresses.SaveAsync(_edit!); _edit = null; });
+    private async Task DefaultAsync(CustomerAddress a) => await RunAsync(async () => { a.IsDefault = true; await Addresses.SaveAsync(a); });
+    private async Task DeleteAsync(int id) => await RunAsync(async () => { await Addresses.DeleteAsync(id); _delete = null; });
+    private async Task RunAsync(Func<Task> action)
+    {
+        if (_busy) return; _busy = true; _error = null;
+        try { await action(); }
+        catch (Exception e) when (e is ArgumentException or ValidationException) { _error = e.Message; }
+        catch (DbUpdateException) { _error = "آدرس هم‌زمان تغییر کرده است؛ دوباره تلاش کنید."; }
+        finally { _items = await Addresses.ListAsync(); _busy = false; }
+    }
+}

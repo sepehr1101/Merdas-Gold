@@ -1,0 +1,36 @@
+@using MerdasGold.Features.Orders.Entities
+@using System.Text.Json
+<dl class="order-facts">
+    <div><dt>کد سفارش</dt><dd class="customer-code" dir="ltr">@Order.Number</dd></div>
+    <div><dt>وضعیت</dt><dd>@OrderFlow.Label(Order.Status)</dd></div>
+    <div><dt>تاریخ ثبت</dt><dd>@OrderFlow.DateLabel(Order.CreatedUtc)</dd></div>
+    <div><dt>گیرنده</dt><dd>@Order.Recipient · <span dir="ltr">@Order.Mobile</span></dd></div>
+    @if (Order.Address.Length > 0) { <div><dt>نشانی ثبت‌شده</dt><dd>@Order.Address</dd></div> }
+    <div><dt>تحویل</dt><dd>@OrderFlow.DeliveryLabel(Order.Delivery)</dd></div>
+    @if (Order.TrackingCode.Length > 0) { <div><dt>کد رهگیری ارسال</dt><dd dir="ltr">@Order.TrackingCode</dd></div> }
+    @if (Order.CustomerNote.Length > 0) { <div><dt>توضیحات مشتری</dt><dd>@Order.CustomerNote</dd></div> }
+</dl>
+<div class="order-table-wrap"><table class="order-table">
+    <caption>قطعات سفارش — مبالغ به تومان</caption>
+    <thead><tr><th>قطعه</th><th>وزن هر قطعه</th><th>تعداد</th><th>قیمت واحد</th><th>جمع</th></tr></thead>
+    <tbody>@foreach (var line in Order.Lines)
+    { <tr><td>@line.ProductTitle<br /><small>@line.VariantTitle @line.Size · @line.ProductCode</small></td><td>@line.Weight.ToString("0.###") گرم</td><td>@line.Quantity</td><td>@line.UnitPrice.ToString("N0")</td><td>@((line.UnitPrice * line.Quantity).ToString("N0"))</td></tr> }</tbody>
+</table></div>
+<p><strong>جمع قطعات: @Order.Total.ToString("N0") تومان</strong></p>
+<p>@(Order.Delivery == DeliveryMethod.Pickup ? "تحویل حضوری بدون هزینه ارسال است." : "هزینه ارسال در این مبلغ نیست و با هماهنگی فروشگاه اعلام می‌شود.")</p>
+<p>این صفحه رسید ثبت سفارش است؛ پرداخت اینترنتی انجام نشده است.</p>
+<details><summary>جزئیات قیمت ثبت‌شده</summary>
+    @foreach (var line in Order.Lines)
+    {
+        var quote = JsonSerializer.Deserialize<ProductPriceQuote>(line.PriceSnapshotJson);
+        @if (quote is not null)
+        { <p>@line.ProductTitle — نرخ طلا: @quote.GoldRateToman.ToString("N0")؛ بهای محصول: @quote.Breakdown.ProductPrice.ToString("N0")؛ اجرت: @quote.Breakdown.Fee.ToString("N0")؛ تخفیف: @quote.Breakdown.Discount.ToString("N0")؛ مالیات: @quote.Breakdown.Tax.ToString("N0")؛ گرد کردن: @quote.Breakdown.Rounding.ToString("N0") تومان (هر قطعه)</p> }
+    }
+</details>
+<h2>روند سفارش</h2>
+<ol class="order-history">@foreach (var entry in Order.Events.OrderBy(x => x.CreatedUtc))
+{ <li><strong>@OrderFlow.Label(entry.Status)</strong> · @OrderFlow.DateLabel(entry.CreatedUtc) @if (ShowInternalNotes) { <p>@entry.Note</p> }</li> }</ol>
+@code {
+    [Parameter, EditorRequired] public Order Order { get; set; } = default!;
+    [Parameter] public bool ShowInternalNotes { get; set; }
+}

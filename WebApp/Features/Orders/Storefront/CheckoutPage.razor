@@ -1,0 +1,230 @@
+@page "/checkout"
+@using MerdasGold.Features.Customers
+@using MerdasGold.Features.Customers.Components
+@using MerdasGold.Features.Customers.Entities
+@using MerdasGold.Features.Customers.Services
+@using MerdasGold.Features.Orders.Components
+@using MerdasGold.Features.Orders.Entities
+@using MerdasGold.Features.Orders.Services
+@using System.ComponentModel.DataAnnotations
+@inject OrderService Orders
+@inject CustomerAddressService Addresses
+@inject AuthenticationStateProvider Authentication
+@inject StorefrontUiState Basket
+@inject NavigationManager Navigation
+@inject ILogger<CheckoutPage> Logger
+
+<PageTitle>ثبت سفارش | مرداس</PageTitle>
+<div class="collection-hero cart-breadcrumb-bar checkout-breadcrumb"><div class="storefront-container"><nav aria-label="مسیر صفحه"><a href="/">خانه</a><span aria-hidden="true">/</span><a href="/cart">سبد خرید</a><span aria-hidden="true">/</span><span aria-current="page">@StepTitle</span></nav></div></div>
+<section class="customer-page purchase-page storefront-container">
+    <ol class="checkout-steps" aria-label="مراحل تکمیل سفارش">
+        @for (var i = 1; i <= 3; i++)
+        {
+            var step = i;
+            <li class="@(step < _step ? "is-complete" : step == _step ? "is-current" : "")" aria-current="@(step == _step ? "step" : null)">
+                <span class="checkout-step-marker" aria-hidden="true">@(step < _step ? "✓" : step == 1 ? "۱" : step == 2 ? "۲" : "۳")</span>
+                <span>@(step == 1 ? "روش تحویل" : step == 2 ? "اطلاعات خریدار" : "تأیید نهایی")</span>
+                <span class="storefront-visually-hidden">@(step < _step ? "انجام‌شده" : step == _step ? "مرحله فعلی" : "مرحله بعد")</span>
+            </li>
+        }
+    </ol>
+    <h1 tabindex="-1" @ref="_heading">@StepTitle</h1>
+    @if (_error is not null) { <p role="alert" class="customer-error" tabindex="-1" @ref="_errorElement">@_error</p> }
+    @if (_loading) { <p role="status">در حال آماده‌سازی سفارش…</p> }
+    else if (Basket.CartCount == 0) { <p>سبد شما خالی است.</p><a class="storefront-action" href="/#products">انتخاب محصول</a> }
+    else if (_step == 1)
+    {
+        <p>سفارش را چطور دریافت می‌کنید؟</p>
+        <fieldset class="customer-fieldset delivery-options">
+            <legend class="storefront-visually-hidden">انتخاب روش تحویل</legend>
+            <label class="customer-address-choice"><input type="radio" name="delivery" checked="@(_delivery == DeliveryMethod.Pickup)" @onchange="() => _delivery = DeliveryMethod.Pickup" /><CheckoutIcon Name="store" /><span><b>تحویل حضوری در فروشگاه</b><span class="choice-description">دریافت از فروشگاه، بدون هزینه ارسال و بدون نیاز به آدرس</span></span></label>
+            <label class="customer-address-choice"><input type="radio" name="delivery" checked="@(_delivery == DeliveryMethod.CoordinatedDelivery)" @onchange="() => _delivery = DeliveryMethod.CoordinatedDelivery" /><CheckoutIcon Name="truck" /><span><b>تحویل غیرحضوری</b><span class="choice-description">ارسال به آدرس شما؛ هزینه و زمان ارسال با هماهنگی فروشگاه</span></span></label>
+        </fieldset>
+        <div class="checkout-navigation"><a class="checkout-back" href="/cart"><CheckoutIcon Name="back" />بازگشت به سبد</a><button class="storefront-action" @onclick="ContinueDelivery">ادامه<CheckoutIcon Name="next" /></button></div>
+    }
+    else if (_step == 2)
+    {
+        <p class="checkout-delivery-caption"><CheckoutIcon Name="@(_delivery == DeliveryMethod.Pickup ? "store" : "truck")" />@OrderFlow.DeliveryLabel(_delivery)</p>
+        @if (!_isCustomer)
+        {
+            <div class="customer-notice"><p>برای ثبت سفارش و پیگیری آن، با شماره موبایل وارد شوید.</p></div><div class="checkout-navigation">@BackToDelivery<a class="storefront-action" href="@LoginHref">ورود و ادامه<CheckoutIcon Name="next" /></a></div>
+        }
+        else if (_delivery == DeliveryMethod.Pickup)
+        {
+            <form class="customer-form" @onsubmit="ReviewAsync" @onsubmit:preventDefault>
+                <label>نام خریدار (الزامی)<input @bind="_recipient" autocomplete="name" maxlength="150" required /></label>
+                <label>شماره موبایل حساب<input value="@_mobile" type="tel" dir="ltr" readonly /></label>
+                <p class="customer-help">هماهنگی تحویل با همین شماره انجام می‌شود.</p>
+                <div class="checkout-navigation">@BackToDelivery<button class="storefront-action" disabled="@_busy" type="submit">@(_busy ? "در حال بررسی…" : "ادامه")<CheckoutIcon Name="next" /></button></div>
+            </form>
+        }
+        else
+        {
+            <div class="checkout-section-heading"><h2>آدرس تحویل</h2>@if (_edit is null) { <button class="checkout-add" disabled="@_busy" @onclick="NewAddress"><CheckoutIcon Name="plus" />افزودن آدرس</button> }</div>
+            @foreach (var address in _addresses)
+            {
+                <div class="checkout-address" @key="address.Id">
+                    <label class="customer-address-choice"><input type="radio" name="address" checked="@(_address == address.Id)" disabled="@_busy" @onchange="() => _address = address.Id" /><span><b>@(string.IsNullOrWhiteSpace(address.Title) ? address.Recipient : address.Title + " — " + address.Recipient)</b><span class="choice-description">@address.FullAddress</span><bdi dir="ltr">@address.Mobile</bdi></span></label>
+                    <button class="checkout-delete" aria-label="حذف آدرس @address.Recipient" title="حذف آدرس" disabled="@_busy" @onclick="() => _delete = address.Id"><CheckoutIcon Name="trash" /></button>
+                    @if (_delete == address.Id)
+                    {
+                        <div class="customer-notice">این آدرس حذف شود؟ <button class="customer-link" disabled="@_busy" @onclick="() => DeleteAddressAsync(address.Id)">بله، حذف شود</button><button class="customer-link" disabled="@_busy" @onclick="() => _delete = null">انصراف</button></div>
+                    }
+                </div>
+            }
+            @if (_edit is not null)
+            {
+                <h3>آدرس جدید</h3>
+                <CustomerAddressForm Address="_edit" Busy="_busy" OnSave="SaveAddressAsync" OnCancel="CancelAddress" /><div class="checkout-navigation">@BackToDelivery</div>
+            }
+            else
+            {
+
+                <div class="checkout-navigation">@BackToDelivery<button class="storefront-action" disabled="@(_busy || _address == 0)" @onclick="ReviewAsync">@(_busy ? "در حال بررسی…" : "ادامه")<CheckoutIcon Name="next" /></button></div>
+            }
+        }
+    }
+    else if (_review is not null)
+    {
+        <div class="checkout-confirmation">
+            <h2>قطعات سفارش</h2>
+            @foreach (var line in _review.Lines)
+            {
+                var product = Basket.CartItems.FirstOrDefault(x => x.VariantId == line.VariantId);
+                <div class="checkout-review-line">
+                    @if (!string.IsNullOrWhiteSpace(product?.ImageUrl)) { <img class="checkout-thumbnail" src="@product.ImageUrl" alt="@line.Title" width="80" height="80" loading="lazy" decoding="async" /> }
+                    <span class="checkout-product-description"><b>@line.Title</b><span class="choice-description">@line.Variant · @line.Quantity عدد</span></span><strong>@((line.Quote.Breakdown.Total * line.Quantity).ToString("N0")) تومان</strong></div>
+            }
+            <section class="checkout-delivery-summary"><h2>اطلاعات تحویل</h2><p><b>@OrderFlow.DeliveryLabel(_delivery)</b></p>
+            @if (_delivery == DeliveryMethod.Pickup) { <p>@_recipient · <bdi dir="ltr">@_mobile</bdi></p> }
+            else if (_addresses.FirstOrDefault(x => x.Id == _address) is { } selected)
+            { <p>@selected.Recipient · <bdi dir="ltr">@selected.Mobile</bdi><br />@selected.FullAddress</p><p class="customer-help">هزینه ارسال جداگانه و با هماهنگی فروشگاه اعلام می‌شود.</p> }
+            </section><label class="customer-form">توضیحات سفارش (اختیاری)<textarea @bind="_note" maxlength="500" rows="3"></textarea></label>
+            <p class="customer-help">اعتبار قیمت تا @OrderFlow.DateLabel(_review.ExpiresUtc). در صورت تغییر، قیمت جدید را دوباره تأیید می‌کنید.</p>
+            <p class="customer-notice">با ثبت درخواست، قطعات برای بررسی فروشگاه ۳۰ دقیقه رزرو می‌شوند. این مرحله پرداخت اینترنتی ندارد.</p>
+            <label class="customer-check"><input type="checkbox" @bind="_accepted" disabled="@_busy" />قیمت، مشخصات تحویل و شرایط رزرو را تأیید می‌کنم.</label>
+            <div class="checkout-total"><div class="cart-checkout-total"><span>جمع قطعات</span><strong>@_review.Total.ToString("N0") تومان</strong></div></div><div class="checkout-navigation"><button type="button" class="checkout-back" disabled="@_busy" @onclick="() => GoToStep(2)"><CheckoutIcon Name="back" />بازگشت</button><button class="storefront-action" disabled="@(_busy || !_accepted)" @onclick="PlaceAsync">@(_busy ? "در حال ثبت…" : "ثبت نهایی درخواست")</button></div>
+            <div class="customer-actions"><button class="customer-link" disabled="@_busy" @onclick="ReviewAsync">به‌روزرسانی قیمت</button><a class="customer-link" href="/cart">ویرایش سبد</a></div>
+        </div>
+    }
+</section>
+
+@code {
+    private string StepTitle => _step == 1 ? "روش تحویل سفارش" : _step == 2 ? "اطلاعات خریدار" : "بررسی و تأیید سفارش";
+    private RenderFragment BackToDelivery => @<button type="button" class="checkout-back" disabled="@_busy" @onclick="() => GoToStep(1)"><CheckoutIcon Name="back" />بازگشت</button>;
+
+    [SupplyParameterFromQuery] public string? Delivery { get; set; }
+    private List<CustomerAddress> _addresses = [];
+    private CustomerAddress? _edit;
+    private CheckoutReview? _review;
+    private int _address, _step = 1;
+    private int? _delete;
+    private DeliveryMethod _delivery;
+    private string _recipient = "", _mobile = "", _note = "";
+    private string? _error, _announcedError;
+    private bool _loading = true, _busy, _accepted, _isCustomer, _focusHeading;
+    private ElementReference _heading, _errorElement;
+    private string LoginHref => "/customer/login?returnUrl=" + Uri.EscapeDataString("/checkout?delivery=" + (_delivery == DeliveryMethod.Pickup ? "pickup" : "shipping"));
+
+    protected override void OnParametersSet()
+    {
+        _delivery = Delivery == "shipping" ? DeliveryMethod.CoordinatedDelivery : DeliveryMethod.Pickup;
+        _step = Delivery is "pickup" or "shipping" ? 2 : 1;
+        _review = null; _accepted = false;
+    }
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (first)
+        {
+            try
+            {
+                await Basket.InitializeAsync();
+                _isCustomer = (await Authentication.GetAuthenticationStateAsync()).User.HasClaim(x => x.Type == CustomerEndpoints.CustomerClaim);
+                if (_isCustomer)
+                {
+                    _addresses = await Addresses.ListAsync();
+                    _address = _addresses.FirstOrDefault()?.Id ?? 0;
+                    _mobile = await Addresses.AccountMobileAsync();
+                    _recipient = _addresses.FirstOrDefault()?.Recipient ?? "";
+                    if (_addresses.Count == 0) NewAddress();
+                }
+            }
+            catch (Exception ex) { ShowFailure(ex, "دریافت اطلاعات ممکن نشد. صفحه را تازه کنید."); }
+            finally { _loading = false; StateHasChanged(); }
+        }
+        else if (_error is not null && _error != _announcedError) { _announcedError = _error; await _errorElement.FocusAsync(); }
+        else if (_focusHeading) { _focusHeading = false; await _heading.FocusAsync(); }
+    }
+    private void ContinueDelivery()
+    {
+        GoToStep(2);
+        Navigation.NavigateTo("/checkout?delivery=" + (_delivery == DeliveryMethod.Pickup ? "pickup" : "shipping"));
+    }
+    private void GoToStep(int step)
+    {
+        _step = step; _accepted = false; _error = null;
+        _focusHeading = step != 2 || _delivery == DeliveryMethod.Pickup || _edit is null;
+    }
+    private void NewAddress() { _edit = new() { Mobile = _mobile, Recipient = _recipient }; _delete = null; }
+    private void CancelAddress() { _edit = null; }
+    private async Task SaveAddressAsync()
+    {
+        if (_busy || _edit is null) return;
+        _busy = true; _error = null;
+        try
+        {
+            await Addresses.SaveAsync(_edit);
+            _address = _edit.Id; _recipient = _edit.Recipient;
+            _addresses = await Addresses.ListAsync(); _edit = null;
+        }
+        catch (Exception ex) { ShowFailure(ex, "ذخیره آدرس ممکن نشد؛ دوباره تلاش کنید."); }
+        finally { _busy = false; }
+    }
+    private async Task DeleteAddressAsync(int id)
+    {
+        if (_busy) return;
+        _busy = true; _error = null;
+        try
+        {
+            await Addresses.DeleteAsync(id); _delete = null;
+            _addresses = await Addresses.ListAsync();
+            if (_address == id) _address = _addresses.FirstOrDefault()?.Id ?? 0;
+            if (_addresses.Count == 0) NewAddress();
+        }
+        catch (Exception ex) { ShowFailure(ex, "حذف آدرس ممکن نشد؛ دوباره تلاش کنید."); }
+        finally { _busy = false; }
+    }
+    private async Task ReviewAsync()
+    {
+        if (_busy || !_isCustomer) return;
+        _error = null; _announcedError = null; _accepted = false;
+        if (_delivery == DeliveryMethod.Pickup && string.IsNullOrWhiteSpace(_recipient)) { _error = "نام خریدار را وارد کنید."; return; }
+        if (_delivery == DeliveryMethod.CoordinatedDelivery && _address == 0) { _error = "آدرس تحویل را انتخاب کنید."; return; }
+        _busy = true;
+        try
+        {
+            _review = await Orders.ReviewAsync(Basket.CartItems.Select(x => new CheckoutItem(x.VariantId, x.Quantity)));
+            GoToStep(3);
+        }
+        catch (Exception ex) { ShowFailure(ex, "بررسی سفارش ممکن نشد؛ دوباره تلاش کنید."); }
+        finally { _busy = false; }
+    }
+    private async Task PlaceAsync()
+    {
+        if (_busy || !_accepted || _review is null) return;
+        _busy = true; _error = null; _announcedError = null;
+        try
+        {
+            var id = await Orders.PlaceAsync(_review.Id, _delivery == DeliveryMethod.Pickup ? 0 : _address, _delivery, _note, _recipient);
+            await Basket.ClearCartAsync(); Navigation.NavigateTo("/customer/orders/" + id);
+        }
+        catch (Exception ex) { ShowFailure(ex, "ثبت سفارش ممکن نشد. دوباره تلاش کنید؛ درخواست تکراری ایجاد نمی‌شود."); _accepted = false; }
+        finally { _busy = false; }
+    }
+    private void ShowFailure(Exception ex, string message)
+    {
+        Logger.LogError(ex, "Checkout operation failed");
+        _error = ex is ArgumentException or ValidationException ? ex.Message : message;
+        _announcedError = null;
+    }
+}
